@@ -1,0 +1,30 @@
+{
+  "name": "@parashari/core",
+  "version": "1.0.0",
+  "description": "Core Vedic astrology calculation engine — Swiss Ephemeris wrapper + Parashara logic",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --config jest.config.js",
+    "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch"
+  },
+  "dependencies": {
+    "swisseph": "^0.5.17"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.7.0"
+  }
+}

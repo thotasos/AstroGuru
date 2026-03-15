@@ -1,0 +1,214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Design System CSS Variables — Parashari Precision
+   ============================================================ */
+:root {
+  --color-bg: #0C0A09;
+  --color-surface: #1C1917;
+  --color-elevated: #292524;
+  --color-border: #44403C;
+  --color-gold: #CA8A04;
+  --color-gold-hover: #D97706;
+  --color-text-primary: #FAFAF9;
+  --color-text-muted: #A8A29E;
+  --color-text-subtle: #78716C;
+
+  /* Planet colors */
+  --planet-sun: #FCD34D;
+  --planet-moon: #E2E8F0;
+  --planet-mars: #EF4444;
+  --planet-mercury: #22C55E;
+  --planet-jupiter: #EAB308;
+  --planet-venus: #EC4899;
+  --planet-saturn: #94A3B8;
+  --planet-rahu: #A855F7;
+  --planet-ketu: #92400E;
+}
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   Custom Scrollbar
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-subtle);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) var(--color-surface);
+}
+
+/* ============================================================
+   Text Selection
+   ============================================================ */
+::selection {
+  background-color: rgba(202, 138, 4, 0.3);
+  color: var(--color-text-primary);
+}
+
+::-moz-selection {
+  background-color: rgba(202, 138, 4, 0.3);
+  color: var(--color-text-primary);
+}
+
+/* ============================================================
+   Focus Styles
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   Typography
+   ============================================================ */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+/* ============================================================
+   Utility Classes
+   ============================================================ */
+@layer utilities {
+  .glass {
+    background: rgba(28, 25, 23, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(68, 64, 60, 0.5);
+  }
+
+  .glass-elevated {
+    background: rgba(41, 37, 36, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(68, 64, 60, 0.6);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .shimmer-bg {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface) 0%,
+      var(--color-elevated) 50%,
+      var(--color-surface) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  .gold-glow {
+    box-shadow: 0 0 20px rgba(202, 138, 4, 0.2);
+  }
+
+  .gold-glow-sm {
+    box-shadow: 0 0 8px rgba(202, 138, 4, 0.15);
+  }
+}
+
+/* ============================================================
+   Component Base Styles
+   ============================================================ */
+@layer components {
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-lg
+           transition-all duration-150 cursor-pointer select-none
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .input-base {
+    @apply w-full bg-cosmic-elevated border border-cosmic-border rounded-lg
+           px-3 py-2 text-stone-50 placeholder:text-stone-500
+           focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent
+           transition-all duration-150;
+  }
+
+  .card-base {
+    @apply bg-cosmic-surface border border-cosmic-border rounded-xl
+           transition-all duration-200;
+  }
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(202, 138, 4, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(202, 138, 4, 0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in { animation: fade-in 0.3s ease-out; }
+.animate-slide-up { animation: slide-up 0.3s ease-out; }
+
+/* ============================================================
+   Chart Styles
+   ============================================================ */
+.south-indian-chart {
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.chart-cell {
+  transition: fill 0.15s ease;
+}
+
+.chart-cell:hover {
+  fill: #292524;
+}
