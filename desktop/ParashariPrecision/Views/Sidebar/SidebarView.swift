@@ -24,6 +24,13 @@ struct SidebarView: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.appTextPrimary)
                 Spacer()
+                Button(action: { profilesVM.loadProfiles() }) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.appTextSecondary)
+                }
+                .buttonStyle(.plain)
+                .help("Refresh Profiles")
                 Button(action: { profilesVM.showNewProfile = true }) {
                     Image(systemName: "plus")
                         .font(.system(size: 14, weight: .medium))

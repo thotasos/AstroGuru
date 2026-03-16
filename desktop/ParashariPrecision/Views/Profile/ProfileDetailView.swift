@@ -37,20 +37,41 @@ struct ProfileDetailView: View {
             tabContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button {
+                        Task { await chartVM.loadChart(for: profile) }
+                    } label: {
+                        Label("Load Chart", systemImage: "circle.grid.3x3")
+                    }
+                    Button {
+                        Task { await dashaVM.loadDashas(for: profile) }
+                    } label: {
+                        Label("Load Dashas", systemImage: "timeline.selection")
+                    }
+                    Button {
+                        Task { await predictionsVM.loadHourlyPredictions(for: profile) }
+                    } label: {
+                        Label("Load Predictions", systemImage: "brain.head.profile")
+                    }
+                    Divider()
+                    Button {
+                        Task {
+                            await chartVM.loadChart(for: profile)
+                            await dashaVM.loadDashas(for: profile)
+                            await predictionsVM.loadHourlyPredictions(for: profile)
+                        }
+                    } label: {
+                        Label("Load All", systemImage: "arrow.clockwise")
+                    }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .help("Load Data")
+            }
+        }
         .background(Color.appBackground)
-        .onAppear {
-            Task {
-                await chartVM.loadChart(for: profile)
-                await dashaVM.loadDashas(for: profile)
-            }
-        }
-        .onChange(of: profile) { _, newProfile in
-            Task {
-                await chartVM.loadChart(for: newProfile)
-                await dashaVM.loadDashas(for: newProfile)
-                await predictionsVM.loadHourlyPredictions(for: newProfile)
-            }
-        }
     }
 
     private var profileHeader: some View {

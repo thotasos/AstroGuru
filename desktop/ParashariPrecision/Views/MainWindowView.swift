@@ -28,10 +28,15 @@ struct MainWindowView: View {
             NewProfileView()
                 .environmentObject(profilesVM)
         }
-        .onAppear {
-            profilesVM.loadProfiles()
-        }
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    profilesVM.loadProfiles()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .help("Load Profiles")
+            }
             ToolbarItem(placement: .status) {
                 HStack(spacing: 6) {
                     Circle()
