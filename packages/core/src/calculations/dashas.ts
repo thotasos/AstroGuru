@@ -124,17 +124,17 @@ export function calculateDasha(
   const nakshatraInfo = getNakshatra(moonSiderealLongitude);
   const { lord: birthNakshatraLord, degreeInNakshatra } = nakshatraInfo;
 
-  // Balance of current mahadasha at birth
+  // Balance of current mahadasha at birth = how much of the current nakshatra remains
   const fractionRemaining = 1 - degreeInNakshatra / NAKSHATRA_SPAN_DEG;
   const startingDashaIndex = dashaSequenceIndex(birthNakshatraLord);
   const [, startingDashaYears] = DASHA_SEQUENCE[startingDashaIndex]!;
   const balanceYears = fractionRemaining * startingDashaYears;
   const balanceDays = balanceYears * DAYS_PER_YEAR;
 
-  // Start date is adjusted back so that the "current" dasha started before birth
-  // The mahadasha technically started (balanceYears) before birth.
+  // FIX: First mahadasha STARTS at birth, not before
+  // The balance determines how long this first mahadasha runs from birth
   const birthMs = birthDate.getTime();
-  const mahaStart = new Date(birthMs - balanceDays * 86400000);
+  const mahaStart = birthDate; // First mahadasha starts at birth
 
   const periods: DashaPeriod[] = [];
 
@@ -146,9 +146,17 @@ export function calculateDasha(
     const [mahaPlanet, mahaYears] = DASHA_SEQUENCE[mahaIdx]!;
 
     let mahaActualStartMs = mahaCurrentStart.getTime();
-    // For the first mahadasha, the actual period we calculate starts at birth
-    // (the mahadasha itself started before birth; we still generate full period for completeness)
-    const mahaDurationDays = mahaYears * DAYS_PER_YEAR;
+
+    // First mahadasha uses balance period, subsequent use full period
+    let mahaDurationDays: number;
+    if (mi === 0) {
+      // First mahadasha: runs from birth for the balance period
+      mahaDurationDays = balanceDays;
+    } else {
+      // Subsequent mahadashas: full duration
+      mahaDurationDays = mahaYears * DAYS_PER_YEAR;
+    }
+
     const mahaEnd = new Date(mahaActualStartMs + mahaDurationDays * 86400000);
 
     // Level 1
@@ -314,13 +322,23 @@ export function getMahadashas(
   const [, startingYears] = DASHA_SEQUENCE[startingIdx]!;
   const balanceDays = fractionRemaining * startingYears * DAYS_PER_YEAR;
   const birthMs = birthDate.getTime();
-  let currentStartMs = birthMs - balanceDays * 86400000;
+
+  // FIX: First mahadasha starts at birth, balance determines its duration
+  let currentStartMs = birthMs;
 
   const mahadashas: DashaLevel[] = [];
   for (let i = 0; i < 9; i++) {
     const idx = (startingIdx + i) % 9;
     const [planet, years] = DASHA_SEQUENCE[idx]!;
-    const durationMs = years * DAYS_PER_YEAR * 86400000;
+
+    // First mahadasha uses balance, rest use full duration
+    let durationMs: number;
+    if (i === 0) {
+      durationMs = balanceDays * 86400000;
+    } else {
+      durationMs = years * DAYS_PER_YEAR * 86400000;
+    }
+
     const endMs = currentStartMs + durationMs;
     mahadashas.push({
       planet,
@@ -332,4 +350,19 @@ export function getMahadashas(
   }
 
   return mahadashas;
+}
+
+/**
+ * Get the specific dasha period (all 5 levels) for a given date/time.
+ */
+export function getDashaAtDate(
+  dashas: DashaPeriod[],
+  date: Date,
+): DashaPeriod | undefined {
+  const ts = date.getTime();
+  return dashas.find(
+    (d) =>
+      d.prana.startDate.getTime() <= ts &&
+      ts < d.prana.endDate.getTime(),
+  );
 }

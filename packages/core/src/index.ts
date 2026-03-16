@@ -62,11 +62,18 @@ export {
   calculateDasha,
   getDashaLordAtDate,
   getDashaLordsAtDate,
+  getDashaAtDate,
   getMahadashas,
   getNakshatra,
   DASHA_SEQUENCE,
   NAKSHATRA_LORD,
 } from './calculations/dashas.js';
+
+export {
+  calculateTransit,
+  calculateHourlyScore,
+  type TransitPosition,
+} from './calculations/transit.js';
 
 export {
   calculateShadbala,
