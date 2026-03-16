@@ -4,6 +4,7 @@ struct ProfileDetailView: View {
     let profile: BirthProfile
     @StateObject private var chartVM = ChartViewModel()
     @StateObject private var dashaVM = DashaViewModel()
+    @StateObject private var predictionsVM = PredictionsViewModel()
     @State private var selectedTab: Tab = .chart
 
     enum Tab: String, CaseIterable {
@@ -11,6 +12,7 @@ struct ProfileDetailView: View {
         case vargas   = "Vargas"
         case dashas   = "Dashas"
         case yogas    = "Yogas"
+        case predictions = "Predictions"
 
         var icon: String {
             switch self {
@@ -18,6 +20,7 @@ struct ProfileDetailView: View {
             case .vargas: return "square.grid.4x3.fill"
             case .dashas: return "timeline.selection"
             case .yogas:  return "sparkles"
+            case .predictions: return "brain.head.profile"
             }
         }
     }
@@ -45,6 +48,7 @@ struct ProfileDetailView: View {
             Task {
                 await chartVM.loadChart(for: newProfile)
                 await dashaVM.loadDashas(for: newProfile)
+                await predictionsVM.loadHourlyPredictions(for: newProfile)
             }
         }
     }
@@ -191,6 +195,8 @@ struct ProfileDetailView: View {
             } else {
                 LoadingView()
             }
+        case .predictions:
+            PredictionsView(viewModel: predictionsVM, profile: profile)
         }
     }
 }

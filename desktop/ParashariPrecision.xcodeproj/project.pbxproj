@@ -33,6 +33,11 @@
 		DC13861242E7E8280EF2787E /* ProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D49FD789FBD29DA6172B14; };
 		6798DF89304B5E87058EE53E /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB9AE306156C5857C71E841; };
 		36C2C8E33FA44C67B594F0EE /* YogaListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBC5193F40CF9696069B611; };
+		A1B2C3D4E5F60718091A2B3C /* Prediction.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718091A2B3D; };
+		A1B2C3D4E5F60718091A2B3E /* PredictionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718091A2B3F; };
+		A1B2C3D4E5F60718091A2B40 /* PredictionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718091A2B41; };
+		A1B2C3D4E5F60718091A2B42 /* HourlyPredictionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718091A2B43; };
+		A1B2C3D4E5F60718091A2B44 /* MonthlyPredictionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718091A2B45; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +69,11 @@
 		C1D49FD789FBD29DA6172B14 /* ProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileListView.swift; sourceTree = "<group>"; };
 		BDB9AE306156C5857C71E841 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		EBBC5193F40CF9696069B611 /* YogaListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YogaListView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718091A2B3D /* Prediction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prediction.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718091A2B3F /* PredictionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictionsViewModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718091A2B41 /* PredictionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictionsView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718091A2B43 /* HourlyPredictionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourlyPredictionsView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718091A2B45 /* MonthlyPredictionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyPredictionsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -97,6 +107,7 @@
 				789AE9565326059CDBBFFD32 /* Profile */,
 				4886C5FD5EFCC6AA3931DA4C /* Sidebar */,
 				4B6D1D9C6C286593A1ED6CDB /* Yoga */,
+				A1B2C3D4E5F60718091A2B46 /* Predictions */,
 			);
 			path = ParashariPrecision;
 			sourceTree = "<group>";
@@ -117,6 +128,7 @@
 				D592C208DBD9C45C598638DF /* DashaPeriod.swift */,
 				EEE5FC4C2A79C525D170AB7E /* Profile.swift */,
 				25E1A21C541FB186D380C483 /* YogaResult.swift */,
+				A1B2C3D4E5F60718091A2B3D /* Prediction.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -137,6 +149,7 @@
 				EFACF37230BC3FA20DF6561C /* ChartViewModel.swift */,
 				716E45BED27A36ACC4767D10 /* DashaViewModel.swift */,
 				D6D8ED9AB814E09CD43A5FB3 /* ProfilesViewModel.swift */,
+				A1B2C3D4E5F60718091A2B3F /* PredictionsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -203,6 +216,16 @@
 				EBBC5193F40CF9696069B611 /* YogaListView.swift */,
 			);
 			path = Views/Yoga;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60718091A2B46 /* Predictions */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718091A2B41 /* PredictionsView.swift */,
+				A1B2C3D4E5F60718091A2B43 /* HourlyPredictionsView.swift */,
+				A1B2C3D4E5F60718091A2B45 /* MonthlyPredictionsView.swift */,
+			);
+			path = Views/Predictions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -278,6 +301,11 @@
 				DC13861242E7E8280EF2787E /* ProfileListView.swift */,
 				6798DF89304B5E87058EE53E /* SidebarView.swift */,
 				36C2C8E33FA44C67B594F0EE /* YogaListView.swift */,
+				A1B2C3D4E5F60718091A2B3C /* Prediction.swift */,
+				A1B2C3D4E5F60718091A2B3E /* PredictionsViewModel.swift */,
+				A1B2C3D4E5F60718091A2B40 /* PredictionsView.swift */,
+				A1B2C3D4E5F60718091A2B42 /* HourlyPredictionsView.swift */,
+				A1B2C3D4E5F60718091A2B44 /* MonthlyPredictionsView.swift */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

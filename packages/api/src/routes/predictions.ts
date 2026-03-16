@@ -28,6 +28,8 @@ import {
   getCachedCalculation,
   saveCachedCalculation,
   isCacheValid,
+  getHourlyPredictions,
+  deletePredictionsForProfile,
 } from '../database/cache.js';
 
 // ---------------------------------------------------------------------------
@@ -276,6 +278,95 @@ const predictionRoutes: FastifyPluginAsync = async (
       };
 
       return reply.send({ data: responseData });
+    },
+  );
+
+  // ── GET /api/predictions/:profileId/hourly ─────────────────────────────────────
+  fastify.get<{ Params: { profileId: string }; Querystring: { date?: string } }>(
+    '/predictions/:profileId/hourly',
+    async (request, reply) => {
+      const { profileId } = request.params;
+      const date = request.query.date ?? new Date().toISOString().split('T')[0]!;
+
+      const profile = getProfile(profileId);
+      if (profile === undefined) {
+        return reply.status(404).send({ error: 'Profile not found' });
+      }
+
+      const predictions = getHourlyPredictions(profileId, date);
+
+      return reply.send({ data: predictions });
+    },
+  );
+
+  // ── GET /api/predictions/:profileId/monthly ───────────────────────────────────
+  fastify.get<{ Params: { profileId: string }; Querystring: { year?: string; month?: string } }>(
+    '/predictions/:profileId/monthly',
+    async (request, reply) => {
+      const { profileId } = request.params;
+      const now = new Date();
+      const year = parseInt(request.query.year ?? String(now.getFullYear()), 10);
+      const month = parseInt(request.query.month ?? String(now.getMonth() + 1), 10);
+
+      const profile = getProfile(profileId);
+      if (profile === undefined) {
+        return reply.status(404).send({ error: 'Profile not found' });
+      }
+
+      // Get hourly predictions for each day of the month
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const monthlyData: Record<string, unknown>[] = [];
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const hourlyData = getHourlyPredictions(profileId, dateStr);
+
+        if (hourlyData.length > 0) {
+          // Calculate daily score as average of hourly scores
+          const scores = hourlyData.filter(h => h.hourly_score !== null).map(h => h.hourly_score!);
+          const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 50;
+
+          // Get categories
+          const categoriesSet = new Set<string>();
+          hourlyData.forEach(h => {
+            if (h.prediction_text) categoriesSet.add('general');
+            if (h.sookshma_dasha_planet !== null) categoriesSet.add('dasha');
+          });
+
+          monthlyData.push({
+            date: dateStr,
+            score: avgScore,
+            categories: Array.from(categoriesSet),
+            hourlyCount: hourlyData.length,
+          });
+        }
+      }
+
+      return reply.send({
+        data: {
+          year,
+          month,
+          dailyPredictions: monthlyData,
+          profileId,
+        },
+      });
+    },
+  );
+
+  // ── DELETE /api/predictions/:profileId/cache ──────────────────────────────────
+  fastify.delete<{ Params: { profileId: string } }>(
+    '/predictions/:profileId/cache',
+    async (request, reply) => {
+      const { profileId } = request.params;
+
+      const profile = getProfile(profileId);
+      if (profile === undefined) {
+        return reply.status(404).send({ error: 'Profile not found' });
+      }
+
+      const deleted = deletePredictionsForProfile(profileId);
+
+      return reply.send({ data: { deleted, profileId } });
     },
   );
 };

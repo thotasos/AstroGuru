@@ -28,6 +28,16 @@ enum APIError: LocalizedError {
     }
 }
 
+// MARK: - API Response Types
+
+struct HourlyPredictionsResponse: Codable {
+    let data: [HourlyPrediction]
+}
+
+struct MonthlyPredictionResponse: Codable {
+    let data: MonthlyPrediction
+}
+
 // MARK: - API Service
 
 actor APIService {
@@ -109,6 +119,28 @@ actor APIService {
 
     func detectYogas(profileId: String) async throws -> [YogaResult] {
         return try await get("/api/profiles/\(profileId)/yogas")
+    }
+
+    // MARK: - Predictions
+
+    func getHourlyPredictions(profileId: String, date: String? = nil) async throws -> [HourlyPrediction] {
+        var path = "/api/predictions/\(profileId)/hourly"
+        if let date = date {
+            path += "?date=\(date)"
+        }
+        let response: HourlyPredictionsResponse = try await get(path)
+        return response.data
+    }
+
+    func getMonthlyPredictions(profileId: String, year: Int, month: Int) async throws -> MonthlyPrediction {
+        let path = "/api/predictions/\(profileId)/monthly?year=\(year)&month=\(month)"
+        let response: MonthlyPredictionResponse = try await get(path)
+        return response.data
+    }
+
+    func clearPredictionCache(profileId: String) async throws -> PredictionCacheResponse {
+        _ = try await delete("/api/predictions/\(profileId)/cache")
+        return PredictionCacheResponse(deleted: 0, profileId: profileId)
     }
 
     // MARK: - Generic HTTP Methods
