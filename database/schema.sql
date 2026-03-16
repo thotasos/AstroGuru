@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS calculations_cache (
   ashtakavarga_json TEXT,            -- AshtakavargaResult JSON
   dashas_json TEXT,                  -- DashaPeriod[] JSON (full 120yr)
   yogas_json TEXT,                   -- YogaResult[] JSON
+  predictions_json TEXT,            -- PredictionsResult JSON
   computed_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (profile_id),
   FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
@@ -76,6 +77,9 @@ CREATE TABLE IF NOT EXISTS profile_status (
 CREATE INDEX IF NOT EXISTS idx_events_profile_date ON events_journal(profile_id, event_date);
 CREATE INDEX IF NOT EXISTS idx_profiles_name ON profiles(name);
 CREATE INDEX IF NOT EXISTS idx_cache_profile ON calculations_cache(profile_id);
+
+-- Schema migrations for existing databases
+ALTER TABLE calculations_cache ADD COLUMN predictions_json TEXT;
 
 INSERT OR IGNORE INTO profile_status VALUES ('new', 'New', 'Profile created, not yet processed');
 INSERT OR IGNORE INTO profile_status VALUES ('processing', 'Processing', 'Chart calculations in progress');

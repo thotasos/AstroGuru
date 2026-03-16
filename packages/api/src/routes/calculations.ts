@@ -253,6 +253,7 @@ function persistFullCache(
       yogas_json: JSON.stringify(yogas),
       shadbala_json: JSON.stringify(shadbala),
       ashtakavarga_json: JSON.stringify(avSerializable),
+      predictions_json: null,
     });
   } catch (err) {
     // Cache write failure is non-fatal — log and continue
@@ -304,6 +305,7 @@ const calculationRoutes: FastifyPluginAsync = async (
             yogas_json: null,
             shadbala_json: null,
             ashtakavarga_json: null,
+            predictions_json: null,
           });
         } catch (err) {
           console.error('[calculations/chart] cache write failed', err);
@@ -354,6 +356,7 @@ const calculationRoutes: FastifyPluginAsync = async (
             yogas_json: existing?.yogas_json ?? null,
             shadbala_json: existing?.shadbala_json ?? null,
             ashtakavarga_json: existing?.ashtakavarga_json ?? null,
+            predictions_json: existing?.predictions_json ?? null,
           });
         } catch (err) {
           console.error('[calculations/vargas] cache write failed', err);
@@ -399,6 +402,7 @@ const calculationRoutes: FastifyPluginAsync = async (
             yogas_json: existing?.yogas_json ?? null,
             shadbala_json: existing?.shadbala_json ?? null,
             ashtakavarga_json: existing?.ashtakavarga_json ?? null,
+            predictions_json: existing?.predictions_json ?? null,
           });
         } catch (err) {
           console.error('[calculations/dashas] cache write failed', err);
@@ -446,6 +450,7 @@ const calculationRoutes: FastifyPluginAsync = async (
             yogas_json: JSON.stringify(sorted),
             shadbala_json: existing?.shadbala_json ?? null,
             ashtakavarga_json: existing?.ashtakavarga_json ?? null,
+            predictions_json: existing?.predictions_json ?? null,
           });
         } catch (err) {
           console.error('[calculations/yogas] cache write failed', err);
@@ -491,6 +496,7 @@ const calculationRoutes: FastifyPluginAsync = async (
             yogas_json: existing?.yogas_json ?? null,
             shadbala_json: JSON.stringify(shadbala),
             ashtakavarga_json: existing?.ashtakavarga_json ?? null,
+            predictions_json: existing?.predictions_json ?? null,
           });
         } catch (err) {
           console.error('[calculations/shadbala] cache write failed', err);
@@ -550,6 +556,7 @@ const calculationRoutes: FastifyPluginAsync = async (
             yogas_json: existing?.yogas_json ?? null,
             shadbala_json: existing?.shadbala_json ?? null,
             ashtakavarga_json: JSON.stringify(avSerializable),
+            predictions_json: existing?.predictions_json ?? null,
           });
         } catch (err) {
           console.error('[calculations/ashtakavarga] cache write failed', err);

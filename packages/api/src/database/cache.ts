@@ -48,6 +48,8 @@ export interface CachedCalculation {
   dashas_json: string | null;
   /** YogaResult[] serialised to JSON, nullable */
   yogas_json: string | null;
+  /** PredictionsResult serialised to JSON, nullable */
+  predictions_json: string | null;
   /** ISO 8601 UTC datetime when row was last written */
   computed_at: string;
 }
@@ -68,6 +70,7 @@ function rowToCache(row: Record<string, unknown>): CachedCalculation {
     ashtakavarga_json: (row['ashtakavarga_json'] as string | null) ?? null,
     dashas_json: (row['dashas_json'] as string | null) ?? null,
     yogas_json: (row['yogas_json'] as string | null) ?? null,
+    predictions_json: (row['predictions_json'] as string | null) ?? null,
     computed_at: row['computed_at'] as string,
   };
 }
@@ -111,13 +114,14 @@ export function saveCachedCalculation(
     string, number, number, number,
     string,
     string | null, string | null, string | null, string | null, string | null,
+    string | null,
     string,
   ]>(`
     INSERT INTO calculations_cache
       (profile_id, cache_version, julian_day, ayanamsa_value,
        chart_json, vargas_json, shadbala_json, ashtakavarga_json,
-       dashas_json, yogas_json, computed_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       dashas_json, yogas_json, predictions_json, computed_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(profile_id) DO UPDATE SET
       cache_version     = excluded.cache_version,
       julian_day        = excluded.julian_day,
@@ -128,6 +132,7 @@ export function saveCachedCalculation(
       ashtakavarga_json = excluded.ashtakavarga_json,
       dashas_json       = excluded.dashas_json,
       yogas_json        = excluded.yogas_json,
+      predictions_json  = excluded.predictions_json,
       computed_at       = excluded.computed_at
   `).run(
     profileId,
@@ -140,6 +145,7 @@ export function saveCachedCalculation(
     data.ashtakavarga_json ?? null,
     data.dashas_json ?? null,
     data.yogas_json ?? null,
+    data.predictions_json ?? null,
     now,
   );
 }
