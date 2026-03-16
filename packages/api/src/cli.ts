@@ -4,12 +4,12 @@ import { Command } from 'commander';
 import { createProfile, getAllProfiles, getProfile } from './database/profiles.js';
 import { runMigrations } from './database/migrate.js';
 import { getCachedCalculation } from './database/cache.js';
-import { runProcessor, processProfile } from './jobs/processor.js';
+import { runProcessor, processProfile, processAllNewProfiles } from './jobs/processor.js';
 
-const PREDEFINED_PLACES: Record<string, { lat: number; lon: number; timezone: string }> = {
-  'nalgonda-india': { lat: 17.0500, lon: 79.2700, timezone: 'Asia/Kolkata' },
-  'houston-texas': { lat: 29.7604, lon: -95.3698, timezone: 'America/Chicago' },
-  'sunnyvale-california': { lat: 37.3688, lon: -122.0363, timezone: 'America/Los_Angeles' },
+const PREDEFINED_PLACES: Record<string, { lat: number; lon: number; timezone: string; utcOffset: number }> = {
+  'nalgonda-india': { lat: 17.0500, lon: 79.2700, timezone: 'Asia/Kolkata', utcOffset: 5.5 },
+  'houston-texas': { lat: 29.7604, lon: -95.3698, timezone: 'America/Chicago', utcOffset: -6 },
+  'sunnyvale-california': { lat: 37.3688, lon: -122.0363, timezone: 'America/Los_Angeles', utcOffset: -8 },
 };
 
 interface CreateOptions {
@@ -33,30 +33,32 @@ async function createProfileAction(options: CreateOptions) {
     process.exit(1);
   }
 
-  // Parse date and time
-  const dobDate = new Date(options.dob);
-  if (isNaN(dobDate.getTime())) {
-    console.error('Error: Invalid date format. Use YYYY-MM-DD');
+  // Parse date and time - treat input as LOCAL time for the given timezone
+  // For example: 10:00 AM in Nalgonda = 10:00 AM IST = UTC + 5:30
+  // We need to convert this to UTC: 10:00 - 5:30 = 4:30 UTC
+  const [year, month, day] = options.dob.split('-').map(Number);
+  const [hours, minutes] = options.time.split(':').map(Number);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes)) {
+    console.error('Error: Invalid date or time format');
     process.exit(1);
   }
 
-  const timeParts = options.time.split(':').map(Number);
-  if (timeParts.length !== 2 || timeParts.some(isNaN)) {
-    console.error('Error: Invalid time format. Use HH:MM');
-    process.exit(1);
-  }
+  // Use the predefined offset
+  const offsetHours = place.utcOffset;
 
-  const hours = timeParts[0] as number;
-  const minutes = timeParts[1] as number;
-  dobDate.setHours(hours, minutes, 0, 0);
+  // Convert local time to UTC
+  // If offset is +5.5 (IST), then 10:00 local = 10:00 - 5:30 = 4:30 UTC
+  const localMs = (hours * 60 + minutes) * 60 * 1000;
+  const offsetMs = offsetHours * 60 * 60 * 1000;
+  const utcMs = localMs - offsetMs;
 
-  // Calculate UTC offset
-  const offsetMinutes = -dobDate.getTimezoneOffset();
-  const offsetHours = offsetMinutes / 60;
+  // Create UTC date
+  const utcDate = new Date(Date.UTC(year, month - 1, day) + utcMs);
 
   const profile = createProfile({
     name: options.name,
-    dob_utc: dobDate.toISOString(),
+    dob_utc: utcDate.toISOString(),
     lat: place.lat,
     lon: place.lon,
     timezone: place.timezone,
@@ -67,8 +69,10 @@ async function createProfileAction(options: CreateOptions) {
 
   console.log(`Created profile: ${profile.id}`);
   console.log(`  Name: ${profile.name}`);
-  console.log(`  DOB: ${profile.dob_utc}`);
+  console.log(`  DOB (UTC): ${profile.dob_utc}`);
+  console.log(`  Local Time: ${options.dob} ${options.time}`);
   console.log(`  Place: ${profile.place_name}`);
+  console.log(`  Timezone: ${profile.timezone} (UTC${offsetHours >= 0 ? '+' : ''}${offsetHours})`);
   console.log(`  Status: ${profile.status}`);
   console.log(`\nRun 'npx tsx src/cli.ts process -i "${profile.id}"' to process this profile.`);
 }
@@ -85,8 +89,8 @@ async function processAction(options: ProcessOptions) {
     console.log(`Processing profile: ${options.id}`);
     await processProfile(options.id);
   } else {
-    // Run continuous processor
-    await runProcessor();
+    // Process all new profiles once
+    await processAllNewProfiles();
   }
 }
 

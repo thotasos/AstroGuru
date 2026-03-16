@@ -6,9 +6,9 @@
  */
 
 import { getDb } from '../database/db.js';
-import { getProfile, updateProfileStatus } from '../database/profiles.js';
+import { getProfile, getAllProfiles, updateProfileStatus } from '../database/profiles.js';
 import { saveCachedCalculation } from '../database/cache.js';
-import { AstrologyEngine, Ayanamsa, type BirthData, type ChartData } from '@parashari/core';
+import { AstrologyEngine, Ayanamsa, type BirthData, type ChartData, generatePredictions } from '@parashari/core';
 
 function getEngine(ayanamsa: Ayanamsa = Ayanamsa.Lahiri): AstrologyEngine {
   return new AstrologyEngine(ayanamsa);
@@ -48,6 +48,9 @@ export async function processProfile(profileId: string): Promise<void> {
     console.log('[processor] Calculating chart...');
     const chart: ChartData = await engine.calculateChart(birthData);
 
+    console.log('[processor] Calculating vargas (divisional charts)...');
+    const vargas = await engine.calculateAllVargas(chart);
+
     console.log('[processor] Calculating dashas...');
     const dashas = await engine.calculateDashas(chart);
 
@@ -60,6 +63,16 @@ export async function processProfile(profileId: string): Promise<void> {
     console.log('[processor] Calculating ashtakavarga...');
     const ashtakavarga = await engine.calculateAshtakavarga(chart);
 
+    console.log('[processor] Generating predictions...');
+    const predictions = generatePredictions({
+      chart,
+      dashas,
+      yogas,
+      shadbala,
+      ashtakavarga,
+      level: 1,
+    });
+
     // Get Julian Day and Ayanamsa value
     const julianDay = chart.julianDay;
     const ayanamsaValue = chart.ayanamsa;
@@ -69,7 +82,7 @@ export async function processProfile(profileId: string): Promise<void> {
       julian_day: julianDay,
       ayanamsa_value: ayanamsaValue,
       chart_json: JSON.stringify(chart),
-      vargas_json: null,
+      vargas_json: JSON.stringify(Object.fromEntries(vargas)),
       shadbala_json: JSON.stringify(shadbala),
       ashtakavarga_json: JSON.stringify({
         bav: Array.from(ashtakavarga.bav.entries()),
@@ -78,7 +91,7 @@ export async function processProfile(profileId: string): Promise<void> {
       }),
       dashas_json: JSON.stringify(dashas),
       yogas_json: JSON.stringify(yogas),
-      predictions_json: null,
+      predictions_json: JSON.stringify(predictions),
     });
 
     // Update status to ready
@@ -119,4 +132,26 @@ export async function runProcessor(): Promise<void> {
       console.error('[processor] Job failed:', error);
     }
   }
+}
+
+export async function processAllNewProfiles(): Promise<void> {
+  const profiles = getAllProfiles().filter(p => p.status === 'new');
+
+  if (profiles.length === 0) {
+    console.log('[processor] No new profiles to process.');
+    return;
+  }
+
+  console.log(`[processor] Found ${profiles.length} new profile(s) to process.`);
+
+  for (const profile of profiles) {
+    console.log(`\n[processor] Processing: ${profile.name} (${profile.id})`);
+    try {
+      await processProfile(profile.id);
+    } catch (error) {
+      console.error(`[processor] Failed to process ${profile.id}:`, error);
+    }
+  }
+
+  console.log('\n[processor] All new profiles processed.');
 }
