@@ -54,6 +54,40 @@ export interface CachedCalculation {
   computed_at: string;
 }
 
+/**
+ * Hourly prediction for a specific profile and date.
+ */
+export interface HourlyPrediction {
+  id: string;
+  profile_id: string;
+  date: string;           // YYYY-MM-DD
+  hour: number;           // 0-23
+  timezone: string;
+
+  // Sookshma Dasha (Level 4)
+  sookshma_dasha_planet: number | null;
+  sookshma_dasha_start: string | null;
+  sookshma_dasha_end: string | null;
+
+  // Prana Dasha (Level 5)
+  prana_dasha_planet: number | null;
+  prana_dasha_start: string | null;
+  prana_dasha_end: string | null;
+
+  // Transit positions
+  moon_nakshatra: number | null;
+  moon_sign: number | null;
+  moon_degree: number | null;
+  transit_lagna: number | null;
+  transit_lagna_sign: number | null;
+
+  // Prediction
+  hourly_score: number | null;
+  prediction_text: string | null;
+
+  created_at: string;
+}
+
 // ---------------------------------------------------------------------------
 // Row mapper
 // ---------------------------------------------------------------------------
@@ -72,6 +106,30 @@ function rowToCache(row: Record<string, unknown>): CachedCalculation {
     yogas_json: (row['yogas_json'] as string | null) ?? null,
     predictions_json: (row['predictions_json'] as string | null) ?? null,
     computed_at: row['computed_at'] as string,
+  };
+}
+
+function rowToHourlyPrediction(row: Record<string, unknown>): HourlyPrediction {
+  return {
+    id: row['id'] as string,
+    profile_id: row['profile_id'] as string,
+    date: row['date'] as string,
+    hour: row['hour'] as number,
+    timezone: row['timezone'] as string,
+    sookshma_dasha_planet: row['sookshma_dasha_planet'] as number | null,
+    sookshma_dasha_start: row['sookshma_dasha_start'] as string | null,
+    sookshma_dasha_end: row['sookshma_dasha_end'] as string | null,
+    prana_dasha_planet: row['prana_dasha_planet'] as number | null,
+    prana_dasha_start: row['prana_dasha_start'] as string | null,
+    prana_dasha_end: row['prana_dasha_end'] as string | null,
+    moon_nakshatra: row['moon_nakshatra'] as number | null,
+    moon_sign: row['moon_sign'] as number | null,
+    moon_degree: row['moon_degree'] as number | null,
+    transit_lagna: row['transit_lagna'] as number | null,
+    transit_lagna_sign: row['transit_lagna_sign'] as number | null,
+    hourly_score: row['hourly_score'] as number | null,
+    prediction_text: row['prediction_text'] as string | null,
+    created_at: row['created_at'] as string,
   };
 }
 
