@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { createProfile } from './database/profiles.js';
 import { runMigrations } from './database/migrate.js';
+import { runProcessor, processProfile } from './jobs/processor.js';
 
 const PREDEFINED_PLACES: Record<string, { lat: number; lon: number; timezone: string }> = {
   'nalgonda-india': { lat: 17.0500, lon: 79.2700, timezone: 'Asia/Kolkata' },
@@ -38,12 +39,14 @@ async function createProfileAction(options: CreateOptions) {
     process.exit(1);
   }
 
-  const [hours, minutes] = options.time.split(':').map(Number);
-  if (isNaN(hours) || isNaN(minutes)) {
+  const timeParts = options.time.split(':').map(Number);
+  if (timeParts.length !== 2 || timeParts.some(isNaN)) {
     console.error('Error: Invalid time format. Use HH:MM');
     process.exit(1);
   }
 
+  const hours = timeParts[0] as number;
+  const minutes = timeParts[1] as number;
   dobDate.setHours(hours, minutes, 0, 0);
 
   // Calculate UTC offset
@@ -69,6 +72,23 @@ async function createProfileAction(options: CreateOptions) {
   console.log(`\nRun 'npx tsx src/cli.ts process -i "${profile.id}"' to process this profile.`);
 }
 
+interface ProcessOptions {
+  id?: string;
+}
+
+async function processAction(options: ProcessOptions) {
+  runMigrations();
+
+  if (options.id) {
+    // Process specific profile
+    console.log(`Processing profile: ${options.id}`);
+    await processProfile(options.id);
+  } else {
+    // Run continuous processor
+    await runProcessor();
+  }
+}
+
 const program = new Command();
 
 program
@@ -84,5 +104,11 @@ program
   .requiredOption('-t, --time <time>', 'Time of birth (HH:MM)')
   .requiredOption('-p, --place <place>', 'Place of birth (predefined: Nalgonda-India, Houston-Texas, Sunnyvale-California)')
   .action(createProfileAction);
+
+program
+  .command('process')
+  .description('Process profiles (run without args for continuous processing)')
+  .option('-i, --id <id>', 'Process specific profile ID')
+  .action(processAction);
 
 program.parse(process.argv);
