@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS events_journal (
 
 -- Hourly predictions cache (30-day rolling window)
 CREATE TABLE IF NOT EXISTS hourly_predictions (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY NOT NULL,
   profile_id TEXT NOT NULL,
   date TEXT NOT NULL,           -- YYYY-MM-DD
   hour INTEGER NOT NULL,        -- 0-23
@@ -88,8 +88,10 @@ CREATE TABLE IF NOT EXISTS hourly_predictions (
   hourly_score INTEGER,
   prediction_text TEXT,
 
-  created_at TEXT NOT NULL,
-  FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  UNIQUE (profile_id, date, hour),
+  CHECK (hour >= 0 AND hour <= 23)
 );
 
 CREATE INDEX IF NOT EXISTS idx_hourly_profile_date
