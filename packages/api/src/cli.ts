@@ -1048,6 +1048,9 @@ async function predictMonthAction(options: PredictMonthOptions) {
 
   const timezone = options.timezone || profile.timezone;
 
+  // Convert timezone to offset for the given month/year
+  const timezoneOffset = getTimezoneOffset(timezone, year, month);
+
   // Get cached data
   const cache = getCachedCalculation(options.id);
   if (!cache || !cache.chart_json || !cache.dashas_json) {
@@ -1079,7 +1082,7 @@ async function predictMonthAction(options: PredictMonthOptions) {
     month,
     profile.lat,
     profile.lon,
-    profile.utc_offset_hours,
+    timezoneOffset,
     chart,
     dashas
   );
@@ -1173,6 +1176,18 @@ async function predictMonthAction(options: PredictMonthOptions) {
 function getMonthName(month: number): string {
   const names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   return names[month - 1] || 'Unknown';
+}
+
+/**
+ * Convert timezone string to offset in hours for a specific date.
+ */
+function getTimezoneOffset(timezone: string, year: number, month: number): number {
+  // Create a date in UTC and get its offset in the target timezone
+  const date = new Date(Date.UTC(year, month - 1, 15, 12, 0, 0));
+  const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+  const tzDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
+  const offsetMs = tzDate.getTime() - utcDate.getTime();
+  return offsetMs / (1000 * 60 * 60);
 }
 
 program
