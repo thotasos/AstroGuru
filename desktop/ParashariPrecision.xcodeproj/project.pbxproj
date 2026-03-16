@@ -1,0 +1,299 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = { };
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA092EDFF164840B0D61D117 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8582860331B53B252513FD5; };
+		86D79C785E72BF7D2C212712 /* ParashariPrecisionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F29616BEB2F146471FC6E85; };
+		1075997330442AA685C87450 /* ChartData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD5D60C791796DE9ECF3D04; };
+		D9ECA8C359ED6914FC4D9D39 /* DashaPeriod.swift in Sources */ = {isa = PBXBuildFile; fileRef = D592C208DBD9C45C598638DF; };
+		C82C29B4763986BE9A250FFD /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE5FC4C2A79C525D170AB7E; };
+		EC90FDF97DD356E0AF238F2B /* YogaResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25E1A21C541FB186D380C483; };
+		0C5F7E846B81568B3E0531CF /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B03CB9E8579F5F3F580C68E; };
+		662E499E4C5CCE92AF4707F2 /* DatabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D0AC7A569B81EA7E6287BC; };
+		1A8356F11649911CC5BFEA8A /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2611BD44DE0480E12A5571; };
+		9537B9F700C908BF67064DCA /* ChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFACF37230BC3FA20DF6561C; };
+		90CEDA0A0374F609A12F36A6 /* DashaViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 716E45BED27A36ACC4767D10; };
+		D2520FC4E1E92552862E9A26 /* ProfilesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6D8ED9AB814E09CD43A5FB3; };
+		054202002A251E311014B114 /* PlanetTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A330BFF61C4E09E514CB06; };
+		4217F59F9ECE2132EB2F05D8 /* SouthIndianChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28AF2B634D35B7470D69C418; };
+		B44C725172C8F3777413E7EC /* VargaSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D734C20B70D1659ADCAB2C31; };
+		8BAA425F57FE8129114137EC /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C835A9DCFF08A32D86B7500A; };
+		E0DD9B2901EB8FB845E995E6 /* GoldButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3646F1D58E0EC6FF578676B1; };
+		504658B9DFBBE330F896FA1B /* PlanetBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF067FFB4C8322C60A9A59A2; };
+		545DAAE299474D530AEDF2B2 /* SurfaceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92684158707D1C3095BC60F1; };
+		B5897582FD95ACF30B34D002 /* DashaTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6262203F6BF5236E824A28C; };
+		68D2ECC72711AF23FAE60731 /* DashaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E712F602A167CE8D083551; };
+		0F9C2E25DBA4BD738036E701 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5575F5CA1AE492918F6532; };
+		FB3AE5DA79255B6DF6267925 /* NewProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845D271BAA4C7CD6A82F629D; };
+		201D1DB62AF52D3813658248 /* ProfileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223E501ECF29B404658FD244; };
+		DC13861242E7E8280EF2787E /* ProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D49FD789FBD29DA6172B14; };
+		6798DF89304B5E87058EE53E /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB9AE306156C5857C71E841; };
+		36C2C8E33FA44C67B594F0EE /* YogaListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBC5193F40CF9696069B611; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		3000765C52B30B4042435A55 /* app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Parashari Precision.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E8582860331B53B252513FD5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		0F29616BEB2F146471FC6E85 /* ParashariPrecisionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParashariPrecisionApp.swift; sourceTree = "<group>"; };
+		2BD5D60C791796DE9ECF3D04 /* ChartData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartData.swift; sourceTree = "<group>"; };
+		D592C208DBD9C45C598638DF /* DashaPeriod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaPeriod.swift; sourceTree = "<group>"; };
+		EEE5FC4C2A79C525D170AB7E /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
+		25E1A21C541FB186D380C483 /* YogaResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YogaResult.swift; sourceTree = "<group>"; };
+		1B03CB9E8579F5F3F580C68E /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		54D0AC7A569B81EA7E6287BC /* DatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseService.swift; sourceTree = "<group>"; };
+		2E2611BD44DE0480E12A5571 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
+		EFACF37230BC3FA20DF6561C /* ChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartViewModel.swift; sourceTree = "<group>"; };
+		716E45BED27A36ACC4767D10 /* DashaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaViewModel.swift; sourceTree = "<group>"; };
+		D6D8ED9AB814E09CD43A5FB3 /* ProfilesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesViewModel.swift; sourceTree = "<group>"; };
+		D3A330BFF61C4E09E514CB06 /* PlanetTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanetTableView.swift; sourceTree = "<group>"; };
+		28AF2B634D35B7470D69C418 /* SouthIndianChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SouthIndianChartView.swift; sourceTree = "<group>"; };
+		D734C20B70D1659ADCAB2C31 /* VargaSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VargaSelectorView.swift; sourceTree = "<group>"; };
+		C835A9DCFF08A32D86B7500A /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		3646F1D58E0EC6FF578676B1 /* GoldButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldButton.swift; sourceTree = "<group>"; };
+		BF067FFB4C8322C60A9A59A2 /* PlanetBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanetBadge.swift; sourceTree = "<group>"; };
+		92684158707D1C3095BC60F1 /* SurfaceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceCard.swift; sourceTree = "<group>"; };
+		A6262203F6BF5236E824A28C /* DashaTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaTimelineView.swift; sourceTree = "<group>"; };
+		13E712F602A167CE8D083551 /* DashaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaView.swift; sourceTree = "<group>"; };
+		9F5575F5CA1AE492918F6532 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
+		845D271BAA4C7CD6A82F629D /* NewProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewProfileView.swift; sourceTree = "<group>"; };
+		223E501ECF29B404658FD244 /* ProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileDetailView.swift; sourceTree = "<group>"; };
+		C1D49FD789FBD29DA6172B14 /* ProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileListView.swift; sourceTree = "<group>"; };
+		BDB9AE306156C5857C71E841 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		EBBC5193F40CF9696069B611 /* YogaListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YogaListView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		450B220DE8EEB27904FC3DC4 = {
+			isa = PBXGroup;
+			children = (
+				30772F61AC9BDC8631745269 /* Products */,
+				54200A089E6583FA7855E017 /* ParashariPrecision */,
+			);
+			sourceTree = "<group>";
+		};
+		30772F61AC9BDC8631745269 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3000765C52B30B4042435A55 /* app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		54200A089E6583FA7855E017 /* ParashariPrecision */ = {
+			isa = PBXGroup;
+			children = (
+				FE910D29D648D8F2EA669AEF /* App */,
+				9CF43B31E8845D861542A38E /* Models */,
+				564EAF51B7DD4639ADD9B985 /* Services */,
+				420CEB417186B52ECF642348 /* ViewModels */,
+				FE3FBF3AF81126E7D6B1FFFF /* RootViews */,
+				4A0BD107D08419F336F30119 /* Chart */,
+				4724C3FAA6DC593B05F661BF /* Components */,
+				A6C7C3F1F2F7618811C51D94 /* DashaViews */,
+				789AE9565326059CDBBFFD32 /* Profile */,
+				4886C5FD5EFCC6AA3931DA4C /* Sidebar */,
+				4B6D1D9C6C286593A1ED6CDB /* Yoga */,
+			);
+			path = ParashariPrecision;
+			sourceTree = "<group>";
+		};
+		FE910D29D648D8F2EA669AEF /* App */ = {
+			isa = PBXGroup;
+			children = (
+				E8582860331B53B252513FD5 /* AppDelegate.swift */,
+				0F29616BEB2F146471FC6E85 /* ParashariPrecisionApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		9CF43B31E8845D861542A38E /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				2BD5D60C791796DE9ECF3D04 /* ChartData.swift */,
+				D592C208DBD9C45C598638DF /* DashaPeriod.swift */,
+				EEE5FC4C2A79C525D170AB7E /* Profile.swift */,
+				25E1A21C541FB186D380C483 /* YogaResult.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		564EAF51B7DD4639ADD9B985 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				1B03CB9E8579F5F3F580C68E /* APIService.swift */,
+				54D0AC7A569B81EA7E6287BC /* DatabaseService.swift */,
+				2E2611BD44DE0480E12A5571 /* SyncService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		420CEB417186B52ECF642348 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				EFACF37230BC3FA20DF6561C /* ChartViewModel.swift */,
+				716E45BED27A36ACC4767D10 /* DashaViewModel.swift */,
+				D6D8ED9AB814E09CD43A5FB3 /* ProfilesViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		FE3FBF3AF81126E7D6B1FFFF /* RootViews */ = {
+			isa = PBXGroup;
+			children = (
+				9F5575F5CA1AE492918F6532 /* MainWindowView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		4A0BD107D08419F336F30119 /* Chart */ = {
+			isa = PBXGroup;
+			children = (
+				D3A330BFF61C4E09E514CB06 /* PlanetTableView.swift */,
+				28AF2B634D35B7470D69C418 /* SouthIndianChartView.swift */,
+				D734C20B70D1659ADCAB2C31 /* VargaSelectorView.swift */,
+			);
+			path = Views/Chart;
+			sourceTree = "<group>";
+		};
+		4724C3FAA6DC593B05F661BF /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				C835A9DCFF08A32D86B7500A /* DesignSystem.swift */,
+				3646F1D58E0EC6FF578676B1 /* GoldButton.swift */,
+				BF067FFB4C8322C60A9A59A2 /* PlanetBadge.swift */,
+				92684158707D1C3095BC60F1 /* SurfaceCard.swift */,
+			);
+			path = Views/Components;
+			sourceTree = "<group>";
+		};
+		A6C7C3F1F2F7618811C51D94 /* DashaViews */ = {
+			isa = PBXGroup;
+			children = (
+				A6262203F6BF5236E824A28C /* DashaTimelineView.swift */,
+				13E712F602A167CE8D083551 /* DashaView.swift */,
+			);
+			path = Views/Dasha;
+			sourceTree = "<group>";
+		};
+		789AE9565326059CDBBFFD32 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				845D271BAA4C7CD6A82F629D /* NewProfileView.swift */,
+				223E501ECF29B404658FD244 /* ProfileDetailView.swift */,
+				C1D49FD789FBD29DA6172B14 /* ProfileListView.swift */,
+			);
+			path = Views/Profile;
+			sourceTree = "<group>";
+		};
+		4886C5FD5EFCC6AA3931DA4C /* Sidebar */ = {
+			isa = PBXGroup;
+			children = (
+				BDB9AE306156C5857C71E841 /* SidebarView.swift */,
+			);
+			path = Views/Sidebar;
+			sourceTree = "<group>";
+		};
+		4B6D1D9C6C286593A1ED6CDB /* Yoga */ = {
+			isa = PBXGroup;
+			children = (
+				EBBC5193F40CF9696069B611 /* YogaListView.swift */,
+			);
+			path = Views/Yoga;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E757D91215D317FF5AF7029D = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2857F3DA31A2E77D5F204763;
+			buildPhases = (65FA6119905E087A5E53253D,A6E8E7DF88D31078DBF4E18B,7997A58CB6F97DD5FFDE7900,);
+			buildRules = ();
+			dependencies = ();
+			name = "Parashari Precision";
+			productName = "Parashari Precision";
+			productReference = 3000765C52B30B4042435A55;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		697596F0D752720E0618139B = {
+			isa = PBXProject;
+			attributes = {LastSwiftUpdateCheck = 1540; LastUpgradeCheck = 1540; TargetAttributes = { E757D91215D317FF5AF7029D = {CreatedOnToolsVersion = 15.4;}; }; };
+			buildConfigurationList = FE422E61AE992D05BC2E14C2;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base,);
+			mainGroup = 450B220DE8EEB27904FC3DC4;
+			productRefGroup = 30772F61AC9BDC8631745269;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (E757D91215D317FF5AF7029D,);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7997A58CB6F97DD5FFDE7900 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A6E8E7DF88D31078DBF4E18B = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		65FA6119905E087A5E53253D = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA092EDFF164840B0D61D117 /* AppDelegate.swift */,
+				86D79C785E72BF7D2C212712 /* ParashariPrecisionApp.swift */,
+				1075997330442AA685C87450 /* ChartData.swift */,
+				D9ECA8C359ED6914FC4D9D39 /* DashaPeriod.swift */,
+				C82C29B4763986BE9A250FFD /* Profile.swift */,
+				EC90FDF97DD356E0AF238F2B /* YogaResult.swift */,
+				0C5F7E846B81568B3E0531CF /* APIService.swift */,
+				662E499E4C5CCE92AF4707F2 /* DatabaseService.swift */,
+				1A8356F11649911CC5BFEA8A /* SyncService.swift */,
+				9537B9F700C908BF67064DCA /* ChartViewModel.swift */,
+				90CEDA0A0374F609A12F36A6 /* DashaViewModel.swift */,
+				D2520FC4E1E92552862E9A26 /* ProfilesViewModel.swift */,
+				054202002A251E311014B114 /* PlanetTableView.swift */,
+				4217F59F9ECE2132EB2F05D8 /* SouthIndianChartView.swift */,
+				B44C725172C8F3777413E7EC /* VargaSelectorView.swift */,
+				8BAA425F57FE8129114137EC /* DesignSystem.swift */,
+				E0DD9B2901EB8FB845E995E6 /* GoldButton.swift */,
+				504658B9DFBBE330F896FA1B /* PlanetBadge.swift */,
+				545DAAE299474D530AEDF2B2 /* SurfaceCard.swift */,
+				B5897582FD95ACF30B34D002 /* DashaTimelineView.swift */,
+				68D2ECC72711AF23FAE60731 /* DashaView.swift */,
+				0F9C2E25DBA4BD738036E701 /* MainWindowView.swift */,
+				FB3AE5DA79255B6DF6267925 /* NewProfileView.swift */,
+				201D1DB62AF52D3813658248 /* ProfileDetailView.swift */,
+				DC13861242E7E8280EF2787E /* ProfileListView.swift */,
+				6798DF89304B5E87058EE53E /* SidebarView.swift */,
+				36C2C8E33FA44C67B594F0EE /* YogaListView.swift */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		7BF9B188E350BF914680EA5A = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_NO_COMMON_BLOCKS = YES; GCC_OPTIMIZATION_LEVEL = 0; GCC_PREPROCESSOR_DEFINITIONS = ("DEBUG=1","$(inherited)",); MACOSX_DEPLOYMENT_TARGET = 14.0; ONLY_ACTIVE_ARCH = YES; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_VERSION = 6.0;}; name = Debug;};
+		DB9D50511D0363A30239E2B2 = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; ENABLE_NS_ASSERTIONS = NO; GCC_NO_COMMON_BLOCKS = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_VERSION = 6.0;}; name = Release;};
+		7C5BBD3BC87E96980C254F65 = {isa = XCBuildConfiguration; buildSettings = {INFOPLIST_FILE = "ParashariPrecision/Resources/Info.plist"; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = "com.parashari.precision"; PRODUCT_NAME = "Parashari Precision"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0;}; name = Debug;};
+		171253D7481529DC7E4428E9 = {isa = XCBuildConfiguration; buildSettings = {INFOPLIST_FILE = "ParashariPrecision/Resources/Info.plist"; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = "com.parashari.precision"; PRODUCT_NAME = "Parashari Precision"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0;}; name = Release;};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FE422E61AE992D05BC2E14C2 = {isa = XCConfigurationList; buildConfigurations = (7BF9B188E350BF914680EA5A,DB9D50511D0363A30239E2B2,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+		2857F3DA31A2E77D5F204763 = {isa = XCConfigurationList; buildConfigurations = (7C5BBD3BC87E96980C254F65,171253D7481529DC7E4428E9,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+/* End XCConfigurationList section */
+	};
+	rootObject = 697596F0D752720E0618139B;
+}

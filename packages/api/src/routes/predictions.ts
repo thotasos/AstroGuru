@@ -170,6 +170,35 @@ const predictionRoutes: FastifyPluginAsync = async (
               sav: avRaw.sav,
               planetBav: new Map(avRaw.planetBav),
             };
+
+            // Convert cached date strings back to Date objects for dashas
+            dashas = dashas.map(d => ({
+              mahadasha: {
+                ...d.mahadasha,
+                startDate: new Date(d.mahadasha.startDate),
+                endDate: new Date(d.mahadasha.endDate),
+              },
+              antardasha: {
+                ...d.antardasha,
+                startDate: new Date(d.antardasha.startDate),
+                endDate: new Date(d.antardasha.endDate),
+              },
+              pratyantardasha: {
+                ...d.pratyantardasha,
+                startDate: new Date(d.pratyantardasha.startDate),
+                endDate: new Date(d.pratyantardasha.endDate),
+              },
+              sookshma: {
+                ...d.sookshma,
+                startDate: new Date(d.sookshma.startDate),
+                endDate: new Date(d.sookshma.endDate),
+              },
+              prana: {
+                ...d.prana,
+                startDate: new Date(d.prana.startDate),
+                endDate: new Date(d.prana.endDate),
+              },
+            }));
           } catch {
             // Cache miss due to corruption - compute fresh
             chart = await engine.calculateChart(birthData);

@@ -33,7 +33,7 @@ import settingsRoutes from './routes/settings.js';
 // Constants
 // ---------------------------------------------------------------------------
 
-const PORT = parseInt(process.env['PORT'] ?? '3001', 10);
+const PORT = parseInt(process.env['PORT'] ?? '5199', 10);
 const HOST = process.env['HOST'] ?? '127.0.0.1';
 const IS_PRODUCTION = process.env['NODE_ENV'] === 'production';
 const VERSION = '1.0.0';

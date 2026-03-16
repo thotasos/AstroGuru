@@ -485,7 +485,27 @@ export function generatePredictions(request: PredictionRequest): PredictionRespo
   // Determine which dasha level to process
   const maxLevel = level ?? 1;
 
+  // Build lookup maps for each level to ensure uniqueness
+  const mahaMap = new Map<string, typeof dashas[0]>();
+  const antiMap = new Map<string, typeof dashas[0]>();
+  const pratyMap = new Map<string, typeof dashas[0]>();
+
   for (const dasha of dashas) {
+    const mahaKey = dasha.mahadasha.startDate.toString();
+    const antiKey = `${mahaKey}-${dasha.antardasha.startDate.toString()}`;
+    const pratyKey = `${antiKey}-${dasha.pratyantardasha.startDate.toString()}`;
+
+    if (!mahaMap.has(mahaKey)) mahaMap.set(mahaKey, dasha);
+    if (!antiMap.has(antiKey)) antiMap.set(antiKey, dasha);
+    if (!pratyMap.has(pratyKey)) pratyMap.set(pratyKey, dasha);
+  }
+
+  // Process based on level
+  const dashasToProcess = maxLevel === 1 ? Array.from(mahaMap.values()) :
+                         maxLevel === 2 ? Array.from(antiMap.values()) :
+                         Array.from(pratyMap.values());
+
+  for (const dasha of dashasToProcess) {
     // Filter by date range - check the mahadasha level dates
     const mahaStart = new Date(dasha.mahadasha.startDate);
     const mahaEnd = new Date(dasha.mahadasha.endDate);
@@ -497,7 +517,7 @@ export function generatePredictions(request: PredictionRequest): PredictionRespo
     const antardasha = dasha.antardasha;
 
     // Process Mahadasha (level 1)
-    if (maxLevel >= 1) {
+    if (maxLevel === 1) {
       const activePlanet = dasha.mahadasha.planet;
       const summary = generatePeriodSummary(activePlanet, 1, chart, shadbala, yogas);
       const { influences, house, sign, strength } = generateDashaPrediction(activePlanet, 1, chart, shadbala, yogas);
@@ -519,7 +539,7 @@ export function generatePredictions(request: PredictionRequest): PredictionRespo
     }
 
     // Process Antardasha (level 2) if requested
-    if (maxLevel >= 2) {
+    if (maxLevel === 2) {
       const antiStart = new Date(antardasha.startDate);
       const antiEnd = new Date(antardasha.endDate);
 
@@ -546,7 +566,7 @@ export function generatePredictions(request: PredictionRequest): PredictionRespo
     }
 
     // Process Pratyantardasha (level 3) if requested
-    if (maxLevel >= 3) {
+    if (maxLevel === 3) {
       const praty = dasha.pratyantardasha;
       const pratyStart = new Date(praty.startDate);
       const pratyEnd = new Date(praty.endDate);
@@ -574,7 +594,7 @@ export function generatePredictions(request: PredictionRequest): PredictionRespo
     }
 
     // Process Sookshma (level 4) if requested
-    if (maxLevel >= 4) {
+    if (maxLevel === 4) {
       const sookshma = dasha.sookshma;
       const sookStart = new Date(sookshma.startDate);
       const sookEnd = new Date(sookshma.endDate);
@@ -600,7 +620,7 @@ export function generatePredictions(request: PredictionRequest): PredictionRespo
     }
 
     // Process Prana (level 5) if requested
-    if (maxLevel >= 5) {
+    if (maxLevel === 5) {
       const prana = dasha.prana;
       const pranaStart = new Date(prana.startDate);
       const pranaEnd = new Date(prana.endDate);

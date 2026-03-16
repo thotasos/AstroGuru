@@ -196,11 +196,14 @@ export function usePredictions(
     level?: 1 | 2 | 3 | 4 | 5;
   }
 ) {
-  const key = profileId ? `predictions/${profileId}/${options?.level ?? 1}` : null;
+  const level = options?.level ?? 1;
+  const key = profileId ? `predictions/${profileId}/${level}` : null;
+
+  const fetchOptions = { ...options, level };
 
   const { data, error, isLoading } = useSWR<PredictionsResponse>(
     key,
-    () => fetchPredictions(profileId!, options),
+    () => fetchPredictions(profileId!, fetchOptions),
     { revalidateOnFocus: false },
   );
 
