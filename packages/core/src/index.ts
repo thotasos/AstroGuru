@@ -73,8 +73,13 @@ export {
   calculateTransit,
   calculateHourlyScore,
   calculateHourlyCategories,
+  generateMonthlyPredictions,
   type TransitPosition,
   type HourlyCategories,
+  type DailyAggregation,
+  type WeeklyAggregation,
+  type MonthlyPrediction,
+  type CategoryTrend,
 } from './calculations/transit.js';
 
 export {

@@ -5,7 +5,7 @@ import { createProfile, getAllProfiles, getProfile, deleteProfile } from './data
 import { runMigrations } from './database/migrate.js';
 import { getCachedCalculation, saveHourlyPredictions, getHourlyPredictions, deleteOldPredictions, deletePredictionsForProfile, getReadyProfiles } from './database/cache.js';
 import { runProcessor, processProfile, processAllNewProfiles } from './jobs/processor.js';
-import { calculateTransit, calculateHourlyScore, calculateHourlyCategories, getDashaAtDate, generateImmediatePredictions } from '@parashari/core';
+import { calculateTransit, calculateHourlyScore, calculateHourlyCategories, getDashaAtDate, generateImmediatePredictions, generateMonthlyPredictions } from '@parashari/core';
 
 const PREDEFINED_PLACES: Record<string, { lat: number; lon: number; timezone: string; utcOffset: number }> = {
   'nalgonda-india': { lat: 17.0500, lon: 79.2700, timezone: 'Asia/Kolkata', utcOffset: 5.5 },
@@ -1014,6 +1014,167 @@ async function predictAction(options: PredictOptions) {
   console.log('\n' + '='.repeat(70) + '\n');
 }
 
+interface PredictMonthOptions {
+  id: string;
+  month: string;
+  timezone?: string;
+  json?: boolean;
+}
+
+async function predictMonthAction(options: PredictMonthOptions) {
+  runMigrations(true);
+
+  const profile = getProfile(options.id);
+  if (!profile) {
+    console.error(`Profile not found: ${options.id}`);
+    process.exit(1);
+  }
+
+  // Parse month (YYYY-MM format)
+  const monthRegex = /^(\d{4})-(\d{2})$/;
+  const match = options.month.match(monthRegex);
+  if (!match) {
+    console.error(`Invalid month format: ${options.month}. Use YYYY-MM (e.g., 2027-01)`);
+    process.exit(1);
+  }
+
+  const year = parseInt(match[1]!, 10);
+  const month = parseInt(match[2]!, 10);
+
+  if (month < 1 || month > 12) {
+    console.error(`Invalid month: ${month}. Must be 1-12.`);
+    process.exit(1);
+  }
+
+  const timezone = options.timezone || profile.timezone;
+
+  // Get cached data
+  const cache = getCachedCalculation(options.id);
+  if (!cache || !cache.chart_json || !cache.dashas_json) {
+    console.error(`No calculations found for profile ${options.id}. Run process first.`);
+    process.exit(1);
+  }
+
+  let chart: any;
+  let dashas: any[];
+  try {
+    chart = JSON.parse(cache.chart_json);
+    dashas = JSON.parse(cache.dashas_json);
+  } catch (e) {
+    console.error(`Failed to parse cached data: ${e}`);
+    process.exit(1);
+  }
+
+  console.log('\n' + '='.repeat(70));
+  console.log(`MONTHLY PREDICTIONS: ${getMonthName(month)} ${year}`);
+  console.log(`Profile: ${profile.name}`);
+  console.log(`Location: ${profile.place_name || 'Unknown'} (${timezone})`);
+  console.log('='.repeat(70));
+
+  // Generate monthly predictions
+  console.log('\nGenerating predictions for all days in the month...\n');
+
+  const monthly = generateMonthlyPredictions(
+    year,
+    month,
+    profile.lat,
+    profile.lon,
+    profile.utc_offset_hours,
+    chart,
+    dashas
+  );
+
+  if (options.json) {
+    console.log(JSON.stringify({
+      profileId: profile.id,
+      profileName: profile.name,
+      month: options.month,
+      predictions: monthly,
+    }, null, 2));
+    return;
+  }
+
+  // Monthly overview
+  console.log('━'.repeat(60));
+  console.log('MONTHLY OVERVIEW');
+  console.log('━'.repeat(60));
+  console.log(`Average Score: ${monthly.monthly.avgScore}/100`);
+  console.log(`Best Days: ${monthly.monthly.bestDays.join(', ')}`);
+  console.log(`Worst Days: ${monthly.monthly.worstDays.join(', ')}`);
+
+  // Weekly summary
+  console.log('\n' + '━'.repeat(60));
+  console.log('WEEKLY SUMMARY');
+  console.log('━'.repeat(60));
+  for (const week of monthly.weekly) {
+    const scoreEmoji = week.avgScore >= 70 ? '🟢' : week.avgScore >= 50 ? '🟡' : '🔴';
+    console.log(`Week ${week.week} (${week.startDate} - ${week.endDate}): ${scoreEmoji} ${week.avgScore} - ${week.highlight}`);
+    console.log(`  Best: ${week.bestDay} | Worst: ${week.worstDay}`);
+  }
+
+  // Category highlights
+  console.log('\n' + '━'.repeat(60));
+  console.log('CATEGORY HIGHLIGHTS');
+  console.log('━'.repeat(60));
+
+  const catNames: Record<string, string> = {
+    career: 'Career',
+    finance: 'Finance',
+    health: 'Health',
+    relationships: 'Relationships',
+    education: 'Education',
+  };
+
+  for (const [cat, name] of Object.entries(catNames)) {
+    const highlights = monthly.monthly.categoryHighlights[cat as keyof typeof monthly.monthly.categoryHighlights];
+    if (highlights.positive.length > 0) {
+      console.log(`\n${name} - Best Days: ${highlights.positive.join(', ')}`);
+    }
+    if (highlights.negative.length > 0) {
+      console.log(`${name} - Challenging Days: ${highlights.negative.join(', ')}`);
+    }
+  }
+
+  // Daily breakdown
+  console.log('\n' + '━'.repeat(60));
+  console.log('DAILY BREAKDOWN');
+  console.log('━'.repeat(60));
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  for (const day of monthly.daily) {
+    const scoreEmoji = day.avgScore >= 70 ? '🟢' : day.avgScore >= 50 ? '🟡' : '🔴';
+    const dayOfMonth = parseInt(day.date.split('-')[2]!, 10);
+
+    console.log(`\n${monthNames[month - 1]} ${dayOfMonth}: ${scoreEmoji} Score: ${day.avgScore}`);
+    console.log(`  Best Hour: ${String(day.bestHour).padStart(2, '0')}:00 (${day.bestScore}) | Worst Hour: ${String(day.worstHour).padStart(2, '0')}:00 (${day.worstScore})`);
+
+    // Show category trends
+    const trends: string[] = [];
+    for (const [cat, trend] of Object.entries(day.categories)) {
+      if (trend === 'positive') trends.push(`↑${cat.charAt(0).toUpperCase()}`);
+      else if (trend === 'negative') trends.push(`↓${cat.charAt(0).toUpperCase()}`);
+    }
+    if (trends.length > 0) {
+      console.log(`  Trends: ${trends.join(' ')}`);
+    }
+
+    // Show significant events
+    if (day.significantEvents.length > 0) {
+      for (const event of day.significantEvents) {
+        console.log(`  ✦ ${event}`);
+      }
+    }
+  }
+
+  console.log('\n' + '='.repeat(70) + '\n');
+}
+
+function getMonthName(month: number): string {
+  const names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return names[month - 1] || 'Unknown';
+}
+
 program
   .command('predict')
   .description('Get daily/hourly predictions for a profile')
@@ -1023,6 +1184,15 @@ program
   .option('-h, --hourly', 'Show hourly breakdown')
   .option('--json', 'Output JSON')
   .action(predictAction);
+
+program
+  .command('predict-month')
+  .description('Get monthly predictions with daily/weekly breakdown and category highlights')
+  .requiredOption('-i, --id <id>', 'Profile ID')
+  .requiredOption('-m, --month <month>', 'Month (YYYY-MM format, e.g., 2027-01)')
+  .option('-t, --timezone <tz>', 'Timezone (default: profile birth timezone)')
+  .option('--json', 'Output JSON')
+  .action(predictMonthAction);
 
 interface DeleteOptions {
   id: string;
