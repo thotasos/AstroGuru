@@ -79,7 +79,10 @@ CREATE INDEX IF NOT EXISTS idx_profiles_name ON profiles(name);
 CREATE INDEX IF NOT EXISTS idx_cache_profile ON calculations_cache(profile_id);
 
 -- Schema migrations for existing databases
+-- predictions_json column check (SQLite doesn't support ADD COLUMN IF NOT EXISTS)
+-- Only add if it doesn't exist (idempotent approach)
 ALTER TABLE calculations_cache ADD COLUMN predictions_json TEXT;
+-- Note: This will fail gracefully if column exists - handled by migration runner
 
 INSERT OR IGNORE INTO profile_status VALUES ('new', 'New', 'Profile created, not yet processed');
 INSERT OR IGNORE INTO profile_status VALUES ('processing', 'Processing', 'Chart calculations in progress');

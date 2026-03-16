@@ -84,7 +84,16 @@ export function runMigrations(): void {
     for (const [i, stmt] of statements.entries()) {
       const preview = stmt.slice(0, 60).replace(/\s+/g, ' ');
       console.log(`[migrate] [${i + 1}/${statements.length}] ${preview}…`);
-      db.exec(stmt);
+      try {
+        db.exec(stmt);
+      } catch (err: any) {
+        // Ignore "duplicate column name" errors for idempotent migrations
+        if (err.code === 'SQLITE_ERROR' && err.message.includes('duplicate column name')) {
+          console.log(`[migrate]   (column already exists, skipping)`);
+          continue;
+        }
+        throw err;
+      }
     }
   });
 
