@@ -133,17 +133,22 @@ function listAction() {
   }
 
   console.log(`\nFound ${profiles.length} profile(s):\n`);
-  console.log('ID'.padEnd(38) + 'Name'.padEnd(20) + 'DOB'.padEnd(25) + 'Place'.padEnd(25) + 'Status');
-  console.log('-'.repeat(108));
+  console.log('ID'.padEnd(38) + 'Name'.padEnd(20) + 'DOB (Local)'.padEnd(25) + 'Place'.padEnd(25) + 'Status');
+  console.log('-'.repeat(118));
 
   for (const p of profiles) {
     const id = p.id.substring(0, 36);
     const name = p.name.substring(0, 18);
-    const dob = p.dob_utc.substring(0, 23);
+
+    // Convert UTC to local timezone
+    const dobUtc = new Date(p.dob_utc);
+    const timezone = p.timezone || 'UTC';
+    const localDob = dobUtc.toLocaleString('en-US', { timeZone: timezone, dateStyle: 'medium', timeStyle: 'short' });
+
     const place = (p.place_name || 'Unknown').substring(0, 23);
     const status = p.status;
 
-    console.log(`${id}  ${name.padEnd(20)} ${dob.padEnd(25)} ${place.padEnd(25)} ${status}`);
+    console.log(`${id}  ${name.padEnd(20)} ${localDob.padEnd(25)} ${place.padEnd(25)} ${status}`);
   }
   console.log('');
 }

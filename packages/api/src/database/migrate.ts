@@ -63,7 +63,7 @@ function parseSqlStatements(sql: string): string[] {
  * inside a single write transaction.  The transaction is rolled back
  * atomically if any statement throws.
  */
-export function runMigrations(): void {
+export function runMigrations(quiet: boolean = false): void {
   if (!fs.existsSync(SCHEMA_PATH)) {
     throw new Error(
       `Schema file not found at expected path: ${SCHEMA_PATH}\n` +
@@ -75,21 +75,25 @@ export function runMigrations(): void {
   const raw = fs.readFileSync(SCHEMA_PATH, 'utf-8');
   const statements = parseSqlStatements(raw);
 
-  console.log(`[migrate] Schema file : ${SCHEMA_PATH}`);
-  console.log(`[migrate] Statements  : ${statements.length}`);
+  if (!quiet) {
+    console.log(`[migrate] Schema file : ${SCHEMA_PATH}`);
+    console.log(`[migrate] Statements  : ${statements.length}`);
+  }
 
   const db = getDb();
 
   const migrate = db.transaction(() => {
     for (const [i, stmt] of statements.entries()) {
-      const preview = stmt.slice(0, 60).replace(/\s+/g, ' ');
-      console.log(`[migrate] [${i + 1}/${statements.length}] ${preview}…`);
+      if (!quiet) {
+        const preview = stmt.slice(0, 60).replace(/\s+/g, ' ');
+        console.log(`[migrate] [${i + 1}/${statements.length}] ${preview}…`);
+      }
       try {
         db.exec(stmt);
       } catch (err: any) {
         // Ignore "duplicate column name" errors for idempotent migrations
         if (err.code === 'SQLITE_ERROR' && err.message.includes('duplicate column name')) {
-          console.log(`[migrate]   (column already exists, skipping)`);
+          if (!quiet) console.log(`[migrate]   (column already exists, skipping)`);
           continue;
         }
         throw err;
@@ -99,7 +103,9 @@ export function runMigrations(): void {
 
   migrate();
 
-  console.log('[migrate] All migrations completed successfully.');
+  if (!quiet) {
+    console.log('[migrate] All migrations completed successfully.');
+  }
 }
 
 // ---------------------------------------------------------------------------
