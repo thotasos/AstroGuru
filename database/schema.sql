@@ -59,6 +59,42 @@ CREATE TABLE IF NOT EXISTS events_journal (
   FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
 );
 
+-- Hourly predictions cache (30-day rolling window)
+CREATE TABLE IF NOT EXISTS hourly_predictions (
+  id TEXT PRIMARY KEY,
+  profile_id TEXT NOT NULL,
+  date TEXT NOT NULL,           -- YYYY-MM-DD
+  hour INTEGER NOT NULL,        -- 0-23
+  timezone TEXT NOT NULL,       -- e.g., America/New_York
+
+  -- Sookshma Dasha (Level 4 - days)
+  sookshma_dasha_planet INTEGER,
+  sookshma_dasha_start TEXT,
+  sookshma_dasha_end TEXT,
+
+  -- Prana Dasha (Level 5 - hours)
+  prana_dasha_planet INTEGER,
+  prana_dasha_start TEXT,
+  prana_dasha_end TEXT,
+
+  -- Transit positions
+  moon_nakshatra INTEGER,
+  moon_sign INTEGER,
+  moon_degree REAL,
+  transit_lagna REAL,
+  transit_lagna_sign INTEGER,
+
+  -- Prediction data
+  hourly_score INTEGER,
+  prediction_text TEXT,
+
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_hourly_profile_date
+  ON hourly_predictions(profile_id, date);
+
 -- App settings (key-value)
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
