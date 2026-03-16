@@ -1,16 +1,38 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { createProfile, getAllProfiles, getProfile } from './database/profiles.js';
+import { createProfile, getAllProfiles, getProfile, deleteProfile } from './database/profiles.js';
 import { runMigrations } from './database/migrate.js';
-import { getCachedCalculation } from './database/cache.js';
+import { getCachedCalculation, saveHourlyPredictions, getHourlyPredictions, deleteOldPredictions, deletePredictionsForProfile, getReadyProfiles } from './database/cache.js';
 import { runProcessor, processProfile, processAllNewProfiles } from './jobs/processor.js';
+import { calculateTransit, calculateHourlyScore, calculateHourlyCategories, getDashaAtDate, generateImmediatePredictions } from '@parashari/core';
 
 const PREDEFINED_PLACES: Record<string, { lat: number; lon: number; timezone: string; utcOffset: number }> = {
   'nalgonda-india': { lat: 17.0500, lon: 79.2700, timezone: 'Asia/Kolkata', utcOffset: 5.5 },
   'houston-texas': { lat: 29.7604, lon: -95.3698, timezone: 'America/Chicago', utcOffset: -6 },
   'sunnyvale-california': { lat: 37.3688, lon: -122.0363, timezone: 'America/Los_Angeles', utcOffset: -8 },
 };
+
+/** Valid timezone options for CLI */
+export const VALID_TIMEZONES = [
+  // Asia
+  'Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Hong_Kong', 'Asia/Tokyo', 'Asia/Seoul',
+  'Asia/Bangkok', 'Asia/Jakarta', 'Asia/Manila', 'Asia/Karachi', 'Asia/Dhaka', 'Asia/Kathmandu',
+  'Asia/Colombo', 'Asia/Maldives',
+  // Europe
+  'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome', 'Europe/Madrid', 'Europe/Amsterdam',
+  'Europe/Moscow', 'Europe/Istanbul', 'Europe/Athens', 'Europe/Warsaw', 'Europe/Stockholm',
+  // Americas
+  'America/New_York', 'America/Los_Angeles', 'America/Chicago', 'America/Denver', 'America/Toronto',
+  'America/Vancouver', 'America/Mexico_City', 'America/Sao_Paulo', 'America/Buenos_Aires',
+  'America/Lima', 'America/Bogota', 'America/Santiago',
+  // Pacific
+  'Pacific/Auckland', 'Pacific/Fiji', 'Australia/Sydney', 'Australia/Melbourne', 'Australia/Perth',
+  // US
+  'US/Eastern', 'US/Central', 'US/Mountain', 'US/Pacific', 'US/Alaska', 'US/Hawaii',
+  // UTC
+  'UTC',
+];
 
 interface CreateOptions {
   name: string;
@@ -21,7 +43,7 @@ interface CreateOptions {
 
 async function createProfileAction(options: CreateOptions) {
   // Run migrations first
-  runMigrations();
+  runMigrations(true);
 
   const placeKey = options.place.toLowerCase().replace(/\s+/g, '-');
   const place = PREDEFINED_PLACES[placeKey];
@@ -36,8 +58,13 @@ async function createProfileAction(options: CreateOptions) {
   // Parse date and time - treat input as LOCAL time for the given timezone
   // For example: 10:00 AM in Nalgonda = 10:00 AM IST = UTC + 5:30
   // We need to convert this to UTC: 10:00 - 5:30 = 4:30 UTC
-  const [year, month, day] = options.dob.split('-').map(Number);
-  const [hours, minutes] = options.time.split(':').map(Number);
+  const dobParts = options.dob.split('-').map(Number);
+  const timeParts = options.time.split(':').map(Number);
+  const year = dobParts[0]!;
+  const month = dobParts[1]!;
+  const day = dobParts[2]!;
+  const hours = timeParts[0]!;
+  const minutes = timeParts[1]!;
 
   if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes)) {
     console.error('Error: Invalid date or time format');
@@ -49,12 +76,12 @@ async function createProfileAction(options: CreateOptions) {
 
   // Convert local time to UTC
   // If offset is +5.5 (IST), then 10:00 local = 10:00 - 5:30 = 4:30 UTC
-  const localMs = (hours * 60 + minutes) * 60 * 1000;
+  const localDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, 0));
   const offsetMs = offsetHours * 60 * 60 * 1000;
-  const utcMs = localMs - offsetMs;
+  const utcMs = localDate.getTime() - offsetMs;
 
   // Create UTC date
-  const utcDate = new Date(Date.UTC(year, month - 1, day) + utcMs);
+  const utcDate = new Date(utcMs);
 
   const profile = createProfile({
     name: options.name,
@@ -79,15 +106,16 @@ async function createProfileAction(options: CreateOptions) {
 
 interface ProcessOptions {
   id?: string;
+  force?: boolean;
 }
 
 async function processAction(options: ProcessOptions) {
-  runMigrations();
+  runMigrations(true);
 
   if (options.id) {
-    // Process specific profile
-    console.log(`Processing profile: ${options.id}`);
-    await processProfile(options.id);
+    // Process specific profile (with optional force reprocess)
+    console.log(`Processing profile: ${options.id}${options.force ? ' (forced reprocess)' : ''}`);
+    await processProfile(options.id, options.force ?? false);
   } else {
     // Process all new profiles once
     await processAllNewProfiles();
@@ -95,7 +123,7 @@ async function processAction(options: ProcessOptions) {
 }
 
 function listAction() {
-  runMigrations();
+  runMigrations(true);
 
   const profiles = getAllProfiles();
 
@@ -125,7 +153,7 @@ interface ReportOptions {
 }
 
 function reportAction(options: ReportOptions) {
-  runMigrations();
+  runMigrations(true);
 
   const profile = getProfile(options.id);
   if (!profile) {
@@ -166,12 +194,12 @@ function reportAction(options: ReportOptions) {
   const hasPredictions = cache.predictions_json !== null;
 
   console.log(`Chart:          ${hasChart ? '✓' : '✗'}`);
-  console.log(`Vargas:         ${hasVargas ? '✓' : '✗'} (not yet calculated)`);
+  console.log(`Vargas:         ${hasVargas ? '✓' : '✗'}`);
   console.log(`Dashas:         ${hasDashas ? '✓' : '✗'}`);
   console.log(`Yogas:          ${hasYogas ? '✓' : '✗'}`);
   console.log(`Shadbala:       ${hasShadbala ? '✓' : '✗'}`);
   console.log(`Ashtakavarga:   ${hasAshtakavarga ? '✓' : '✗'}`);
-  console.log(`Predictions:    ${hasPredictions ? '✓' : '✗'} (not yet generated)`);
+  console.log(`Predictions:    ${hasPredictions ? '✓' : '✗'}`);
   console.log(`Computed at:    ${cache.computed_at}`);
 
   // Parse and display chart data
@@ -197,7 +225,7 @@ function reportAction(options: ReportOptions) {
   }
 
   // Parse and display yogas
-  if (hasYogas) {
+  if (hasYogas && cache.yogas_json) {
     console.log('\n--- Yogas (Planetary Combinations) ---');
     const yogas = JSON.parse(cache.yogas_json);
     if (yogas.length === 0) {
@@ -223,8 +251,231 @@ function reportAction(options: ReportOptions) {
     }
   }
 
+  // Parse and display Vargas (divisional charts)
+  if (hasVargas && cache.vargas_json) {
+    console.log('\n--- Vargas (Divisional Charts) ---');
+    const vargas = JSON.parse(cache.vargas_json);
+    const vargaNames: Record<string, string> = {
+      D1: 'Rasi (Lagna)',
+      D2: 'Hora',
+      D3: 'Drekkana',
+      D4: 'Chaturthamsha',
+      D5: 'Panchamsha',
+      D6: 'Shashthamsha',
+      D7: 'Saptamsha',
+      D8: 'Ashtamsha',
+      D9: 'Navamsha',
+      D10: 'Dashamsha',
+      D11: 'Rudramsha',
+      D12: 'Dwadashamsha',
+    };
+    const vargasList = Object.keys(vargas);
+    if (vargasList.length > 0) {
+      for (const v of vargasList) {
+        const name = vargaNames[v] || v;
+        console.log(`  ${name.padEnd(20)}: ${v}`);
+      }
+    } else {
+      console.log('  No vargas calculated.');
+    }
+  }
+
+  // Parse and display predictions
+  if (hasPredictions && cache.predictions_json) {
+    const predictions = JSON.parse(cache.predictions_json);
+    const periods = predictions.periods || [];
+
+    // Try to generate enhanced immediate predictions if we have all data
+    if (hasChart && hasDashas && hasYogas && hasShadbala && cache.chart_json && cache.dashas_json && cache.yogas_json && cache.shadbala_json) {
+      const chart = JSON.parse(cache.chart_json);
+      const dashas = JSON.parse(cache.dashas_json);
+      const yogas = JSON.parse(cache.yogas_json);
+      const shadbalaData = cache.shadbala_json ? JSON.parse(cache.shadbala_json) : [];
+
+      try {
+        const immediatePreds = generateImmediatePredictions(
+          chart, dashas, yogas, shadbalaData,
+          profile.lat, profile.lon, profile.utc_offset_hours
+        );
+
+        console.log('\n=== ENHANCED PREDICTIONS (Past Year, Current & Next Year) ===\n');
+
+        // Past
+        if (immediatePreds.past) {
+          console.log('━'.repeat(60));
+          console.log('📌 IMMEDIATE PAST (Last 1-2 Years)');
+          console.log('━'.repeat(60));
+          const p = immediatePreds.past;
+          console.log(`Period: ${p.startDate.toISOString().split('T')[0]} to ${p.endDate.toISOString().split('T')[0]}`);
+          console.log(`Assessment: ${p.overallAssessment.toUpperCase()}`);
+          console.log(`\n${p.title}`);
+          console.log(`\n${p.summary}`);
+          console.log('\nKey Factors:');
+          for (const factor of p.keyFactors) {
+            console.log(`  • ${factor}`);
+          }
+          if (p.activeYogas.length > 0) {
+            console.log('\nActive Yogas:');
+            for (const yoga of p.activeYogas.slice(0, 3)) {
+              console.log(`  • ${yoga}`);
+            }
+          }
+          if (p.transitInfluences.length > 0) {
+            console.log('\nTransit Influences:');
+            for (const t of p.transitInfluences.slice(0, 3)) {
+              console.log(`  • ${t}`);
+            }
+          }
+        }
+
+        // Current
+        if (immediatePreds.current) {
+          console.log('\n' + '━'.repeat(60));
+          console.log('📌 CURRENT PERIOD (Now - Next Year)');
+          console.log('━'.repeat(60));
+          const c = immediatePreds.current;
+          console.log(`Period: ${c.startDate.toISOString().split('T')[0]} to ${c.endDate.toISOString().split('T')[0]}`);
+          console.log(`Assessment: ${c.overallAssessment.toUpperCase()}`);
+          console.log(`\n${c.title}`);
+          console.log(`\n${c.summary}`);
+          console.log('\nKey Factors:');
+          for (const factor of c.keyFactors) {
+            console.log(`  • ${factor}`);
+          }
+          if (c.activeYogas.length > 0) {
+            console.log('\nActive Yogas:');
+            for (const yoga of c.activeYogas.slice(0, 3)) {
+              console.log(`  • ${yoga}`);
+            }
+          }
+          if (c.transitInfluences.length > 0) {
+            console.log('\nTransit Influences:');
+            for (const t of c.transitInfluences.slice(0, 3)) {
+              console.log(`  • ${t}`);
+            }
+          }
+        }
+
+        // Future
+        if (immediatePreds.future) {
+          console.log('\n' + '━'.repeat(60));
+          console.log('📌 IMMEDIATE FUTURE (Next 1-2 Years)');
+          console.log('━'.repeat(60));
+          const f = immediatePreds.future;
+          console.log(`Period: ${f.startDate.toISOString().split('T')[0]} to ${f.endDate.toISOString().split('T')[0]}`);
+          console.log(`Assessment: ${f.overallAssessment.toUpperCase()}`);
+          console.log(`\n${f.title}`);
+          console.log(`\n${f.summary}`);
+          console.log('\nKey Factors:');
+          for (const factor of f.keyFactors) {
+            console.log(`  • ${factor}`);
+          }
+          if (f.activeYogas.length > 0) {
+            console.log('\nActive Yogas:');
+            for (const yoga of f.activeYogas.slice(0, 3)) {
+              console.log(`  • ${yoga}`);
+            }
+          }
+          if (f.transitInfluences.length > 0) {
+            console.log('\nTransit Influences:');
+            for (const t of f.transitInfluences.slice(0, 3)) {
+              console.log(`  • ${t}`);
+            }
+          }
+        }
+
+        console.log('\n');
+      } catch (e) {
+        // Fall back to basic predictions
+        displayBasicPredictions(periods);
+      }
+    } else {
+      displayBasicPredictions(periods);
+    }
+  }
+
+  // Helper function for basic predictions
+  function displayBasicPredictions(periods: any[]) {
+    console.log('\n=== PREDICTIONS (Past, Current & Future) ===');
+    const now = new Date();
+    const planetNames = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
+    const levelNames = ['Mahadasha', 'Antardasha', 'Pratyantardasha', 'Sookshma', 'Prana'];
+
+    // Past periods (completed)
+    const pastPeriods = periods.filter((p: { endDate: string }) => new Date(p.endDate) < now);
+    // Current periods
+    const currentPeriods = periods.filter((p: { startDate: string; endDate: string }) => {
+      const start = new Date(p.startDate);
+      const end = new Date(p.endDate);
+      return start <= now && end >= now;
+    });
+    // Future periods
+    const futurePeriods = periods.filter((p: { startDate: string }) => new Date(p.startDate) > now);
+
+    console.log(`\nTotal Periods: ${periods.length}`);
+    console.log(`Past: ${pastPeriods.length} | Current: ${currentPeriods.length} | Future: ${futurePeriods.length}`);
+
+    // Show PAST completed periods (most recent first)
+    if (pastPeriods.length > 0) {
+      console.log('\n--- PAST MAHADASHA PERIODS ---');
+      const recentPast = pastPeriods.slice(-5).reverse();
+      for (const p of recentPast) {
+        const planet = planetNames[p.activePlanet] || `Planet ${p.activePlanet}`;
+        const start = p.startDate.split('T')[0];
+        const end = p.endDate.split('T')[0];
+        console.log(`\n${planet} Mahadasha: ${start} to ${end}`);
+        console.log(`  Level: ${levelNames[p.level - 1]}`);
+        console.log(`  House: ${p.houseAffected}`);
+        console.log(`  Strength: ${p.planetStrength}`);
+        if (p.summary) {
+          const lines = p.summary.split('\n');
+          for (const line of lines.slice(0, 5)) {
+            console.log(`  ${line.trim()}`);
+          }
+        }
+      }
+    }
+
+    // Show CURRENT periods
+    if (currentPeriods.length > 0) {
+      console.log('\n--- CURRENT ACTIVE PERIOD ---');
+      for (const p of currentPeriods.slice(0, 3)) {
+        const planet = planetNames[p.activePlanet] || `Planet ${p.activePlanet}`;
+        const start = p.startDate.split('T')[0];
+        const end = p.endDate.split('T')[0];
+        console.log(`\n${planet} (${levelNames[p.level - 1]}): ${start} to ${end}`);
+        console.log(`  House: ${p.houseAffected} | Strength: ${p.planetStrength}`);
+        if (p.summary) {
+          const lines = p.summary.split('\n');
+          for (const line of lines) {
+            console.log(`  ${line.trim()}`);
+          }
+        }
+      }
+    }
+
+    // Show NEXT upcoming periods
+    if (futurePeriods.length > 0) {
+      console.log('\n--- UPCOMING MAHADASHA PERIODS ---');
+      const nextFive = futurePeriods.slice(0, 5);
+      for (const p of nextFive) {
+        const planet = planetNames[p.activePlanet] || `Planet ${p.activePlanet}`;
+        const start = p.startDate.split('T')[0];
+        const end = p.endDate.split('T')[0];
+        console.log(`\n${planet} Mahadasha: ${start} to ${end}`);
+        console.log(`  House: ${p.houseAffected} | Strength: ${p.planetStrength}`);
+        if (p.summary) {
+          const lines = p.summary.split('\n').slice(0, 3);
+          for (const line of lines) {
+            console.log(`  ${line.trim()}`);
+          }
+        }
+      }
+    }
+  }
+
   // Parse and display shadbala
-  if (hasShadbala) {
+  if (hasShadbala && cache.shadbala_json) {
     console.log('\n--- Shadbala (Planetary Strengths) ---');
     const shadbala = JSON.parse(cache.shadbala_json);
     const planetNames = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
@@ -243,7 +494,7 @@ function reportAction(options: ReportOptions) {
   }
 
   // Parse and display dashas
-  if (hasDashas) {
+  if (hasDashas && cache.dashas_json) {
     console.log('\n--- Vimshottari Dasha (Planetary Periods) ---');
     const dashas = JSON.parse(cache.dashas_json);
     const planetNames = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
@@ -277,14 +528,25 @@ function reportAction(options: ReportOptions) {
   }
 
   // Key predictions from past periods
-  if (hasDashas && hasChart) {
+  if (hasDashas && hasChart && cache.dashas_json) {
     console.log('\n--- Past Mahadasha Periods ---');
     const dashas = JSON.parse(cache.dashas_json);
     const planetNames = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
     const now = new Date();
 
-    // Get unique mahadasha periods (first level only)
-    const mahadashas = dashas.filter((d: { antardasha: null }) => d.antardasha === null);
+    // Get unique mahadasha periods (level === 1 means top-level mahadasha)
+    const mahaEntries = dashas.filter((d: { mahadasha: { level: number } }) => d.mahadasha.level === 1);
+
+    // Deduplicate by mahadasha planet + startDate
+    const seen = new Set<string>();
+    const mahadashas: typeof mahaEntries = [];
+    for (const d of mahaEntries) {
+      const key = `${d.mahadasha.planet}-${d.mahadasha.startDate}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        mahadashas.push(d);
+      }
+    }
     const pastDashas = mahadashas.filter((d: { mahadasha: { endDate: string } }) => new Date(d.mahadasha.endDate) < now);
 
     if (pastDashas.length > 0) {
@@ -301,6 +563,251 @@ function reportAction(options: ReportOptions) {
   }
 
   console.log('\n' + '='.repeat(70) + '\n');
+}
+
+const CACHE_DAYS = 30;
+const HOURS_PER_DAY = 24;
+
+/** Helper to convert date to ISO string, handling both Date objects and string inputs */
+function toISOString(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+  if (typeof date === 'string') return date;
+  if (date instanceof Date) return date.toISOString();
+  return null;
+}
+
+interface HourlyPredictionInput {
+  id: string;
+  profile_id: string;
+  date: string;
+  hour: number;
+  timezone: string;
+  sookshma_dasha_planet: number | null;
+  sookshma_dasha_start: string | null;
+  sookshma_dasha_end: string | null;
+  prana_dasha_planet: number | null;
+  prana_dasha_start: string | null;
+  prana_dasha_end: string | null;
+  moon_nakshatra: number;
+  moon_sign: number;
+  moon_degree: number;
+  transit_lagna: number;
+  transit_lagna_sign: number;
+  hourly_score: number;
+  prediction_text: null;
+}
+
+async function generateHourlyCacheForProfile(
+  profileId: string,
+  timezone: string,
+  force: boolean = false
+): Promise<number> {
+  const profile = getProfile(profileId);
+  if (!profile) {
+    console.error(`Profile not found: ${profileId}`);
+    return 0;
+  }
+
+  const cache = getCachedCalculation(profileId);
+  if (!cache) {
+    console.error(`No calculations found for profile ${profileId}. Run process first.`);
+    return 0;
+  }
+
+  // Delete existing predictions if force is true
+  if (force) {
+    const deleted = deletePredictionsForProfile(profileId);
+    console.log(`Deleted ${deleted} existing predictions.`);
+  }
+
+  // Parse cached data with error handling
+  let dashas: any[];
+  let chart: any;
+  try {
+    dashas = JSON.parse(cache.dashas_json || '[]');
+    chart = JSON.parse(cache.chart_json);
+  } catch (e) {
+    console.error(`Failed to parse cached data for profile ${profileId}:`, e);
+    return 0;
+  }
+
+  // Generate for next 30 days
+  const predictions: HourlyPredictionInput[] = [];
+  const now = new Date();
+
+  for (let day = 0; day < CACHE_DAYS; day++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() + day);
+    const dateStr = date.toISOString().split('T')[0]!;
+
+    for (let hour = 0; hour < HOURS_PER_DAY; hour++) {
+      const hourDate = new Date(date);
+      hourDate.setHours(hour, 0, 0, 0);
+
+      // Calculate transit for this hour
+      const transit = calculateTransit(
+        hourDate,
+        profile.lat,
+        profile.lon,
+        profile.ayanamsa_id,
+      );
+
+      // Get dasha at this time
+      const dashaAtTime = getDashaAtDate(dashas, hourDate);
+
+      // Calculate score
+      const score = calculateHourlyScore(
+        transit,
+        dashaAtTime?.prana.planet ?? null,
+        chart,
+      );
+
+      predictions.push({
+        id: `${profileId}-${dateStr}-${hour}`,
+        profile_id: profileId,
+        date: dateStr,
+        hour,
+        timezone,
+        sookshma_dasha_planet: dashaAtTime?.sookshma.planet ?? null,
+        sookshma_dasha_start: toISOString(dashaAtTime?.sookshma.startDate) ?? null,
+        sookshma_dasha_end: toISOString(dashaAtTime?.sookshma.endDate) ?? null,
+        prana_dasha_planet: dashaAtTime?.prana.planet ?? null,
+        prana_dasha_start: toISOString(dashaAtTime?.prana.startDate) ?? null,
+        prana_dasha_end: toISOString(dashaAtTime?.prana.endDate) ?? null,
+        moon_nakshatra: transit.moonNakshatra,
+        moon_sign: transit.moonSign,
+        moon_degree: transit.moonDegree,
+        transit_lagna: transit.lagna,
+        transit_lagna_sign: transit.lagnaSign,
+        hourly_score: score,
+        prediction_text: null,
+      });
+    }
+  }
+
+  // Save to database
+  saveHourlyPredictions(predictions);
+  console.log(`Generated ${predictions.length} hourly predictions for ${profile.name}`);
+  return predictions.length;
+}
+
+/**
+ * Generate hourly predictions for a specific date (on-demand).
+ * Used when date is not in cache.
+ */
+async function generateHourlyPredictionForDate(
+  profileId: string,
+  dateStr: string,
+  timezone: string,
+): Promise<any[]> {
+  const profile = getProfile(profileId);
+  if (!profile) {
+    throw new Error(`Profile not found: ${profileId}`);
+  }
+
+  const cache = getCachedCalculation(profileId);
+  if (!cache) {
+    throw new Error(`No calculations found for ${profileId}. Run process first.`);
+  }
+
+  // Parse cached data
+  let dashas: any[];
+  let chart: any;
+  try {
+    dashas = JSON.parse(cache.dashas_json || '[]');
+    chart = JSON.parse(cache.chart_json);
+  } catch (e) {
+    throw new Error(`Failed to parse cached data: ${e}`);
+  }
+
+  const predictions: HourlyPredictionInput[] = [];
+  const date = new Date(dateStr + 'T12:00:00');
+
+  for (let hour = 0; hour < 24; hour++) {
+    const hourDate = new Date(date);
+    hourDate.setHours(hour, 0, 0, 0);
+
+    // Calculate transit for this hour
+    const transit = calculateTransit(
+      hourDate,
+      profile.lat,
+      profile.lon,
+      profile.ayanamsa_id,
+    );
+
+    // Get dasha at this time
+    const dashaAtTime = getDashaAtDate(dashas, hourDate);
+
+    // Calculate score
+    const score = calculateHourlyScore(
+      transit,
+      dashaAtTime?.prana.planet ?? null,
+      chart,
+    );
+
+    predictions.push({
+      id: `${profileId}-${dateStr}-${hour}`,
+      profile_id: profileId,
+      date: dateStr,
+      hour,
+      timezone,
+      sookshma_dasha_planet: dashaAtTime?.sookshma.planet ?? null,
+      sookshma_dasha_start: toISOString(dashaAtTime?.sookshma.startDate),
+      sookshma_dasha_end: toISOString(dashaAtTime?.sookshma.endDate),
+      prana_dasha_planet: dashaAtTime?.prana.planet ?? null,
+      prana_dasha_start: toISOString(dashaAtTime?.prana.startDate),
+      prana_dasha_end: toISOString(dashaAtTime?.prana.endDate),
+      moon_nakshatra: transit.moonNakshatra,
+      moon_sign: transit.moonSign,
+      moon_degree: transit.moonDegree,
+      transit_lagna: transit.lagna,
+      transit_lagna_sign: transit.lagnaSign,
+      hourly_score: score,
+      prediction_text: null,
+    });
+  }
+
+  return predictions;
+}
+
+interface PredictCacheOptions {
+  id?: string;
+  timezone?: string;
+  force?: boolean;
+}
+
+async function predictCacheAction(options: PredictCacheOptions) {
+  runMigrations(true);
+
+  // Clean old data first
+  console.log('Cleaning old predictions...');
+  const deleted = deleteOldPredictions();
+  console.log(`Deleted ${deleted} old prediction records.`);
+
+  const profiles = options.id
+    ? [getProfile(options.id)].filter(Boolean)
+    : getReadyProfiles();
+
+  if (profiles.length === 0) {
+    console.log('No ready profiles found.');
+    return;
+  }
+
+  console.log(`\nGenerating cache for ${profiles.length} profile(s)...\n`);
+
+  let totalGenerated = 0;
+  for (const profile of profiles) {
+    if (!profile) continue;
+    try {
+      const tz = options.timezone || profile.timezone;
+      const count = await generateHourlyCacheForProfile(profile.id, tz, options.force ?? false);
+      totalGenerated += count;
+    } catch (err) {
+      console.error(`Error generating cache for ${profile.name}:`, err);
+    }
+  }
+
+  console.log(`\nTotal hourly predictions generated: ${totalGenerated}`);
 }
 
 const program = new Command();
@@ -321,8 +828,9 @@ program
 
 program
   .command('process')
-  .description('Process profiles (run without args for continuous processing)')
+  .description('Process profiles (run without args for all new profiles)')
   .option('-i, --id <id>', 'Process specific profile ID')
+  .option('-f, --force', 'Force reprocess even if already processed')
   .action(processAction);
 
 program
@@ -335,5 +843,244 @@ program
   .description('Generate a detailed report for a profile')
   .requiredOption('-i, --id <id>', 'Profile ID')
   .action(reportAction);
+
+program
+  .command('predict-cache')
+  .description('Pre-generate 30-day hourly prediction cache (for cron)')
+  .option('-i, --id <id>', 'Specific profile ID (default: all ready profiles)')
+  .option('-t, --timezone <tz>', 'Timezone for predictions')
+  .option('-f, --force', 'Force regeneration even if cache exists')
+  .action(predictCacheAction);
+
+interface PredictOptions {
+  id: string;
+  date: string;
+  timezone?: string;
+  hourly?: boolean;
+  json?: boolean;
+}
+
+async function predictAction(options: PredictOptions) {
+  runMigrations(true);
+
+  const profile = getProfile(options.id);
+  if (!profile) {
+    console.error(`Profile not found: ${options.id}`);
+    process.exit(1);
+  }
+
+  // Validate date format (YYYY-MM-DD)
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(options.date)) {
+    console.error(`Invalid date format: ${options.date}. Use YYYY-MM-DD.`);
+    process.exit(1);
+  }
+
+  const timezone = options.timezone || profile.timezone;
+  const date = options.date;
+
+  // Try to get from cache first
+  let predictions = getHourlyPredictions(options.id, date);
+
+  // If not in cache, generate on-demand
+  if (predictions.length === 0) {
+    console.log(`No cached predictions for ${date}. Generating on-demand...`);
+    try {
+      predictions = await generateHourlyPredictionForDate(options.id, date, timezone);
+    } catch (err) {
+      console.error(`Error generating predictions: ${err}`);
+      process.exit(1);
+    }
+  }
+
+  if (options.json) {
+    // JSON output
+    console.log(JSON.stringify({
+      profileId: profile.id,
+      profileName: profile.name,
+      date,
+      timezone,
+      predictions: options.hourly ? predictions : predictions.filter((_, i) => i % 6 === 0),
+    }, null, 2));
+    return;
+  }
+
+  // Plain text output
+  console.log('\n' + '='.repeat(70));
+  console.log(`DAILY PREDICTION: ${date}`);
+  console.log(`Profile: ${profile.name}`);
+  console.log(`Location: ${profile.place_name || 'Unknown'} (${timezone})`);
+  console.log('='.repeat(70));
+
+  // Calculate overall score
+  const scores = predictions.map(p => p.hourly_score ?? 50);
+  const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+  console.log(`\nOverall Day Score: ${avgScore.toFixed(0)}/100`);
+
+  if (options.hourly) {
+    console.log('\n--- Hourly Breakdown ---');
+    const planetNames = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
+    const nakshatraNames = ['Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashira', 'Ardra', 'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 'Purva Phalguni', 'Uttara Phalguni', 'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha', 'Jyeshtha', 'Mula', 'Purva Ashadha', 'Uttara Ashadha', 'Shravana', 'Dhanishta', 'Shatabhisha', 'Purva Bhadrapada', 'Uttara Bhadrapada', 'Revati'];
+    const signNames = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+
+    // Get chart data for category calculation
+    const cache = getCachedCalculation(profile.id);
+    let chart: any = null;
+    let dashas: any[] = [];
+    if (cache) {
+      try {
+        chart = JSON.parse(cache.chart_json);
+        dashas = JSON.parse(cache.dashas_json || '[]');
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    for (const p of predictions) { // Show all 24 hours
+      const time = `${String(p.hour).padStart(2, '0')}:00`;
+      const score = p.hourly_score ?? 50;
+      const moonNaksh = nakshatraNames[p.moon_nakshatra ?? 0];
+      const lagnaSign = signNames[p.transit_lagna_sign ?? 0];
+      const pranaPlanet = planetNames[p.prana_dasha_planet ?? 0];
+      const mood = score >= 70 ? 'Favorable' : score >= 50 ? 'Moderate' : 'Challenging';
+
+      console.log(`${time} | ${pranaPlanet} | Moon: ${moonNaksh} | ${mood}`);
+    }
+
+    // Calculate and show category summary if we have chart data
+    if (chart && cache) {
+      console.log('\n--- Category Summary ---');
+
+      // Calculate categories for the day (use first hour's transit)
+      const firstPred = predictions[0];
+      if (firstPred) {
+        const transit = {
+          moonLongitude: 0,
+          moonNakshatra: firstPred.moon_nakshatra ?? 0,
+          moonSign: firstPred.moon_sign ?? 0,
+          moonDegree: firstPred.moon_degree ?? 0,
+          lagna: firstPred.transit_lagna ?? 0,
+          lagnaSign: firstPred.transit_lagna_sign ?? 0,
+        };
+        const dashaPlanet = firstPred.prana_dasha_planet as any;
+        const categories = calculateHourlyCategories(transit, dashaPlanet, chart);
+
+        console.log(`Career:        ${categories.career}`);
+        console.log(`Finance:       ${categories.finance}`);
+        console.log(`Health:        ${categories.health}`);
+        console.log(`Relationships: ${categories.relationships}`);
+        console.log(`Education:     ${categories.education}`);
+        console.log(`${categories.overall}`);
+      }
+    }
+  } else {
+    // Show category summary (not hourly)
+    console.log('\n--- Category Summary ---');
+
+    // Get chart data for category calculation
+    const cache = getCachedCalculation(profile.id);
+    let chart: any = null;
+    if (cache) {
+      try {
+        chart = JSON.parse(cache.chart_json);
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    // Calculate categories for the day (use middle of day for average)
+    const middayPred = predictions[12]; // Use noon as representative
+    if (middayPred && chart) {
+      const transit = {
+        moonLongitude: 0,
+        moonNakshatra: middayPred.moon_nakshatra ?? 0,
+        moonSign: middayPred.moon_sign ?? 0,
+        moonDegree: middayPred.moon_degree ?? 0,
+        lagna: middayPred.transit_lagna ?? 0,
+        lagnaSign: middayPred.transit_lagna_sign ?? 0,
+      };
+      const dashaPlanet = middayPred.prana_dasha_planet as any;
+      const categories = calculateHourlyCategories(transit, dashaPlanet, chart);
+
+      console.log(`Career:        ${categories.career}`);
+      console.log(`Finance:       ${categories.finance}`);
+      console.log(`Health:        ${categories.health}`);
+      console.log(`Relationships: ${categories.relationships}`);
+      console.log(`Education:     ${categories.education}`);
+      console.log(`${categories.overall}`);
+    }
+  }
+
+  console.log('\n' + '='.repeat(70) + '\n');
+}
+
+program
+  .command('predict')
+  .description('Get daily/hourly predictions for a profile')
+  .requiredOption('-i, --id <id>', 'Profile ID')
+  .requiredOption('-d, --date <date>', 'Date (YYYY-MM-DD)')
+  .option('-t, --timezone <tz>', 'Timezone (default: profile birth timezone)')
+  .option('-h, --hourly', 'Show hourly breakdown')
+  .option('--json', 'Output JSON')
+  .action(predictAction);
+
+interface DeleteOptions {
+  id: string;
+  force?: boolean;
+}
+
+function deleteAction(options: DeleteOptions) {
+  runMigrations(true);
+
+  const profile = getProfile(options.id);
+  if (!profile) {
+    console.error(`Profile not found: ${options.id}`);
+    process.exit(1);
+  }
+
+  if (!options.force) {
+    console.log(`About to delete profile:`);
+    console.log(`  Name: ${profile.name}`);
+    console.log(`  DOB: ${profile.dob_utc}`);
+    console.log(`  Place: ${profile.place_name}`);
+    console.log(`\nThis will also delete all cached calculations, hourly predictions, and journal events.`);
+    console.log(`\nRun with --force to confirm deletion.`);
+    process.exit(1);
+  }
+
+  console.log(`Deleting profile: ${profile.name} (${profile.id})`);
+  deleteProfile(profile.id);
+  console.log('Profile and all related data deleted successfully.');
+}
+
+program
+  .command('delete')
+  .description('Delete a profile and all its data')
+  .requiredOption('-i, --id <id>', 'Profile ID to delete')
+  .option('-f, --force', 'Skip confirmation and delete immediately')
+  .action(deleteAction);
+
+program
+  .command('timezones')
+  .description('List valid timezone options')
+  .action(() => {
+    console.log('\nValid timezone options:\n');
+    // Group by region
+    const regions: Record<string, string[]> = {
+      'Asia': VALID_TIMEZONES.filter(t => t.startsWith('Asia/')),
+      'Europe': VALID_TIMEZONES.filter(t => t.startsWith('Europe/')),
+      'Americas': VALID_TIMEZONES.filter(t => t.startsWith('America/')),
+      'Pacific': VALID_TIMEZONES.filter(t => t.startsWith('Pacific/')),
+      'US': VALID_TIMEZONES.filter(t => t.startsWith('US/')),
+      'UTC': ['UTC'],
+    };
+    for (const [region, zones] of Object.entries(regions)) {
+      console.log(`${region}:`);
+      for (const tz of zones) {
+        console.log(`  ${tz}`);
+      }
+      console.log('');
+    }
+  });
 
 program.parse(process.argv);

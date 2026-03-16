@@ -72,7 +72,9 @@ export {
 export {
   calculateTransit,
   calculateHourlyScore,
+  calculateHourlyCategories,
   type TransitPosition,
+  type HourlyCategories,
 } from './calculations/transit.js';
 
 export {
@@ -115,9 +117,11 @@ export {
   generatePredictions,
   generateSinglePeriodSummary,
   getCurrentPeriodPrediction,
+  generateImmediatePredictions,
   type PredictionPeriod,
   type PredictionRequest,
   type PredictionResponse,
+  type ImmediatePrediction,
 } from './calculations/predictions.js';
 
 // ------------------------------------

@@ -2,7 +2,7 @@
 // Prediction Engine — Plain English Astrological Predictions
 // ============================================================
 // Generates predictions based on Vimshottari Dasha, chart data,
-// yogas, shadbala, and ashtakavarga.
+// yogas, shadbala, transits, and ashtakavarga.
 // ============================================================
 
 import {
@@ -18,6 +18,9 @@ import {
   AshtakavargaResult,
   PlanetPosition,
 } from '../types/index.js';
+
+// Import transit calculation for enhanced predictions
+import { calculateTransit, isFunctionalBenefic, isInKendra, isPlanetInOwnOrExalted, isPlanetInDebilitated, FUNCTIONAL_NATURES, PLANET_EXALTED_SIGNS, PLANET_DEBILITATED_SIGNS, type TransitPosition } from './transit.js';
 
 // ------------------------------------
 // Planet Significations (Natural)
@@ -709,4 +712,378 @@ export function getCurrentPeriodPrediction(
     houseAffected: house,
     signPosition: sign,
   };
+}
+
+// ============================================================
+// Enhanced Immediate Past/Future Predictions
+// ============================================================
+
+export interface ImmediatePrediction {
+  period: 'past' | 'current' | 'future';
+  startDate: Date;
+  endDate: Date;
+  title: string;
+  summary: string;
+  keyFactors: string[];
+  transitInfluences: string[];
+  activeYogas: string[];
+  lifeAreas: string[];
+  overallAssessment: 'positive' | 'challenging' | 'neutral';
+}
+
+/**
+ * Generate enhanced predictions for immediate past (last 1-2 years) and future (next 1-2 years).
+ * This combines dasha, transit, yoga, and chart factors for more specific predictions.
+ */
+export function generateImmediatePredictions(
+  chart: ChartData,
+  dashas: DashaPeriod[],
+  yogas: YogaResult[],
+  shadbala: ShadbalaResult[],
+  latitude: number,
+  longitude: number,
+  utcOffset: number = 0
+): { past: ImmediatePrediction | null; current: ImmediatePrediction | null; future: ImmediatePrediction | null } {
+  const now = new Date();
+  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+  const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+  const twoYearsFromNow = new Date(now.getFullYear() + 2, now.getMonth(), now.getDate());
+
+  // Generate predictions for each period using all dashas (the function will find the right one)
+  const pastPrediction = generateSpecificPeriodPrediction(
+    chart, dashas, yogas, shadbala,
+    oneYearAgo, now,
+    latitude, longitude, utcOffset,
+    'past'
+  );
+
+  const currentPrediction = generateSpecificPeriodPrediction(
+    chart, dashas, yogas, shadbala,
+    now, oneYearFromNow,
+    latitude, longitude, utcOffset,
+    'current'
+  );
+
+  const futurePrediction = generateSpecificPeriodPrediction(
+    chart, dashas, yogas, shadbala,
+    oneYearFromNow, twoYearsFromNow,
+    latitude, longitude, utcOffset,
+    'future'
+  );
+
+  return {
+    past: pastPrediction,
+    current: currentPrediction,
+    future: futurePrediction
+  };
+}
+
+/**
+ * Find the antardasha planet active at a specific date within a mahadasha period.
+ */
+function getAntardashaAtDate(dasha: DashaPeriod, targetDate: Date): Planet {
+  const antiStart = new Date(dasha.antardasha.startDate).getTime();
+  const antiEnd = new Date(dasha.antardasha.endDate).getTime();
+  const targetMs = targetDate.getTime();
+
+  if (targetMs >= antiStart && targetMs <= antiEnd) {
+    return dasha.antardasha.planet;
+  }
+
+  // Check pratyantardasha if available
+  if (dasha.pratyantardasha) {
+    const pratyStart = new Date(dasha.pratyantardasha.startDate).getTime();
+    const pratyEnd = new Date(dasha.pratyantardasha.endDate).getTime();
+    if (targetMs >= pratyStart && targetMs <= pratyEnd) {
+      return dasha.pratyantardasha.planet;
+    }
+  }
+
+  // Fall back to the main antardasha
+  return dasha.antardasha.planet;
+}
+
+/**
+ * Generate a specific prediction for a time period, combining all astrological factors.
+ */
+function generateSpecificPeriodPrediction(
+  chart: ChartData,
+  dashas: DashaPeriod[],
+  yogas: YogaResult[],
+  shadbala: ShadbalaResult[],
+  startDate: Date,
+  endDate: Date,
+  latitude: number,
+  longitude: number,
+  utcOffset: number,
+  periodType: 'past' | 'current' | 'future'
+): ImmediatePrediction | null {
+  const natalLagnaSign = Math.floor(chart.ascendant / 30) as Sign;
+  const natalMoon = chart.planets.find(p => p.planet === Planet.Moon);
+  const natalMoonNakshatra = natalMoon?.nakshatra ?? 0;
+
+  // Find the mahadasha that's active during this period
+  const dashaAtPeriod = dashas.find(d => {
+    const mahaStart = new Date(d.mahadasha.startDate).getTime();
+    const mahaEnd = new Date(d.mahadasha.endDate).getTime();
+    const startMs = startDate.getTime();
+    const endMs = endDate.getTime();
+    return mahaEnd >= startMs && mahaStart <= endMs;
+  });
+
+  if (!dashaAtPeriod) return null;
+
+  const mahaPlanet = dashaAtPeriod.mahadasha.planet;
+
+  // Get the antardasha active at the midpoint of the period
+  const midDate = new Date((startDate.getTime() + endDate.getTime()) / 2);
+  const antiPlanet = getAntardashaAtDate(dashaAtPeriod, midDate);
+
+  // Get planet positions and strengths
+  const mahaSign = getPlanetSign(chart, mahaPlanet) ?? Sign.Aries;
+  const mahaHouse = getPlanetHouse(chart, mahaPlanet) ?? House.First;
+  const mahaStrength = getPlanetStrength(shadbala, mahaPlanet);
+  const isMahaStrong = isPlanetStrong(mahaStrength);
+  const isMahaExalted = isPlanetExalted(mahaPlanet, mahaSign);
+  const isMahaDebilitated = isPlanetDebilitated(mahaPlanet, mahaSign);
+
+  // Get antardasha planet's sign
+  const antiSign = getPlanetSign(chart, antiPlanet) ?? Sign.Aries;
+  const antiHouse = getPlanetHouse(chart, antiPlanet) ?? House.First;
+
+  // Calculate transit influences for the period (sample key dates)
+  const transitInfluences = calculateTransitInfluencesForPeriod(
+    chart, startDate, endDate, latitude, longitude, utcOffset,
+    antiPlanet, natalLagnaSign, natalMoonNakshatra
+  );
+
+  // Find relevant yogas
+  const relevantYogas = yogas.filter(y =>
+    y.isPresent && (y.planets.includes(mahaPlanet) || y.planets.includes(antiPlanet))
+  );
+
+  // Calculate overall assessment
+  let positiveCount = 0;
+  let totalFactors = 0;
+
+  // Mahadasha planet assessment
+  if (isMahaExalted || isMahaStrong) {
+    positiveCount += 2;
+  } else if (isMahaDebilitated) {
+    positiveCount -= 1;
+  }
+  totalFactors += 2;
+
+  // Antardasha planet assessment
+  const antiIsExalted = isPlanetExalted(antiPlanet, antiSign);
+  const antiIsDebilitated = isPlanetDebilitated(antiPlanet, antiSign);
+  if (antiIsExalted) positiveCount += 1;
+  else if (antiIsDebilitated) positiveCount -= 1;
+  totalFactors += 1;
+
+  // Functional nature
+  const isMahaFunctionalBenefic = isFunctionalBenefic(mahaPlanet, natalLagnaSign);
+  const isAntiFunctionalBenefic = isFunctionalBenefic(antiPlanet, natalLagnaSign);
+  if (isMahaFunctionalBenefic) positiveCount += 1;
+  if (isAntiFunctionalBenefic) positiveCount += 1;
+  totalFactors += 2;
+
+  // Transit assessment
+  if (transitInfluences.positiveCount > transitInfluences.negativeCount) {
+    positiveCount += 1;
+  } else if (transitInfluences.negativeCount > transitInfluences.positiveCount) {
+    positiveCount -= 1;
+  }
+  totalFactors += 1;
+
+  // Yoga assessment
+  if (relevantYogas.length > 0) positiveCount += 1;
+  totalFactors += 1;
+
+  const ratio = positiveCount / totalFactors;
+  const overallAssessment: 'positive' | 'challenging' | 'neutral' =
+    ratio >= 0.6 ? 'positive' : ratio <= 0.3 ? 'challenging' : 'neutral';
+
+  // Build key factors
+  const keyFactors: string[] = [];
+
+  // Mahadasha influence
+  keyFactors.push(`${getPlanetName(mahaPlanet)} Mahadasha (${getSignName(mahaSign)} in ${getHouseName(mahaHouse)})`);
+
+  // Antardasha influence
+  keyFactors.push(`${getPlanetName(antiPlanet)} Antardasha (${getSignName(antiSign)} in ${getHouseName(antiHouse)})`);
+
+  // Strength and dignity
+  if (isMahaExalted) {
+    keyFactors.push(`${getPlanetName(mahaPlanet)} is exalted - powerful positive influence`);
+  } else if (isMahaDebilitated) {
+    keyFactors.push(`${getPlanetName(mahaPlanet)} is debilitated - challenges expected`);
+  } else if (isMahaStrong) {
+    keyFactors.push(`${getPlanetName(mahaPlanet)} has strong shadbala`);
+  }
+
+  if (antiIsExalted) {
+    keyFactors.push(`${getPlanetName(antiPlanet)} is exalted in ${getSignName(antiSign)}`);
+  } else if (antiIsDebilitated) {
+    keyFactors.push(`${getPlanetName(antiPlanet)} is debilitated in ${getSignName(antiSign)}`);
+  }
+
+  // Functional nature
+  if (isMahaFunctionalBenefic) {
+    keyFactors.push(`${getPlanetName(mahaPlanet)} is a functional benefic for ${getSignName(natalLagnaSign)} Lagna`);
+  }
+  if (isAntiFunctionalBenefic) {
+    keyFactors.push(`${getPlanetName(antiPlanet)} is a functional benefic`);
+  }
+
+  // House affected
+  const houseInfo = HOUSE_MEANINGS[mahaHouse];
+  const antiHouseInfo = HOUSE_MEANINGS[antiHouse];
+  keyFactors.push(`Primary life areas: ${houseInfo.areas[0]}, ${antiHouseInfo.areas[0]}`);
+
+  // Build summary
+  const periodLabel = periodType === 'past' ? 'During this period' :
+                      periodType === 'current' ? 'Currently' : 'In the coming period';
+
+  let summary = `${periodLabel}, the ${getPlanetName(mahaPlanet)} Mahadasha is active, with ${getPlanetName(antiPlanet)} Antardasha influencing the timeline. `;
+
+  // Add specific prediction based on planet and house
+  summary += generateSpecificPrediction(mahaPlanet, mahaHouse, mahaSign, isMahaExalted, isMahaDebilitated, isMahaFunctionalBenefic, relevantYogas);
+
+  // Add antardasha influence
+  const antiPlanetInfo = PLANET_SIGNIFICATIONS[antiPlanet];
+  summary += ` The ${getPlanetName(antiPlanet)} sub-period brings focus on ${antiPlanetInfo.domains[0]} and ${antiHouseInfo.areas[0]}.`;
+
+  // Add transit influence summary
+  if (transitInfluences.summary) {
+    summary += ` ${transitInfluences.summary}`;
+  }
+
+  // Title
+  const title = `${getPlanetName(mahaPlanet)} Mahadasha with ${getPlanetName(antiPlanet)} Antardasha`;
+
+  return {
+    period: periodType,
+    startDate,
+    endDate,
+    title,
+    summary,
+    keyFactors,
+    transitInfluences: transitInfluences.details,
+    activeYogas: relevantYogas.map(y => y.name),
+    lifeAreas: [houseInfo.areas[0] ?? 'various', antiHouseInfo.areas[0] ?? 'various'],
+    overallAssessment
+  };
+}
+
+/**
+ * Calculate transit influences for a period (sampling key dates).
+ */
+function calculateTransitInfluencesForPeriod(
+  chart: ChartData,
+  startDate: Date,
+  endDate: Date,
+  latitude: number,
+  longitude: number,
+  utcOffset: number,
+  dashaPlanet: Planet,
+  natalLagnaSign: Sign,
+  natalMoonNakshatra: number
+): { details: string[]; summary: string; positiveCount: number; negativeCount: number } {
+  const details: string[] = [];
+  let positiveCount = 0;
+  let negativeCount = 0;
+
+  // Sample a few dates within the period
+  const samples = 4;
+  const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+
+  for (let i = 0; i < samples; i++) {
+    const sampleDate = new Date(startDate.getTime() + (totalDays * i / (samples - 1)) * (24 * 60 * 60 * 1000));
+
+    try {
+      const transit = calculateTransit(sampleDate, latitude, longitude, utcOffset);
+
+      // Check transit aspects
+      const moonSign = transit.moonSign as Sign;
+      const lagnaSign = transit.lagnaSign as Sign;
+
+      // Moon's transit influence
+      if (isPlanetInOwnOrExalted(Planet.Moon, moonSign)) {
+        details.push(`Moon in ${getSignName(moonSign)} (own/exalted) - emotional wellbeing`);
+        positiveCount++;
+      } else if (isPlanetInDebilitated(Planet.Moon, moonSign)) {
+        details.push(`Moon in ${getSignName(moonSign)} (debilitated) - emotional challenges`);
+        negativeCount++;
+      }
+
+      // Lagna transit
+      if (isInKendra(lagnaSign, natalLagnaSign)) {
+        details.push(`Lagna in Kendra - favorable for new beginnings`);
+        positiveCount++;
+      }
+
+      // Dasha planet transit
+      const dashaSign = transit.moonSign as Sign; // Using moon as proxy for transit position
+      if (isFunctionalBenefic(dashaPlanet, lagnaSign)) {
+        details.push(`${getPlanetName(dashaPlanet)} period aligned with favorable transit`);
+        positiveCount++;
+      }
+    } catch (e) {
+      // Skip invalid dates
+    }
+  }
+
+  const summary = positiveCount > negativeCount ?
+    `Transit conditions are generally favorable with ${positiveCount} positive indicators.` :
+    negativeCount > positiveCount ?
+    `Transit conditions present some challenges with ${negativeCount} difficult aspects.` :
+    `Transit conditions are mixed but balanced.`;
+
+  return { details, summary, positiveCount, negativeCount };
+}
+
+/**
+ * Generate a specific prediction based on planet, house, and conditions.
+ */
+function generateSpecificPrediction(
+  planet: Planet,
+  house: House,
+  sign: Sign,
+  isExalted: boolean,
+  isDebilitated: boolean,
+  isFunctionalBenefic: boolean,
+  yogas: YogaResult[]
+): string {
+  const planetInfo = PLANET_SIGNIFICATIONS[planet];
+  const houseInfo = HOUSE_MEANINGS[house];
+  const signInfo = SIGN_QUALITIES[sign];
+
+  let prediction = '';
+
+  // Base prediction on planet and house
+  const domains = planetInfo.domains;
+  const houseAreas = houseInfo.areas;
+
+  if (isExalted && isFunctionalBenefic) {
+    prediction = `This is a highly favorable period for ${domains[0]} and ${houseAreas[0]}. `;
+    prediction += `The planet's exalted position amplifies its positive effects, bringing growth and opportunities. `;
+  } else if (isDebilitated) {
+    prediction = `This period may bring challenges related to ${domains[0]} and ${houseAreas[0]}. `;
+    prediction += `The planet's weak position suggests need for patience and perseverance. `;
+  } else if (isFunctionalBenefic) {
+    prediction = `A favorable period for ${domains[0]} and ${houseAreas[0]}. `;
+    prediction += `The ${signInfo.element} energy of ${getSignName(sign)} supports progress. `;
+  } else {
+    prediction = `This period emphasizes ${houseAreas[0]} matters. `;
+    prediction += `Results will depend on how you work with the ${signInfo.element} energy of ${getSignName(sign)}. `;
+  }
+
+  // Add yoga influences
+  if (yogas.length > 0) {
+    const yogaNames = yogas.slice(0, 2).map(y => y.name).join(', ');
+    prediction += `Active yogas like ${yogaNames} add to the period's significance.`;
+  }
+
+  return prediction;
 }
