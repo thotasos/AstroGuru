@@ -11,6 +11,7 @@
  */
 
 import { getDb } from './db.js';
+import { Profile } from './profiles.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -239,4 +240,90 @@ export function isCacheValid(profileId: string): boolean {
   const computedAt = new Date(cached.computed_at).getTime();
   const ageMs = Date.now() - computedAt;
   return ageMs <= CACHE_TTL_MS;
+}
+
+/**
+ * Save multiple hourly predictions for a profile.
+ */
+export function saveHourlyPredictions(
+  predictions: Omit<HourlyPrediction, 'created_at'>[],
+): void {
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  const stmt = db.prepare(`
+    INSERT INTO hourly_predictions
+      (id, profile_id, date, hour, timezone,
+       sookshma_dasha_planet, sookshma_dasha_start, sookshma_dasha_end,
+       prana_dasha_planet, prana_dasha_start, prana_dasha_end,
+       moon_nakshatra, moon_sign, moon_degree,
+       transit_lagna, transit_lagna_sign,
+       hourly_score, prediction_text, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertMany = db.transaction((preds: typeof predictions) => {
+    for (const p of preds) {
+      stmt.run(
+        p.id, p.profile_id, p.date, p.hour, p.timezone,
+        p.sookshma_dasha_planet, p.sookshma_dasha_start, p.sookshma_dasha_end,
+        p.prana_dasha_planet, p.prana_dasha_start, p.prana_dasha_end,
+        p.moon_nakshatra, p.moon_sign, p.moon_degree,
+        p.transit_lagna, p.transit_lagna_sign,
+        p.hourly_score, p.prediction_text, now,
+      );
+    }
+  });
+
+  insertMany(predictions);
+}
+
+/**
+ * Get hourly predictions for a profile on a specific date.
+ */
+export function getHourlyPredictions(
+  profileId: string,
+  date: string,
+): HourlyPrediction[] {
+  const db = getDb();
+  const rows = db
+    .prepare<[string, string], Record<string, unknown>>(
+      'SELECT * FROM hourly_predictions WHERE profile_id = ? AND date = ? ORDER BY hour ASC',
+    )
+    .all(profileId, date);
+
+  return rows.map(rowToHourlyPrediction);
+}
+
+/**
+ * Delete hourly predictions older than today.
+ */
+export function deleteOldPredictions(): number {
+  const db = getDb();
+  const today = new Date().toISOString().split('T')[0]!;
+  const result = db.prepare<[string]>(
+    'DELETE FROM hourly_predictions WHERE date < ?',
+  ).run(today);
+  return result.changes;
+}
+
+/**
+ * Get all profiles that are ready for prediction caching.
+ */
+export function getReadyProfiles(): Pick<Profile, 'id' | 'name' | 'dob_utc' | 'lat' | 'lon' | 'timezone'>[] {
+  const db = getDb();
+  const rows = db
+    .prepare<[], Record<string, unknown>>(
+      "SELECT id, name, dob_utc, lat, lon, timezone FROM profiles WHERE status = 'ready'",
+    )
+    .all();
+
+  return rows.map(row => ({
+    id: row['id'] as string,
+    name: row['name'] as string,
+    dob_utc: row['dob_utc'] as string,
+    lat: row['lat'] as number,
+    lon: row['lon'] as number,
+    timezone: row['timezone'] as string,
+  }));
 }
