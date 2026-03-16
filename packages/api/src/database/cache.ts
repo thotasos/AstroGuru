@@ -308,6 +308,17 @@ export function deleteOldPredictions(): number {
 }
 
 /**
+ * Delete all hourly predictions for a specific profile.
+ */
+export function deletePredictionsForProfile(profileId: string): number {
+  const db = getDb();
+  const result = db.prepare<[string]>(
+    'DELETE FROM hourly_predictions WHERE profile_id = ?',
+  ).run(profileId);
+  return result.changes;
+}
+
+/**
  * Get all profiles that are ready for prediction caching.
  */
 export function getReadyProfiles(): Pick<Profile, 'id' | 'name' | 'dob_utc' | 'lat' | 'lon' | 'timezone'>[] {
