@@ -32,6 +32,7 @@ export interface Profile {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  status: 'new' | 'processing' | 'ready' | 'error';
 }
 
 export interface CreateProfileInput {
@@ -65,6 +66,7 @@ function rowToProfile(row: Record<string, unknown>): Profile {
     notes: (row['notes'] as string | null) ?? null,
     created_at: row['created_at'] as string,
     updated_at: row['updated_at'] as string,
+    status: (row['status'] as string) as 'new' | 'processing' | 'ready' | 'error',
   };
 }
 
@@ -211,6 +213,19 @@ export function updateProfile(
 export function deleteProfile(id: string): void {
   const db = getDb();
   db.prepare<[string]>('DELETE FROM profiles WHERE id = ?').run(id);
+}
+
+/**
+ * Updates the processing status of a profile.
+ */
+export function updateProfileStatus(
+  id: string,
+  status: 'new' | 'processing' | 'ready' | 'error',
+): void {
+  const db = getDb();
+  const now = new Date().toISOString();
+  db.prepare<[string, string, string]>('UPDATE profiles SET status = ?, updated_at = ? WHERE id = ?')
+    .run(status, now, id);
 }
 
 /**
