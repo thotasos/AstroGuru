@@ -5,7 +5,7 @@ import { createProfile, getAllProfiles, getProfile, deleteProfile } from './data
 import { runMigrations } from './database/migrate.js';
 import { getCachedCalculation, saveHourlyPredictions, getHourlyPredictions, deleteOldPredictions, deletePredictionsForProfile, getReadyProfiles } from './database/cache.js';
 import { runProcessor, processProfile, processAllNewProfiles } from './jobs/processor.js';
-import { calculateTransit, calculateHourlyScore, calculateHourlyCategories, getDashaAtDate, generateImmediatePredictions, generateMonthlyPredictions } from '@parashari/core';
+import { calculateTransit, calculateHourlyScore, calculateHourlyCategories, parseCategoryTrend, getDashaAtDate, generateImmediatePredictions, generateMonthlyPredictions } from '@parashari/core';
 
 const PREDEFINED_PLACES: Record<string, { lat: number; lon: number; timezone: string; utcOffset: number }> = {
   'nalgonda-india': { lat: 17.0500, lon: 79.2700, timezone: 'Asia/Kolkata', utcOffset: 5.5 },
@@ -115,7 +115,7 @@ async function processAction(options: ProcessOptions) {
   if (options.id) {
     // Process specific profile (with optional force reprocess)
     console.log(`Processing profile: ${options.id}${options.force ? ' (forced reprocess)' : ''}`);
-    await processProfile(options.id, options.force ?? false);
+    await processProfile(options.id);
   } else {
     // Process all new profiles once
     await processAllNewProfiles();
@@ -629,7 +629,26 @@ async function generateHourlyCacheForProfile(
   let dashas: any[];
   let chart: any;
   try {
-    dashas = JSON.parse(cache.dashas_json || '[]');
+    const rawDashas = JSON.parse(cache.dashas_json || '[]');
+    // Convert date strings to Date objects for dasha calculations
+    dashas = rawDashas.map((d: any) => ({
+      ...d,
+      mahadasha: d.mahadasha ? {
+        ...d.mahadasha,
+        startDate: new Date(d.mahadasha.startDate),
+        endDate: new Date(d.mahadasha.endDate),
+      } : undefined,
+      antardasha: Array.isArray(d.antardasha) ? d.antardasha.map((a: any) => ({
+        ...a,
+        startDate: new Date(a.startDate),
+        endDate: new Date(a.endDate),
+      })) : [],
+      prana: d.prana ? {
+        ...d.prana,
+        startDate: new Date(d.prana.startDate),
+        endDate: new Date(d.prana.endDate),
+      } : null,
+    }));
     chart = JSON.parse(cache.chart_json);
   } catch (e) {
     console.error(`Failed to parse cached data for profile ${profileId}:`, e);
@@ -924,39 +943,148 @@ async function predictAction(options: PredictOptions) {
 
   if (options.hourly) {
     console.log('\n--- Hourly Breakdown ---');
-    const planetNames = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
-    const nakshatraNames = ['Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashira', 'Ardra', 'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 'Purva Phalguni', 'Uttara Phalguni', 'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha', 'Jyeshtha', 'Mula', 'Purva Ashadha', 'Uttara Ashadha', 'Shravana', 'Dhanishta', 'Shatabhisha', 'Purva Bhadrapada', 'Uttara Bhadrapada', 'Revati'];
-    const signNames = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
 
     // Get chart data for category calculation
     const cache = getCachedCalculation(profile.id);
     let chart: any = null;
-    let dashas: any[] = [];
     if (cache) {
       try {
         chart = JSON.parse(cache.chart_json);
-        dashas = JSON.parse(cache.dashas_json || '[]');
       } catch (e) {
         // Ignore parse errors
       }
     }
 
-    for (const p of predictions) { // Show all 24 hours
-      const time = `${String(p.hour).padStart(2, '0')}:00`;
-      const score = p.hourly_score ?? 50;
-      const moonNaksh = nakshatraNames[p.moon_nakshatra ?? 0];
-      const lagnaSign = signNames[p.transit_lagna_sign ?? 0];
-      const pranaPlanet = planetNames[p.prana_dasha_planet ?? 0];
-      const mood = score >= 70 ? 'Favorable' : score >= 50 ? 'Moderate' : 'Challenging';
+    // Calculate categories for each hour and build trend strings
+    const hourlyTrends: string[] = [];
 
-      console.log(`${time} | ${pranaPlanet} | Moon: ${moonNaksh} | ${mood}`);
+    for (const p of predictions) {
+      const time = `${String(p.hour).padStart(2, '0')}:00`;
+
+      if (chart) {
+        const transit = {
+          moonLongitude: 0,
+          moonNakshatra: p.moon_nakshatra ?? 0,
+          moonSign: p.moon_sign ?? 0,
+          moonDegree: p.moon_degree ?? 0,
+          lagna: p.transit_lagna ?? 0,
+          lagnaSign: p.transit_lagna_sign ?? 0,
+          venusSign: null,
+          jupiterSign: null,
+        };
+        const dashaPlanet = p.prana_dasha_planet as any;
+        const categories = calculateHourlyCategories(transit, dashaPlanet, chart);
+
+        // Build trend string from categories
+        const trends: string[] = [];
+        const trendMap: Record<string, string> = {
+          career: 'C',
+          finance: 'F',
+          health: 'H',
+          relationships: 'R',
+          education: 'E',
+        };
+
+        for (const [cat, trend] of Object.entries(categories)) {
+          if (cat === 'overall') continue;
+          const trendResult = parseCategoryTrend(trend as string);
+          if (trendResult === 'positive') trends.push(`↑${trendMap[cat]}`);
+          else if (trendResult === 'negative') trends.push(`↓${trendMap[cat]}`);
+        }
+
+        hourlyTrends.push(`${time} | ${trends.join(' ')}`);
+      } else {
+        // Fallback if no chart data
+        const score = p.hourly_score ?? 50;
+        const mood = score >= 70 ? '↑' : score >= 50 ? '-' : '↓';
+        hourlyTrends.push(`${time} | ${mood}`);
+      }
+    }
+
+    // Print all hourly trends
+    for (const line of hourlyTrends) {
+      console.log(line);
     }
 
     // Calculate and show category summary if we have chart data
     if (chart && cache) {
       console.log('\n--- Category Summary ---');
 
-      // Calculate categories for the day (use first hour's transit)
+      // Calculate categories for each hour and determine best/worst for each category
+      type CategoryTrendType = 'career' | 'finance' | 'health' | 'relationships' | 'education';
+
+      const categoryBestWorst: Record<CategoryTrendType, { best: number; worst: number; bestScore: number; worstScore: number }> = {
+        career: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+        finance: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+        health: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+        relationships: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+        education: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+      };
+
+      // Calculate hourly categories and track best/worst for each
+      // Also track absolute best/worst by score as fallback for neutral categories
+      let absBestHour = 0;
+      let absWorstHour = 0;
+      let absBestScore = -1;
+      let absWorstScore = 101;
+
+      for (let i = 0; i < predictions.length; i++) {
+        const p = predictions[i];
+        if (!p) continue;
+
+        const transit = {
+          moonLongitude: 0,
+          moonNakshatra: p.moon_nakshatra ?? 0,
+          moonSign: p.moon_sign ?? 0,
+          moonDegree: p.moon_degree ?? 0,
+          lagna: p.transit_lagna ?? 0,
+          lagnaSign: p.transit_lagna_sign ?? 0,
+          venusSign: null,
+          jupiterSign: null,
+        };
+        const dashaPlanet = p.prana_dasha_planet as any;
+        const categories = calculateHourlyCategories(transit, dashaPlanet, chart);
+        const score = p.hourly_score ?? 50;
+
+        // Track absolute best/worst by score
+        if (score > absBestScore) {
+          absBestScore = score;
+          absBestHour = i;
+        }
+        if (score < absWorstScore) {
+          absWorstScore = score;
+          absWorstHour = i;
+        }
+
+        for (const cat of ['career', 'finance', 'health', 'relationships', 'education'] as CategoryTrendType[]) {
+          const trend = parseCategoryTrend(categories[cat]);
+          const cw = categoryBestWorst[cat];
+
+          if (trend === 'positive' && score > cw.bestScore) {
+            cw.best = i;
+            cw.bestScore = score;
+          }
+          if (trend === 'negative' && score < cw.worstScore) {
+            cw.worst = i;
+            cw.worstScore = score;
+          }
+        }
+      }
+
+      // Helper to format hour with fallback for unset values
+      const formatHourWithFallback = (cat: CategoryTrendType) => {
+        const cw = categoryBestWorst[cat];
+        const bestHour = cw.bestScore > -1 ? cw.best : absBestHour;
+        const bestScore = cw.bestScore > -1 ? cw.bestScore : absBestScore;
+        const worstHour = cw.worstScore < 101 ? cw.worst : absWorstHour;
+        const worstScore = cw.worstScore < 101 ? cw.worstScore : absWorstScore;
+        return {
+          best: `${String(bestHour).padStart(2, '0')}:00 (${bestScore})`,
+          worst: `${String(worstHour).padStart(2, '0')}:00 (${worstScore})`
+        };
+      };
+
+      // Get first hour's categories for overall summary
       const firstPred = predictions[0];
       if (firstPred) {
         const transit = {
@@ -966,15 +1094,33 @@ async function predictAction(options: PredictOptions) {
           moonDegree: firstPred.moon_degree ?? 0,
           lagna: firstPred.transit_lagna ?? 0,
           lagnaSign: firstPred.transit_lagna_sign ?? 0,
+          venusSign: null,
+          jupiterSign: null,
         };
         const dashaPlanet = firstPred.prana_dasha_planet as any;
         const categories = calculateHourlyCategories(transit, dashaPlanet, chart);
 
+        const careerTimes = formatHourWithFallback('career');
+        const financeTimes = formatHourWithFallback('finance');
+        const healthTimes = formatHourWithFallback('health');
+        const relTimes = formatHourWithFallback('relationships');
+        const eduTimes = formatHourWithFallback('education');
+
         console.log(`Career:        ${categories.career}`);
+        console.log(`                Best: ${careerTimes.best} | Worst: ${careerTimes.worst}`);
+
         console.log(`Finance:       ${categories.finance}`);
+        console.log(`                Best: ${financeTimes.best} | Worst: ${financeTimes.worst}`);
+
         console.log(`Health:        ${categories.health}`);
+        console.log(`                Best: ${healthTimes.best} | Worst: ${healthTimes.worst}`);
+
         console.log(`Relationships: ${categories.relationships}`);
+        console.log(`                Best: ${relTimes.best} | Worst: ${relTimes.worst}`);
+
         console.log(`Education:     ${categories.education}`);
+        console.log(`                Best: ${eduTimes.best} | Worst: ${eduTimes.worst}`);
+
         console.log(`${categories.overall}`);
       }
     }
@@ -993,7 +1139,81 @@ async function predictAction(options: PredictOptions) {
       }
     }
 
-    // Calculate categories for the day (use middle of day for average)
+    // Calculate categories for each hour and determine best/worst for each category
+    type CategoryTrendType = 'career' | 'finance' | 'health' | 'relationships' | 'education';
+
+    const categoryBestWorst: Record<CategoryTrendType, { best: number; worst: number; bestScore: number; worstScore: number }> = {
+      career: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+      finance: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+      health: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+      relationships: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+      education: { best: 0, worst: 0, bestScore: -1, worstScore: 101 },
+    };
+
+    // Calculate hourly categories and track best/worst for each
+    // Also track absolute best/worst by score as fallback for neutral categories
+    let absBestHour = 0;
+    let absWorstHour = 0;
+    let absBestScore = -1;
+    let absWorstScore = 101;
+
+    for (let i = 0; i < predictions.length; i++) {
+      const p = predictions[i];
+      if (!p) continue;
+
+      const transit = {
+        moonLongitude: 0,
+        moonNakshatra: p.moon_nakshatra ?? 0,
+        moonSign: p.moon_sign ?? 0,
+        moonDegree: p.moon_degree ?? 0,
+        lagna: p.transit_lagna ?? 0,
+        lagnaSign: p.transit_lagna_sign ?? 0,
+        venusSign: null,
+        jupiterSign: null,
+      };
+      const dashaPlanet = p.prana_dasha_planet as any;
+      const categories = calculateHourlyCategories(transit, dashaPlanet, chart);
+      const score = p.hourly_score ?? 50;
+
+      // Track absolute best/worst by score
+      if (score > absBestScore) {
+        absBestScore = score;
+        absBestHour = i;
+      }
+      if (score < absWorstScore) {
+        absWorstScore = score;
+        absWorstHour = i;
+      }
+
+      for (const cat of ['career', 'finance', 'health', 'relationships', 'education'] as CategoryTrendType[]) {
+        const trend = parseCategoryTrend(categories[cat]);
+        const cw = categoryBestWorst[cat];
+
+        if (trend === 'positive' && score > cw.bestScore) {
+          cw.best = i;
+          cw.bestScore = score;
+        }
+        if (trend === 'negative' && score < cw.worstScore) {
+          cw.worst = i;
+          cw.worstScore = score;
+        }
+      }
+    }
+
+    // Helper to format hour with fallback for unset values
+    const formatHourWithFallback = (cat: CategoryTrendType) => {
+      const cw = categoryBestWorst[cat];
+      const bestHour = cw.bestScore > -1 ? cw.best : absBestHour;
+      const bestScore = cw.bestScore > -1 ? cw.bestScore : absBestScore;
+      const worstHour = cw.worstScore < 101 ? cw.worst : absWorstHour;
+      const worstScore = cw.worstScore < 101 ? cw.worstScore : absWorstScore;
+      return {
+        best: `${String(bestHour).padStart(2, '0')}:00 (${bestScore})`,
+        worst: `${String(worstHour).padStart(2, '0')}:00 (${worstScore})`
+      };
+    };
+
+    // Get midday prediction for overall summary text
     const middayPred = predictions[12]; // Use noon as representative
     if (middayPred && chart) {
       const transit = {
@@ -1003,15 +1223,33 @@ async function predictAction(options: PredictOptions) {
         moonDegree: middayPred.moon_degree ?? 0,
         lagna: middayPred.transit_lagna ?? 0,
         lagnaSign: middayPred.transit_lagna_sign ?? 0,
+        venusSign: null,
+        jupiterSign: null,
       };
       const dashaPlanet = middayPred.prana_dasha_planet as any;
       const categories = calculateHourlyCategories(transit, dashaPlanet, chart);
 
+      const careerTimes = formatHourWithFallback('career');
+      const financeTimes = formatHourWithFallback('finance');
+      const healthTimes = formatHourWithFallback('health');
+      const relTimes = formatHourWithFallback('relationships');
+      const eduTimes = formatHourWithFallback('education');
+
       console.log(`Career:        ${categories.career}`);
+      console.log(`                Best: ${careerTimes.best} | Worst: ${careerTimes.worst}`);
+
       console.log(`Finance:       ${categories.finance}`);
+      console.log(`                Best: ${financeTimes.best} | Worst: ${financeTimes.worst}`);
+
       console.log(`Health:        ${categories.health}`);
+      console.log(`                Best: ${healthTimes.best} | Worst: ${healthTimes.worst}`);
+
       console.log(`Relationships: ${categories.relationships}`);
+      console.log(`                Best: ${relTimes.best} | Worst: ${relTimes.worst}`);
+
       console.log(`Education:     ${categories.education}`);
+      console.log(`                Best: ${eduTimes.best} | Worst: ${eduTimes.worst}`);
+
       console.log(`${categories.overall}`);
     }
   }

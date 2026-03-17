@@ -12,6 +12,10 @@ export interface TransitPosition {
   moonDegree: number;
   lagna: number;
   lagnaSign: number;
+  /** Venus transit sign (0-11) */
+  venusSign: number | null;
+  /** Jupiter transit sign (0-11) */
+  jupiterSign: number | null;
 }
 
 /**
@@ -200,6 +204,26 @@ export function calculateTransit(
 
   const lagnaSign = Math.floor(lagnaSidereal / 30);
 
+  // Calculate Venus and Jupiter transit positions
+  let venusSign: number | null = null;
+  let jupiterSign: number | null = null;
+
+  try {
+    const venusTropical = getPlanetPosition(jd, Planet.Venus);
+    const venusSidereal = getSiderealLongitude(venusTropical.longitude, jd);
+    venusSign = Math.floor(venusSidereal / 30);
+  } catch {
+    venusSign = null;
+  }
+
+  try {
+    const jupiterTropical = getPlanetPosition(jd, Planet.Jupiter);
+    const jupiterSidereal = getSiderealLongitude(jupiterTropical.longitude, jd);
+    jupiterSign = Math.floor(jupiterSidereal / 30);
+  } catch {
+    jupiterSign = null;
+  }
+
   return {
     moonLongitude: moonSidereal,
     moonNakshatra: moonNakshatraInfo.nakshatra,
@@ -207,6 +231,8 @@ export function calculateTransit(
     moonDegree,
     lagna: lagnaSidereal,
     lagnaSign,
+    venusSign,
+    jupiterSign,
   };
 }
 
@@ -389,15 +415,63 @@ export function calculateHourlyCategories(
     categories.career = "Neutral for career. Not ideal for major moves.";
   }
 
-  // Finance (based on Jupiter/Venus)
-  if (dashaPlanet === Planet.Jupiter || dashaPlanet === Planet.Venus) {
+  // Finance (based on Jupiter/Venus, 2nd/11th house, transit influences)
+  const natalVenus = chart.planets.find(p => p.planet === Planet.Venus);
+  const natalJupiter = chart.planets.find(p => p.planet === Planet.Jupiter);
+  const transitVenusSign = transit.venusSign as Sign | null;
+  const transitJupiterSign = transit.jupiterSign as Sign | null;
+  const birthVenus = natalVenus?.planet ?? Planet.Venus;
+  const birthJupiter = natalJupiter?.planet ?? Planet.Jupiter;
+
+  const isVenusStrong = transitVenusSign !== null && isPlanetInOwnOrExalted(birthVenus, transitVenusSign);
+  const isVenusWeak = transitVenusSign !== null && isPlanetInDebilitated(birthVenus, transitVenusSign);
+  const isJupiterStrong = transitJupiterSign !== null && isPlanetInOwnOrExalted(birthJupiter, transitJupiterSign);
+
+  // Calculate 2nd house (wealth) and 11th house (gains) lord positions
+  const getHouseLord = (house: number, lagnaSign: Sign): Sign => {
+    const lordIndex = (house - 1 + lagnaSign) % 12;
+    return lordIndex as Sign;
+  };
+
+  const secondHouseLord = getHouseLord(2, natalLagnaSign);
+  const eleventhHouseLord = getHouseLord(11, natalLagnaSign);
+  const isSecondLordInKendra = isInKendra(secondHouseLord, natalLagnaSign);
+  const isEleventhLordInKendra = isInKendra(eleventhHouseLord, natalLagnaSign);
+
+  // Determine finance score based on multiple factors
+  let financeScore = 0;
+  if (dashaPlanet === Planet.Jupiter || dashaPlanet === Planet.Venus) financeScore += 2;
+  if (isDashaFavorable) financeScore += 1;
+  if (isMoonStrong) financeScore += 1;
+  if (isVenusStrong) financeScore += 2;
+  if (isJupiterStrong) financeScore += 1;
+  if (isSecondLordInKendra) financeScore += 1;
+  if (isEleventhLordInKendra) financeScore += 1;
+  if (isVenusWeak) financeScore -= 1;
+  if (isMoonWeak) financeScore -= 1;
+
+  if (financeScore >= 4) {
     categories.finance = isDashaFavorable
-      ? "Favorable for finances. Good for investments."
-      : "Financial caution advised.";
-  } else if (isMoonStrong) {
-    categories.finance = "Moon in strong position supports financial planning.";
+      ? "Excellent for finances. Highly favorable for investments and wealth accumulation."
+      : "Good for finances. Beneficial period for monetary gains.";
+  } else if (financeScore >= 2) {
+    categories.finance = isMoonStrong
+      ? "Moon in strong position supports financial planning and wealth growth."
+      : isVenusStrong
+        ? "Venus in strong position enhances financial opportunities."
+        : "Favorable financial period. Good for investments.";
+  } else if (financeScore >= 1) {
+    categories.finance = isSecondLordInKendra
+      ? "2nd house lord in Kendra supports accumulated wealth."
+      : isEleventhLordInKendra
+        ? "11th house lord in Kendra indicates potential gains."
+        : "Moderate financial prospects. Proceed with balanced approach.";
+  } else if (financeScore <= -1) {
+    categories.finance = isMoonWeak
+      ? "Weak Moon position suggests financial caution. Avoid major investments."
+      : "Financial challenges. Exercise caution with money matters.";
   } else {
-    categories.finance = "Neutral for finances.";
+    categories.finance = "Neutral for finances. Maintain steady approach.";
   }
 
   // Health (based on Mars/Rahu)
@@ -420,11 +494,38 @@ export function calculateHourlyCategories(
       : "Relationships neutral today.";
   }
 
-  // Education (based on Jupiter)
-  if (dashaPlanet === Planet.Jupiter) {
-    categories.education = "Strong for learning and teaching.";
+  // Education (based on Jupiter, Mercury, 4th/5th house lords)
+  const natalMercury = chart.planets.find(p => p.planet === Planet.Mercury);
+
+  // Calculate 4th house (learning) and 5th house (wisdom) lord positions
+  const fourthHouseLord = getHouseLord(4, natalLagnaSign);
+  const fifthHouseLord = getHouseLord(5, natalLagnaSign);
+  const isFourthLordKendra = isInKendra(fourthHouseLord, natalLagnaSign);
+  const isFifthLordKendra = isInKendra(fifthHouseLord, natalLagnaSign);
+
+  // Calculate education score
+  let eduScore = 0;
+  if (dashaPlanet === Planet.Jupiter) eduScore += 3;
+  if (natalMercury) {
+    const mercSign = natalMercury.sign;
+    if (isPlanetInOwnOrExalted(natalMercury.planet, mercSign)) eduScore += 1;
+  }
+  if (isFourthLordKendra) eduScore += 1;
+  if (isFifthLordKendra) eduScore += 1;
+  if (isDashaFavorable) eduScore += 1;
+
+  if (eduScore >= 4) {
+    categories.education = "Excellent for education and learning. Highly favorable for studies.";
+  } else if (eduScore >= 2) {
+    categories.education = dashaPlanet === Planet.Jupiter
+      ? "Strong for learning and teaching. Jupiter enhances wisdom."
+      : isFourthLordKendra
+        ? "4th house lord in Kendra supports educational pursuits."
+        : "Good for education and intellectual activities.";
+  } else if (eduScore >= 1) {
+    categories.education = "Moderate for education. Normal learning activities.";
   } else {
-    categories.education = "Normal for education.";
+    categories.education = "Normal for education. Focus on routine studies.";
   }
 
   // Overall
@@ -445,14 +546,33 @@ export function calculateHourlyCategories(
 /**
  * Parse category text to get trend assessment.
  */
-function parseCategoryTrend(categoryText: string): CategoryTrend {
+export function parseCategoryTrend(categoryText: string): CategoryTrend {
   const lower = categoryText.toLowerCase();
-  if (lower.includes('very good') || lower.includes('excellent') || lower.includes('favorable')) {
-    return 'positive';
+
+  // Positive indicators
+  const positiveKeywords = [
+    'very good', 'excellent', 'favorable', 'favourable',
+    'good for', 'strong for', 'strong career', 'supports',
+    'enhances', 'beneficial', 'optimal', 'positive',
+    'great', 'outstanding', 'superb', 'exceptional'
+  ];
+
+  // Negative indicators
+  const negativeKeywords = [
+    'challenging', 'caution', 'difficult', 'challenges',
+    'issues', 'tensions', 'problems', 'weak',
+    'avoid', 'not ideal', 'poor', 'negative',
+    'difficulties', 'obstacles', 'hindrance'
+  ];
+
+  for (const kw of positiveKeywords) {
+    if (lower.includes(kw)) return 'positive';
   }
-  if (lower.includes('challenging') || lower.includes('caution') || lower.includes('difficult')) {
-    return 'negative';
+
+  for (const kw of negativeKeywords) {
+    if (lower.includes(kw)) return 'negative';
   }
+
   return 'neutral';
 }
 
@@ -536,7 +656,8 @@ export function generateMonthlyPredictions(
       }
     }
 
-    // Determine category trends
+    // Determine category trends - use BEST hour's categories (most positive view of the day)
+    // Also check WORST hour for negative indicators
     const categoryTrends: DailyAggregation['categories'] = {
       career: 'neutral',
       finance: 'neutral',
@@ -545,51 +666,25 @@ export function generateMonthlyPredictions(
       education: 'neutral',
     };
 
-    // Count positive/negative for each category
-    const categoryCounts = {
-      career: { positive: 0, negative: 0, total: 0 },
-      finance: { positive: 0, negative: 0, total: 0 },
-      health: { positive: 0, negative: 0, total: 0 },
-      relationships: { positive: 0, negative: 0, total: 0 },
-      education: { positive: 0, negative: 0, total: 0 },
-    };
+    // Get best and worst hour predictions
+    const bestHp = hourlyPredictions[bestHour];
+    const worstHp = hourlyPredictions[worstHour];
 
-    for (const hp of hourlyPredictions) {
-      const cats = hp.categories;
-      categoryCounts.career.total++;
-      categoryCounts.finance.total++;
-      categoryCounts.health.total++;
-      categoryCounts.relationships.total++;
-      categoryCounts.education.total++;
-
-      const careerTrend = parseCategoryTrend(cats.career);
-      if (careerTrend === 'positive') categoryCounts.career.positive++;
-      else if (careerTrend === 'negative') categoryCounts.career.negative++;
-
-      const financeTrend = parseCategoryTrend(cats.finance);
-      if (financeTrend === 'positive') categoryCounts.finance.positive++;
-      else if (financeTrend === 'negative') categoryCounts.finance.negative++;
-
-      const healthTrend = parseCategoryTrend(cats.health);
-      if (healthTrend === 'positive') categoryCounts.health.positive++;
-      else if (healthTrend === 'negative') categoryCounts.health.negative++;
-
-      const relTrend = parseCategoryTrend(cats.relationships);
-      if (relTrend === 'positive') categoryCounts.relationships.positive++;
-      else if (relTrend === 'negative') categoryCounts.relationships.negative++;
-
-      const eduTrend = parseCategoryTrend(cats.education);
-      if (eduTrend === 'positive') categoryCounts.education.positive++;
-      else if (eduTrend === 'negative') categoryCounts.education.negative++;
-    }
-
-    // Determine trend based on majority
-    for (const cat of ['career', 'finance', 'health', 'relationships', 'education'] as const) {
-      const counts = categoryCounts[cat];
-      if (counts.positive > counts.total / 2) {
-        categoryTrends[cat] = 'positive';
-      } else if (counts.negative > counts.total / 2) {
-        categoryTrends[cat] = 'negative';
+    if (bestHp) {
+      const bestCats = bestHp.categories;
+      for (const cat of ['career', 'finance', 'health', 'relationships', 'education'] as const) {
+        const trend = parseCategoryTrend(bestCats[cat]);
+        // Use best hour's trend, but check if worst hour has strong negative
+        if (worstHp) {
+          const worstTrend = parseCategoryTrend(worstHp.categories[cat]);
+          if (worstTrend === 'negative' && trend !== 'positive') {
+            categoryTrends[cat] = 'negative';
+          } else {
+            categoryTrends[cat] = trend;
+          }
+        } else {
+          categoryTrends[cat] = trend;
+        }
       }
     }
 
@@ -673,29 +768,55 @@ export function generateMonthlyPredictions(
   const worstDays = sortedByScore.slice(-3).map(d => d.date).reverse();
 
   // Category highlights
-  const categoryHighlights = {
-    career: { positive: [] as string[], negative: [] as string[] },
-    finance: { positive: [] as string[], negative: [] as string[] },
-    health: { positive: [] as string[], negative: [] as string[] },
-    relationships: { positive: [] as string[], negative: [] as string[] },
-    education: { positive: [] as string[], negative: [] as string[] },
+  // Collect days with their scores for proper sorting
+  const categoryPositiveDays: Record<string, { date: string; score: number }[]> = {
+    career: [],
+    finance: [],
+    health: [],
+    relationships: [],
+    education: [],
+  };
+  const categoryNegativeDays: Record<string, { date: string; score: number }[]> = {
+    career: [],
+    finance: [],
+    health: [],
+    relationships: [],
+    education: [],
   };
 
   for (const day of daily) {
     for (const cat of ['career', 'finance', 'health', 'relationships', 'education'] as const) {
       if (day.categories[cat] === 'positive') {
-        categoryHighlights[cat].positive.push(day.date);
+        categoryPositiveDays[cat]!.push({ date: day.date, score: day.avgScore });
       } else if (day.categories[cat] === 'negative') {
-        categoryHighlights[cat].negative.push(day.date);
+        categoryNegativeDays[cat]!.push({ date: day.date, score: day.avgScore });
       }
     }
   }
 
-  // Limit to top 5 each
-  for (const cat of Object.keys(categoryHighlights) as Array<keyof typeof categoryHighlights>) {
-    categoryHighlights[cat].positive = categoryHighlights[cat].positive.slice(0, 5);
-    categoryHighlights[cat].negative = categoryHighlights[cat].negative.slice(0, 5);
-  }
+  // Sort by score (descending for positive, ascending for negative) and limit to top 5
+  const categoryHighlights = {
+    career: {
+      positive: (categoryPositiveDays['career'] || []).sort((a, b) => b.score - a.score).slice(0, 5).map(d => d.date),
+      negative: (categoryNegativeDays['career'] || []).sort((a, b) => a.score - b.score).slice(0, 5).map(d => d.date),
+    },
+    finance: {
+      positive: (categoryPositiveDays['finance'] || []).sort((a, b) => b.score - a.score).slice(0, 5).map(d => d.date),
+      negative: (categoryNegativeDays['finance'] || []).sort((a, b) => a.score - b.score).slice(0, 5).map(d => d.date),
+    },
+    health: {
+      positive: (categoryPositiveDays['health'] || []).sort((a, b) => b.score - a.score).slice(0, 5).map(d => d.date),
+      negative: (categoryNegativeDays['health'] || []).sort((a, b) => a.score - b.score).slice(0, 5).map(d => d.date),
+    },
+    relationships: {
+      positive: (categoryPositiveDays['relationships'] || []).sort((a, b) => b.score - a.score).slice(0, 5).map(d => d.date),
+      negative: (categoryNegativeDays['relationships'] || []).sort((a, b) => a.score - b.score).slice(0, 5).map(d => d.date),
+    },
+    education: {
+      positive: (categoryPositiveDays['education'] || []).sort((a, b) => b.score - a.score).slice(0, 5).map(d => d.date),
+      negative: (categoryNegativeDays['education'] || []).sort((a, b) => a.score - b.score).slice(0, 5).map(d => d.date),
+    },
+  };
 
   return {
     month,

@@ -73,6 +73,7 @@ export {
   calculateTransit,
   calculateHourlyScore,
   calculateHourlyCategories,
+  parseCategoryTrend,
   generateMonthlyPredictions,
   type TransitPosition,
   type HourlyCategories,

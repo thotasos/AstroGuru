@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { DM_Sans } from 'next/font/google';
 import '../styles/globals.css';
 import { Sidebar } from '@/components/ui/Sidebar';
@@ -10,6 +10,10 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
+export const viewport: Viewport = {
+  themeColor: '#0C0A09',
+};
+
 export const metadata: Metadata = {
   title: {
     default: 'Parashari Precision',
@@ -17,7 +21,6 @@ export const metadata: Metadata = {
   },
   description: 'Professional Vedic Astrology — South Indian Charts, Vimshottari Dashas, Yogas & Shadbala',
   keywords: ['Vedic astrology', 'Jyotish', 'South Indian chart', 'Vimshottari dasha', 'Parashari'],
-  themeColor: '#0C0A09',
 };
 
 export default function RootLayout({

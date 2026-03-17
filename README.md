@@ -161,9 +161,22 @@ xcodebuild -project ParashariPrecision.xcodeproj \
            -configuration Debug \
            build
 
+# The built app is located at:
+# ~/Library/Developer/Xcode/DerivedData/ParashariPrecision-*/Build/Products/Debug/Parashari Precision.app
+
 # Or open in Xcode and run (Cmd+R)
 open desktop/ParashariPrecision.xcodeproj
 ```
+
+### App Icon
+
+The app icon is generated using a Python script located at `generate_icon.py`. To regenerate the icon:
+
+```bash
+python3 generate_icon.py
+```
+
+This creates all required icon sizes in `desktop/ParashariPrecision/Resources/Assets.xcassets/AppIcon.appiconset/`. The icon follows Apple's design guidelines with a cosmic/astrology theme matching the app's dark gold aesthetic.
 
 Minimum deployment target: macOS 14 (Sonoma). The desktop app reads the same SQLite file that the API server writes to, so changes made in the web app are reflected in the native app within 5 seconds.
 
