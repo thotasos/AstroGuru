@@ -738,7 +738,36 @@ async function generateHourlyPredictionForDate(
   let dashas: any[];
   let chart: any;
   try {
-    dashas = JSON.parse(cache.dashas_json || '[]');
+    const rawDashas = JSON.parse(cache.dashas_json || '[]');
+    // Convert date strings to Date objects for dasha calculations
+    dashas = rawDashas.map((d: any) => ({
+      ...d,
+      mahadasha: d.mahadasha ? {
+        ...d.mahadasha,
+        startDate: new Date(d.mahadasha.startDate),
+        endDate: new Date(d.mahadasha.endDate),
+      } : undefined,
+      antardasha: Array.isArray(d.antardasha) ? d.antardasha.map((a: any) => ({
+        ...a,
+        startDate: new Date(a.startDate),
+        endDate: new Date(a.endDate),
+      })) : [],
+      pratyantardasha: d.pratyantardasha ? {
+        ...d.pratyantardasha,
+        startDate: new Date(d.pratyantardasha.startDate),
+        endDate: new Date(d.pratyantardasha.endDate),
+      } : null,
+      sookshma: d.sookshma ? {
+        ...d.sookshma,
+        startDate: new Date(d.sookshma.startDate),
+        endDate: new Date(d.sookshma.endDate),
+      } : null,
+      prana: d.prana ? {
+        ...d.prana,
+        startDate: new Date(d.prana.startDate),
+        endDate: new Date(d.prana.endDate),
+      } : null,
+    }));
     chart = JSON.parse(cache.chart_json);
   } catch (e) {
     throw new Error(`Failed to parse cached data: ${e}`);
@@ -1305,7 +1334,36 @@ async function predictMonthAction(options: PredictMonthOptions) {
   let dashas: any[];
   try {
     chart = JSON.parse(cache.chart_json);
-    dashas = JSON.parse(cache.dashas_json);
+    const rawDashas = JSON.parse(cache.dashas_json);
+    // Convert date strings to Date objects for dasha calculations
+    dashas = rawDashas.map((d: any) => ({
+      ...d,
+      mahadasha: d.mahadasha ? {
+        ...d.mahadasha,
+        startDate: new Date(d.mahadasha.startDate),
+        endDate: new Date(d.mahadasha.endDate),
+      } : undefined,
+      antardasha: Array.isArray(d.antardasha) ? d.antardasha.map((a: any) => ({
+        ...a,
+        startDate: new Date(a.startDate),
+        endDate: new Date(a.endDate),
+      })) : [],
+      pratyantardasha: d.pratyantardasha ? {
+        ...d.pratyantardasha,
+        startDate: new Date(d.pratyantardasha.startDate),
+        endDate: new Date(d.pratyantardasha.endDate),
+      } : null,
+      sookshma: d.sookshma ? {
+        ...d.sookshma,
+        startDate: new Date(d.sookshma.startDate),
+        endDate: new Date(d.sookshma.endDate),
+      } : null,
+      prana: d.prana ? {
+        ...d.prana,
+        startDate: new Date(d.prana.startDate),
+        endDate: new Date(d.prana.endDate),
+      } : null,
+    }));
   } catch (e) {
     console.error(`Failed to parse cached data: ${e}`);
     process.exit(1);
