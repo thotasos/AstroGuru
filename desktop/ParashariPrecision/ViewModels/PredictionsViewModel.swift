@@ -50,10 +50,25 @@ class PredictionsViewModel: ObservableObject {
         isLoading = true
         error = nil
 
+        // Try API first
+        if await APIService.shared.isServerAvailable() {
+            do {
+                hourlyPredictions = try await APIService.shared.getHourlyPredictions(profileId: profile.id, date: date)
+                isLoading = false
+                return
+            } catch {
+                // Fall through to local fallback
+            }
+        }
+
+        // Fallback to local calculation
         do {
-            hourlyPredictions = try await APIService.shared.getHourlyPredictions(profileId: profile.id, date: date)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            let parsedDate = formatter.date(from: date) ?? Date()
+            hourlyPredictions = try await CalculationService.shared.getHourlyPredictions(for: profile, date: parsedDate)
         } catch {
-            self.error = error.localizedDescription
+            self.error = "Predictions unavailable: \(error.localizedDescription). Make sure the CLI server is running on port 5199, or rebuild with local calculations enabled."
             hourlyPredictions = []
         }
         isLoading = false
@@ -75,10 +90,22 @@ class PredictionsViewModel: ObservableObject {
         isLoading = true
         error = nil
 
+        // Try API first
+        if await APIService.shared.isServerAvailable() {
+            do {
+                monthlyPrediction = try await APIService.shared.getMonthlyPredictions(profileId: profile.id, year: year, month: month)
+                isLoading = false
+                return
+            } catch {
+                // Fall through to local fallback
+            }
+        }
+
+        // Fallback to local calculation
         do {
-            monthlyPrediction = try await APIService.shared.getMonthlyPredictions(profileId: profile.id, year: year, month: month)
+            monthlyPrediction = try await CalculationService.shared.getMonthlyPredictions(for: profile, year: year, month: month)
         } catch {
-            self.error = error.localizedDescription
+            self.error = "Monthly predictions unavailable: \(error.localizedDescription). Make sure the CLI server is running on port 5199, or rebuild with local calculations enabled."
             monthlyPrediction = nil
         }
         isLoading = false

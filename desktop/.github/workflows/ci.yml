@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: List available schemes
+        run: xcodebuild -project ParashariPrecision.xcodeproj -list
+
+      - name: Build Debug
+        run: |
+          xcodebuild -project ParashariPrecision.xcodeproj -scheme "Parashari Precision" -configuration Debug build CODE_SIGNING_ALLOWED=NO
+
+      - name: Build Release
+        run: |
+          xcodebuild -project ParashariPrecision.xcodeproj -scheme "Parashari Precision" -configuration Release build CODE_SIGNING_ALLOWED=NO
