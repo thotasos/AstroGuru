@@ -1,5 +1,12 @@
 import Foundation
 
+enum ProfileStatus: String, Codable {
+    case new = "new"
+    case processing = "processing"
+    case ready = "ready"
+    case error = "error"
+}
+
 struct BirthProfile: Identifiable, Codable, Hashable {
     let id: String
     var name: String
@@ -9,6 +16,7 @@ struct BirthProfile: Identifiable, Codable, Hashable {
     var timezone: String
     var placeName: String
     var notes: String
+    var status: ProfileStatus
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -19,6 +27,7 @@ struct BirthProfile: Identifiable, Codable, Hashable {
         case timezone
         case placeName = "place_name"
         case notes
+        case status
     }
 
     var formattedDOB: String {
@@ -50,6 +59,7 @@ struct CreateProfileRequest: Codable {
     let lat: Double
     let lon: Double
     let timezone: String
+    let utcOffsetHours: Double
     let placeName: String
     let notes: String
 
@@ -59,6 +69,7 @@ struct CreateProfileRequest: Codable {
         case lat
         case lon
         case timezone
+        case utcOffsetHours = "utc_offset_hours"
         case placeName = "place_name"
         case notes
     }
@@ -73,6 +84,7 @@ extension BirthProfile {
         lon: 76.5222,
         timezone: "Asia/Kolkata",
         placeName: "Kalady, Kerala, India",
-        notes: "Vedic philosopher and theologian"
+        notes: "Vedic philosopher and theologian",
+        status: .ready
     )
 }

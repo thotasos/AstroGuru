@@ -103,7 +103,6 @@ struct GoldButtonStyle: ButtonStyle {
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
-            .cursor(.pointingHand)
     }
 }
 
@@ -336,10 +335,10 @@ struct ErrorBanner: View {
 
 extension View {
     @ViewBuilder
-    func cursor(_ cursor: NSCursor) -> some View {
+    func cursor(_ nsCursor: NSCursor) -> some View {
         if #available(macOS 13.0, *) {
             self.onHover { inside in
-                if inside { cursor.push() } else { NSCursor.pop() }
+                if inside { nsCursor.push() } else { NSCursor.pop() }
             }
         } else {
             self

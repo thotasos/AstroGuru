@@ -77,6 +77,8 @@ struct ProfileListRow: View {
 
             Spacer()
 
+            ProfileStatusBadge(status: profile.status)
+
             Text(profile.shortDOB)
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundColor(.white.opacity(0.3))
@@ -90,5 +92,33 @@ struct ProfileListRow: View {
         ]
         let index = abs(name.hashValue) % colors.count
         return colors[index]
+    }
+}
+
+// MARK: - Profile Status Badge
+
+struct ProfileStatusBadge: View {
+    let status: ProfileStatus
+
+    var variant: StatusBadge.Variant {
+        switch status {
+        case .new: return .info
+        case .processing: return .warning
+        case .ready: return .active
+        case .error: return .warning
+        }
+    }
+
+    var displayText: String {
+        switch status {
+        case .new: return "New"
+        case .processing: return "Processing"
+        case .ready: return "Ready"
+        case .error: return "Error"
+        }
+    }
+
+    var body: some View {
+        StatusBadge(text: displayText, variant: variant)
     }
 }

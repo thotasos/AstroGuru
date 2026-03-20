@@ -6,6 +6,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CALC002B4E5F60718091A0001 /* CalculationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CALC001B4E5F60718091A0001; };
 		AA092EDFF164840B0D61D117 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8582860331B53B252513FD5; };
 		86D79C785E72BF7D2C212712 /* ParashariPrecisionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F29616BEB2F146471FC6E85; };
 		1075997330442AA685C87450 /* ChartData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD5D60C791796DE9ECF3D04; };
@@ -38,10 +39,27 @@
 		A1B2C3D4E5F60718091A2B40 /* PredictionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718091A2B41; };
 		A1B2C3D4E5F60718091A2B42 /* HourlyPredictionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718091A2B43; };
 		A1B2C3D4E5F60718091A2B44 /* MonthlyPredictionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718091A2B45; };
+		SHAD001B4E5F60718091A0001 /* ShadbalaResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHAD001B4E5F60718091A0002; };
+		ASHT001B4E5F60718091A0003 /* AshtakavargaResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASHT001B4E5F60718091A0004; };
+		SHAD002B4E5F60718091A0005 /* ShadbalaViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHAD002B4E5F60718091A0006; };
+		ASHT002B4E5F60718091A0007 /* AshtakavargaViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASHT002B4E5F60718091A0008; };
+		SHAD003B4E5F60718091A0009 /* ShadbalaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHAD003B4E5F60718091A0010; };
+		ASHT003B4E5F60718091A0011 /* AshtakavargaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASHT003B4E5F60718091A0012; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		3000765C52B30B4042435A55 /* app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Parashari Precision.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ASTC001B4E5F60718091A0001 /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
+		ASTC001B4E5F60718091A0002 /* Vargas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Vargas.swift; sourceTree = "<group>"; };
+		ASTC001B4E5F60718091A0003 /* Dashas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dashas.swift; sourceTree = "<group>"; };
+		ASTC001B4E5F60718091A0004 /* JulianDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JulianDate.swift; sourceTree = "<group>"; };
+		ASTC001B4E5F60718091A0005 /* VargasCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VargasCalculator.swift; sourceTree = "<group>"; };
+		ASTC001B4E5F60718091A0006 /* TransitCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitCalculator.swift; sourceTree = "<group>"; };
+		ASTC001B4E5F60718091A0007 /* DatabaseCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseCache.swift; sourceTree = "<group>"; };
+		ASTC001B4E5F60718091A0008 /* PredictionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictionEngine.swift; sourceTree = "<group>"; };
+		ASTC001B4E5F60718091A0009 /* Shadbala.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shadbala.swift; sourceTree = "<group>"; };
+		ASTC001B4E5F60718091A0010 /* Ashtakavarga.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ashtakavarga.swift; sourceTree = "<group>"; };
+		CALC001B4E5F60718091A0001 /* CalculationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculationService.swift; sourceTree = "<group>"; };
 		E8582860331B53B252513FD5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		0F29616BEB2F146471FC6E85 /* ParashariPrecisionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParashariPrecisionApp.swift; sourceTree = "<group>"; };
 		2BD5D60C791796DE9ECF3D04 /* ChartData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartData.swift; sourceTree = "<group>"; };
@@ -74,6 +92,12 @@
 		A1B2C3D4E5F60718091A2B41 /* PredictionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictionsView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718091A2B43 /* HourlyPredictionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourlyPredictionsView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718091A2B45 /* MonthlyPredictionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyPredictionsView.swift; sourceTree = "<group>"; };
+	SHAD001B4E5F60718091A0002 /* ShadbalaResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadbalaResult.swift; sourceTree = "<group>"; };
+	ASHT001B4E5F60718091A0004 /* AshtakavargaResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AshtakavargaResult.swift; sourceTree = "<group>"; };
+	SHAD002B4E5F60718091A0006 /* ShadbalaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadbalaViewModel.swift; sourceTree = "<group>"; };
+	ASHT002B4E5F60718091A0008 /* AshtakavargaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AshtakavargaViewModel.swift; sourceTree = "<group>"; };
+	SHAD003B4E5F60718091A0010 /* ShadbalaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadbalaView.swift; sourceTree = "<group>"; };
+	ASHT003B4E5F60718091A0012 /* AshtakavargaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AshtakavargaView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -108,6 +132,8 @@
 				4886C5FD5EFCC6AA3931DA4C /* Sidebar */,
 				4B6D1D9C6C286593A1ED6CDB /* Yoga */,
 				A1B2C3D4E5F60718091A2B46 /* Predictions */,
+				SHADV001B4E5F60718091A0013 /* ShadbalaViews */,
+				ASHTV001B4E5F60718091A0014 /* AshtakavargaViews */,
 			);
 			path = ParashariPrecision;
 			sourceTree = "<group>";
@@ -129,6 +155,8 @@
 				EEE5FC4C2A79C525D170AB7E /* Profile.swift */,
 				25E1A21C541FB186D380C483 /* YogaResult.swift */,
 				A1B2C3D4E5F60718091A2B3D /* Prediction.swift */,
+				SHAD001B4E5F60718091A0002 /* ShadbalaResult.swift */,
+				ASHT001B4E5F60718091A0004 /* AshtakavargaResult.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -139,6 +167,8 @@
 				1B03CB9E8579F5F3F580C68E /* APIService.swift */,
 				54D0AC7A569B81EA7E6287BC /* DatabaseService.swift */,
 				2E2611BD44DE0480E12A5571 /* SyncService.swift */,
+				CALC001B4E5F60718091A0001 /* CalculationService.swift */,
+				ASTCGRP001B4E5F60718091A0 /* AstrologyCore */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -150,6 +180,8 @@
 				716E45BED27A36ACC4767D10 /* DashaViewModel.swift */,
 				D6D8ED9AB814E09CD43A5FB3 /* ProfilesViewModel.swift */,
 				A1B2C3D4E5F60718091A2B3F /* PredictionsViewModel.swift */,
+				SHAD002B4E5F60718091A0006 /* ShadbalaViewModel.swift */,
+				ASHT002B4E5F60718091A0008 /* AshtakavargaViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -228,6 +260,39 @@
 			path = Views/Predictions;
 			sourceTree = "<group>";
 		};
+		SHADV001B4E5F60718091A0013 /* ShadbalaViews */ = {
+			isa = PBXGroup;
+			children = (
+				SHAD003B4E5F60718091A0010 /* ShadbalaView.swift */,
+			);
+			path = Views/Shadbala;
+			sourceTree = "<group>";
+		};
+		ASHTV001B4E5F60718091A0014 /* AshtakavargaViews */ = {
+			isa = PBXGroup;
+			children = (
+				ASHT003B4E5F60718091A0012 /* AshtakavargaView.swift */,
+			);
+			path = Views/Ashtakavarga;
+			sourceTree = "<group>";
+		};
+		ASTCGRP001B4E5F60718091A0 /* AstrologyCore */ = {
+			isa = PBXGroup;
+			children = (
+				ASTC001B4E5F60718091A0001 /* Types.swift */,
+				ASTC001B4E5F60718091A0002 /* Vargas.swift */,
+				ASTC001B4E5F60718091A0003 /* Dashas.swift */,
+				ASTC001B4E5F60718091A0004 /* JulianDate.swift */,
+				ASTC001B4E5F60718091A0005 /* VargasCalculator.swift */,
+				ASTC001B4E5F60718091A0006 /* TransitCalculator.swift */,
+				ASTC001B4E5F60718091A0007 /* DatabaseCache.swift */,
+				ASTC001B4E5F60718091A0008 /* PredictionEngine.swift */,
+				ASTC001B4E5F60718091A0009 /* Shadbala.swift */,
+				ASTC001B4E5F60718091A0010 /* Ashtakavarga.swift */,
+			);
+			path = AstrologyCore;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -274,6 +339,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CALC002B4E5F60718091A0001 /* CalculationService.swift */,
 				AA092EDFF164840B0D61D117 /* AppDelegate.swift */,
 				86D79C785E72BF7D2C212712 /* ParashariPrecisionApp.swift */,
 				1075997330442AA685C87450 /* ChartData.swift */,
@@ -306,6 +372,12 @@
 				A1B2C3D4E5F60718091A2B40 /* PredictionsView.swift */,
 				A1B2C3D4E5F60718091A2B42 /* HourlyPredictionsView.swift */,
 				A1B2C3D4E5F60718091A2B44 /* MonthlyPredictionsView.swift */,
+				SHAD001B4E5F60718091A0001 /* ShadbalaResult.swift */,
+				ASHT001B4E5F60718091A0003 /* AshtakavargaResult.swift */,
+				SHAD002B4E5F60718091A0005 /* ShadbalaViewModel.swift */,
+				ASHT002B4E5F60718091A0007 /* AshtakavargaViewModel.swift */,
+				SHAD003B4E5F60718091A0009 /* ShadbalaView.swift */,
+				ASHT003B4E5F60718091A0011 /* AshtakavargaView.swift */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

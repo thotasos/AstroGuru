@@ -97,6 +97,46 @@ struct YogaResult: Codable, Identifiable {
         case isPresent = "is_present"
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        self.id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
+        self.name = try container.decode(String.self, forKey: .name)
+        self.sanskritName = try container.decodeIfPresent(String.self, forKey: .sanskritName) ?? name
+        self.description = try container.decode(String.self, forKey: .description)
+        self.effects = try container.decodeIfPresent(String.self, forKey: .effects) ?? ""
+        self.housesInvolved = try container.decode([Int].self, forKey: .housesInvolved)
+        self.isPresent = try container.decode(Bool.self, forKey: .isPresent)
+
+        // API returns category as String like "Raja Yoga", "Special Yoga"
+        let categoryString = try container.decode(String.self, forKey: .category)
+        self.category = YogaCategory.allCases.first { $0.displayName.lowercased() == categoryString.lowercased() } ?? .unknown
+
+        // API returns strength as Double (0-1) or Int (1-3 scale)
+        // Convert to YogaStrength enum
+        if let strengthDouble = try? container.decode(Double.self, forKey: .strength) {
+            if strengthDouble >= 0.75 {
+                self.strength = .strong
+            } else if strengthDouble >= 0.5 {
+                self.strength = .moderate
+            } else {
+                self.strength = .weak
+            }
+        } else if let strengthInt = try? container.decode(Int.self, forKey: .strength) {
+            switch strengthInt {
+            case 3: self.strength = .strong
+            case 2: self.strength = .moderate
+            default: self.strength = .weak
+            }
+        } else {
+            self.strength = .weak
+        }
+
+        // API returns planets as [Int], convert to planet names
+        let planetInts = try container.decode([Int].self, forKey: .planetsInvolved)
+        self.planetsInvolved = planetInts.compactMap { Planet(rawValue: $0)?.name }
+    }
+
     var planetsDisplay: String {
         planetsInvolved.joined(separator: ", ")
     }

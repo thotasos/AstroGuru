@@ -5,6 +5,8 @@ struct ProfileDetailView: View {
     @StateObject private var chartVM = ChartViewModel()
     @StateObject private var dashaVM = DashaViewModel()
     @StateObject private var predictionsVM = PredictionsViewModel()
+    @StateObject private var shadbalaVM = ShadbalaViewModel()
+    @StateObject private var ashtakavargaVM = AshtakavargaViewModel()
     @State private var selectedTab: Tab = .chart
 
     enum Tab: String, CaseIterable {
@@ -12,6 +14,8 @@ struct ProfileDetailView: View {
         case vargas   = "Vargas"
         case dashas   = "Dashas"
         case yogas    = "Yogas"
+        case shadbala = "Shadbala"
+        case ashtakavarga = "Ashtakavarga"
         case predictions = "Predictions"
 
         var icon: String {
@@ -20,6 +24,8 @@ struct ProfileDetailView: View {
             case .vargas: return "square.grid.4x3.fill"
             case .dashas: return "timeline.selection"
             case .yogas:  return "sparkles"
+            case .shadbala: return "scalemass"
+            case .ashtakavarga: return "square.grid.3x3"
             case .predictions: return "brain.head.profile"
             }
         }
@@ -51,6 +57,16 @@ struct ProfileDetailView: View {
                         Label("Load Dashas", systemImage: "timeline.selection")
                     }
                     Button {
+                        Task { await shadbalaVM.loadShadbala(for: profile) }
+                    } label: {
+                        Label("Load Shadbala", systemImage: "scalemass")
+                    }
+                    Button {
+                        Task { await ashtakavargaVM.loadAshtakavarga(for: profile) }
+                    } label: {
+                        Label("Load Ashtakavarga", systemImage: "square.grid.3x3")
+                    }
+                    Button {
                         Task { await predictionsVM.loadHourlyPredictions(for: profile) }
                     } label: {
                         Label("Load Predictions", systemImage: "brain.head.profile")
@@ -58,8 +74,21 @@ struct ProfileDetailView: View {
                     Divider()
                     Button {
                         Task {
+                            await chartVM.reprocessProfile(profile)
+                            await dashaVM.loadDashas(for: profile)
+                            await shadbalaVM.loadShadbala(for: profile)
+                            await ashtakavargaVM.loadAshtakavarga(for: profile)
+                            await predictionsVM.loadHourlyPredictions(for: profile)
+                        }
+                    } label: {
+                        Label("Reprocess", systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    Button {
+                        Task {
                             await chartVM.loadChart(for: profile)
                             await dashaVM.loadDashas(for: profile)
+                            await shadbalaVM.loadShadbala(for: profile)
+                            await ashtakavargaVM.loadAshtakavarga(for: profile)
                             await predictionsVM.loadHourlyPredictions(for: profile)
                         }
                     } label: {
@@ -216,6 +245,12 @@ struct ProfileDetailView: View {
             } else {
                 LoadingView()
             }
+        case .shadbala:
+            ShadbalaView(profile: profile)
+                .environmentObject(shadbalaVM)
+        case .ashtakavarga:
+            AshtakavargaView(profile: profile)
+                .environmentObject(ashtakavargaVM)
         case .predictions:
             PredictionsView(viewModel: predictionsVM, profile: profile)
         }

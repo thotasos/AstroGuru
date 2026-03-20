@@ -68,7 +68,7 @@ actor DatabaseService {
     func getProfiles() throws -> [BirthProfile] {
         let connection = try openDatabase()
         let sql = """
-            SELECT id, name, dob_utc, lat, lon, timezone, place_name, notes
+            SELECT id, name, dob_utc, lat, lon, timezone, place_name, notes, status
             FROM profiles
             ORDER BY name ASC
             """
@@ -91,7 +91,7 @@ actor DatabaseService {
     func getProfile(id: String) throws -> BirthProfile? {
         let connection = try openDatabase()
         let sql = """
-            SELECT id, name, dob_utc, lat, lon, timezone, place_name, notes
+            SELECT id, name, dob_utc, lat, lon, timezone, place_name, notes, status
             FROM profiles
             WHERE id = ?
             """
@@ -188,6 +188,8 @@ actor DatabaseService {
         let timezone = sqlite3_column_text(statement, 5).map { String(cString: $0) } ?? "UTC"
         let placeName = sqlite3_column_text(statement, 6).map { String(cString: $0) } ?? ""
         let notes = sqlite3_column_text(statement, 7).map { String(cString: $0) } ?? ""
+        let statusString = sqlite3_column_text(statement, 8).map { String(cString: $0) } ?? "new"
+        let status = ProfileStatus(rawValue: statusString) ?? .new
 
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -201,7 +203,8 @@ actor DatabaseService {
             lon: lon,
             timezone: timezone,
             placeName: placeName,
-            notes: notes
+            notes: notes,
+            status: status
         )
     }
 }

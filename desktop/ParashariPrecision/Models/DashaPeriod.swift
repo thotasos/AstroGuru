@@ -15,11 +15,37 @@ struct DashaPeriod: Codable, Identifiable, Sendable {
     enum CodingKeys: String, CodingKey {
         case id
         case planet
-        case startDate = "start_date"
-        case endDate = "end_date"
+        case startDate = "startDate"
+        case endDate = "endDate"
         case level
         case parentId = "parent_id"
         case subPeriods = "sub_periods"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // API returns planet as Int, we need to decode it and convert to name
+        let planetInt = try container.decode(Int.self, forKey: .planet)
+        let planetName = Planet(rawValue: planetInt)?.name ?? "Unknown"
+        self.planet = planetName
+
+        self.id = UUID().uuidString
+        self.startDate = try container.decode(Date.self, forKey: .startDate)
+        self.endDate = try container.decode(Date.self, forKey: .endDate)
+        self.level = try container.decode(Int.self, forKey: .level)
+        self.parentId = try container.decodeIfPresent(String.self, forKey: .parentId)
+        self.subPeriods = nil
+    }
+
+    init(planet: String, startDate: Date, endDate: Date, level: Int, parentId: String? = nil, subPeriods: [DashaPeriod]? = nil) {
+        self.id = UUID().uuidString
+        self.planet = planet
+        self.startDate = startDate
+        self.endDate = endDate
+        self.level = level
+        self.parentId = parentId
+        self.subPeriods = subPeriods
     }
 
     var planetEnum: Planet? {

@@ -179,15 +179,60 @@ struct PlanetPosition: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id
         case planet
-        case longitude
+        case longitude = "tropicalLongitude"
         case latitude
         case speed
         case sign
-        case signLongitude = "sign_longitude"
+        case signLongitude = "degreeInSign"
         case nakshatra
         case nakshatraPada = "nakshatra_pada"
         case isRetrograde = "is_retrograde"
         case house
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // Generate unique ID
+        id = UUID().uuidString
+
+        // API returns planet as Int (0-8), convert to planet name
+        let planetInt = try container.decode(Int.self, forKey: .planet)
+        self.planet = Planet(rawValue: planetInt)?.name ?? "Unknown"
+
+        // API returns tropicalLongitude as "longitude"
+        self.longitude = try container.decode(Double.self, forKey: .longitude)
+
+        // Sign longitude is stored as degreeInSign in API
+        self.signLongitude = try container.decodeIfPresent(Double.self, forKey: .signLongitude) ?? 0
+
+        self.latitude = try container.decode(Double.self, forKey: .latitude)
+        self.speed = try container.decode(Double.self, forKey: .speed)
+        self.sign = try container.decode(Int.self, forKey: .sign)
+
+        // Nakshatra is Int in API
+        let nakshatraInt = try container.decode(Int.self, forKey: .nakshatra)
+        self.nakshatra = String(nakshatraInt)
+
+        self.nakshatraPada = try container.decode(Int.self, forKey: .nakshatraPada)
+        self.isRetrograde = try container.decode(Bool.self, forKey: .isRetrograde)
+        self.house = try container.decodeIfPresent(Int.self, forKey: .house) ?? 0
+    }
+
+    // Memberwise init for manual construction
+    init(id: String = UUID().uuidString, planet: String, longitude: Double, latitude: Double,
+         speed: Double, sign: Int, signLongitude: Double, nakshatra: String,
+         nakshatraPada: Int, isRetrograde: Bool, house: Int) {
+        self.id = id
+        self.planet = planet
+        self.longitude = longitude
+        self.latitude = latitude
+        self.speed = speed
+        self.sign = sign
+        self.signLongitude = signLongitude
+        self.nakshatra = nakshatra
+        self.nakshatraPada = nakshatraPada
+        self.isRetrograde = isRetrograde
+        self.house = house
     }
 
     var planetEnum: Planet? {
@@ -223,8 +268,36 @@ struct HouseCusp: Codable, Identifiable {
         case id
         case house
         case sign
-        case longitude
-        case signLongitude = "sign_longitude"
+        case degreeOnCusp
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = UUID().uuidString
+        house = try container.decode(Int.self, forKey: .house)
+        sign = try container.decode(Int.self, forKey: .sign)
+
+        // API returns degreeOnCusp for longitude
+        let degOnCusp = try container.decode(Double.self, forKey: .degreeOnCusp)
+        longitude = degOnCusp
+        signLongitude = degOnCusp.truncatingRemainder(dividingBy: 30)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(house, forKey: .house)
+        try container.encode(sign, forKey: .sign)
+        try container.encode(longitude, forKey: .degreeOnCusp)
+    }
+
+    // Memberwise init for manual construction
+    init(id: String = UUID().uuidString, house: Int, sign: Int, longitude: Double, signLongitude: Double) {
+        self.id = id
+        self.house = house
+        self.sign = sign
+        self.longitude = longitude
+        self.signLongitude = signLongitude
     }
 }
 
@@ -244,13 +317,52 @@ struct ChartData: Codable {
     enum CodingKeys: String, CodingKey {
         case profileId = "profile_id"
         case varga
-        case ayanamsa
-        case ayanamsaDegree = "ayanamsa_degree"
-        case ascendantSign = "ascendant_sign"
-        case ascendantDegree = "ascendant_degree"
+        case ayanamsa = "ayanamsaType"
+        case ayanamsaDegree = "ayanamsa"
+        case ascendantSign = "ascendant"
+        case ascendantDegree
         case planets
         case houses
         case calculatedAt = "calculated_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // profileId might not be in the response, default to empty
+        profileId = try container.decodeIfPresent(String.self, forKey: .profileId) ?? ""
+
+        // varga defaults to D1
+        varga = try container.decodeIfPresent(String.self, forKey: .varga) ?? "D1"
+
+        // API returns ascendant as a Double (total degrees), not sign+degree separately
+        let ascendantTotal = try container.decode(Double.self, forKey: .ascendantSign)
+        ascendantSign = Int(ascendantTotal / 30) % 12
+        ascendantDegree = ascendantTotal.truncatingRemainder(dividingBy: 30)
+
+        // API returns ayanamsaType (String name) and ayanamsa (Double degree)
+        // Swift model expects ayanamsa as String name and ayanamsaDegree as Double
+        ayanamsa = try container.decode(String.self, forKey: .ayanamsa)
+        ayanamsaDegree = try container.decode(Double.self, forKey: .ayanamsaDegree)
+
+        planets = try container.decode([PlanetPosition].self, forKey: .planets)
+        houses = try container.decode([HouseCusp].self, forKey: .houses)
+        calculatedAt = try container.decodeIfPresent(Date.self, forKey: .calculatedAt)
+    }
+
+    // Memberwise init for manual construction
+    init(profileId: String, varga: String, ayanamsa: String, ayanamsaDegree: Double,
+         ascendantSign: Int, ascendantDegree: Double, planets: [PlanetPosition],
+         houses: [HouseCusp], calculatedAt: Date?) {
+        self.profileId = profileId
+        self.varga = varga
+        self.ayanamsa = ayanamsa
+        self.ayanamsaDegree = ayanamsaDegree
+        self.ascendantSign = ascendantSign
+        self.ascendantDegree = ascendantDegree
+        self.planets = planets
+        self.houses = houses
+        self.calculatedAt = calculatedAt
     }
 
     var ascendantSignEnum: Sign? {

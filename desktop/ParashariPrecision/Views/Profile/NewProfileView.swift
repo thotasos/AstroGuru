@@ -175,12 +175,22 @@ struct NewProfileView: View {
         isSubmitting = true
         error = nil
 
+        // Calculate UTC offset for the given timezone at the birth date
+        let utcOffsetHours: Double
+        if let tz = TimeZone(identifier: timezone) {
+            let offsetSeconds = tz.secondsFromGMT(for: birthDate)
+            utcOffsetHours = Double(offsetSeconds) / 3600.0
+        } else {
+            utcOffsetHours = 0
+        }
+
         let request = CreateProfileRequest(
             name: name.trimmingCharacters(in: .whitespaces),
             dobUTC: birthDate,
             lat: lat,
             lon: lon,
             timezone: timezone,
+            utcOffsetHours: utcOffsetHours,
             placeName: placeName,
             notes: notes
         )

@@ -49,6 +49,26 @@ class ChartViewModel: ObservableObject {
         await loadChart(for: profile)
     }
 
+    // MARK: - Reprocess Profile
+
+    func reprocessProfile(_ profile: BirthProfile) async {
+        currentProfile = profile
+        isLoading = true
+        error = nil
+
+        do {
+            // Invalidate cache first
+            try await APIService.shared.invalidateCache(profileId: profile.id)
+            // Then recalculate everything via full calculation
+            let full = try await APIService.shared.calculateFull(profileId: profile.id)
+            chart = full.chart
+            vargas = full.vargas
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isLoading = false
+    }
+
     // MARK: - Load Vargas
 
     func loadVargas(for profile: BirthProfile) async {
