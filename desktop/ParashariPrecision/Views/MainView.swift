@@ -76,13 +76,14 @@ struct SidebarView: View {
     }
 }
 
+@MainActor
 struct DetailView: View {
     let profile: Profile
     @State private var selectedTab: MainView.MainTab = .chart
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("", selection: $selectedTab) {
+            Picker("Analysis", selection: $selectedTab) {
                 Text("Chart").tag(MainView.MainTab.chart)
                 Text("Dasha").tag(MainView.MainTab.dasha)
                 Text("Shadbala").tag(MainView.MainTab.shadbala)
@@ -91,6 +92,7 @@ struct DetailView: View {
                 Text("Predictions").tag(MainView.MainTab.predictions)
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .padding(.horizontal)
             .padding(.vertical, 8)
 
