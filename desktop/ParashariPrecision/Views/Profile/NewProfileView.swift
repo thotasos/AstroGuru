@@ -149,13 +149,22 @@ struct NewProfileView: View {
             return
         }
 
+        // The DatePicker gives us a Date in the system timezone.
+        // Reinterpret the displayed time as local time in the birth timezone.
+        let systemCalendar = Calendar.current
+        let localComponents = systemCalendar.dateComponents([.year, .month, .day, .hour, .minute], from: formState.dob)
+
+        var birthCalendar = Calendar(identifier: .gregorian)
+        birthCalendar.timeZone = TimeZone(identifier: formState.timezone) ?? TimeZone(secondsFromGMT: 0)!
+        let dobInBirthTimezone = birthCalendar.date(from: localComponents) ?? formState.dob
+
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)  // Always store as UTC
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
 
         let profile = Profile(
             name: formState.name.trimmingCharacters(in: .whitespaces),
-            dobUTC: formatter.string(from: formState.dob),  // formatter handles timezone — no "Z" appended
+            dobUTC: formatter.string(from: dobInBirthTimezone),
             latitude: formState.latitude,
             longitude: formState.longitude,
             timezone: formState.timezone,

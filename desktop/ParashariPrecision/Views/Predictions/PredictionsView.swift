@@ -147,24 +147,101 @@ struct DashaPredictionContentView: View {
 struct DashaTimelineView: View {
     @ObservedObject var viewModel: PredictionsViewModel
 
+    private func colorForPlanet(_ planet: String) -> Color {
+        switch planet {
+        case "Sun": return .orange
+        case "Moon": return Color(white: 0.6)
+        case "Mars": return .red
+        case "Mercury": return .green
+        case "Jupiter": return .yellow
+        case "Venus": return .pink
+        case "Saturn": return .purple
+        case "Rahu", "Ketu": return .indigo
+        default: return .gray
+        }
+    }
+
+    private var totalYears: Double {
+        let dashas = viewModel.dashas
+        guard !dashas.isEmpty else { return 1 }
+        let first = dashas[0]
+        let last = dashas[dashas.count - 1]
+        let start = Double(first.startYear) + Double(first.startMonth) / 12.0
+        let end = Double(last.endYear) + Double(last.endMonth) / 12.0
+        let span = end - start
+        return span > 0 ? span : 1
+    }
+
+    private func fraction(for dasha: DashaPeriod) -> Double {
+        let start = Double(dasha.startYear) + Double(dasha.startMonth) / 12.0
+        let end = Double(dasha.endYear) + Double(dasha.endMonth) / 12.0
+        return max(0, (end - start) / totalYears)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Dasha Timeline")
                 .font(.headline)
 
-            // Placeholder for timeline visualization
-            HStack(spacing: 4) {
-                ForEach(0..<12, id: \.self) { house in
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(height: 20)
-                        .cornerRadius(2)
+            if viewModel.dashas.isEmpty {
+                Text("No dasha periods available")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            } else {
+                GeometryReader { geo in
+                    HStack(spacing: 2) {
+                        ForEach(Array(viewModel.dashas.enumerated()), id: \.offset) { _, dasha in
+                            let width = geo.size.width * fraction(for: dasha)
+                            ZStack {
+                                Rectangle()
+                                    .fill(colorForPlanet(dasha.lord).opacity(0.75))
+                                    .frame(width: max(width, 2), height: 28)
+                                    .cornerRadius(3)
+
+                                if width > 28 {
+                                    Text(dasha.lord.prefix(3))
+                                        .font(.system(size: 9, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .frame(width: max(width, 2))
+                        }
+                    }
+                }
+                .frame(height: 28)
+
+                // Year labels
+                HStack {
+                    if let first = viewModel.dashas.first {
+                        Text("\(first.startYear)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if let last = viewModel.dashas.last {
+                        Text("\(last.endYear)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Legend
+                let visibleDashas = viewModel.dashas.prefix(9)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 3), spacing: 4) {
+                    ForEach(Array(visibleDashas.enumerated()), id: \.offset) { _, dasha in
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(colorForPlanet(dasha.lord))
+                                .frame(width: 8, height: 8)
+                            Text("\(dasha.lord) (\(dasha.startYear)–\(dasha.endYear))")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
                 }
             }
-
-            Text("Visual timeline representation would appear here")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
         }
         .padding()
         .background(Color(nsColor: .controlBackgroundColor))
@@ -321,10 +398,9 @@ struct HighlightedTextView: View {
         while searchStart < result.endIndex {
             let searchSubstring = result[searchStart..<result.endIndex]
             if let range = searchSubstring.range(of: searchText) {
-                let fullRange = Range(uncheckedBounds: (lower: searchStart, upper: range.upperBound))
-                result[fullRange].foregroundColor = color
+                result[range].foregroundColor = color
                 if isBold {
-                    result[fullRange].font = .body.bold()
+                    result[range].font = .body.bold()
                 }
                 searchStart = range.upperBound
             } else {

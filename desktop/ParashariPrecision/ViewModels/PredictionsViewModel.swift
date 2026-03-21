@@ -7,6 +7,7 @@ final class PredictionsViewModel: ObservableObject {
     @Published var planetPredictions: [String: String] = [:]
     @Published var dashaPrediction: String = ""
     @Published var yogaImpact: String = ""
+    @Published var dashas: [DashaPeriod] = []
     @Published var isGenerating = false
     @Published var errorMessage: String?
 
@@ -31,6 +32,8 @@ final class PredictionsViewModel: ObservableObject {
             hour: hour, minute: minute,
             lat: profile.latitude, lon: profile.longitude
         )
+
+        self.dashas = dashas
 
         let shadbala = engine.calculateShadbala(chartData: chartData)
         let yogas = engine.detectYogas(chartData: chartData, shadbala: shadbala)

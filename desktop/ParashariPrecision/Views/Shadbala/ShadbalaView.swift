@@ -3,7 +3,6 @@ import SwiftUI
 struct ShadbalaView: View {
     let profile: Profile
     @StateObject private var viewModel = ShadbalaViewModel()
-    @State private var chartData: ChartData?
 
     var body: some View {
         Group {
@@ -35,7 +34,6 @@ struct ShadbalaView: View {
                 lat: profile.latitude, lon: profile.longitude,
                 tzOffset: profile.utcOffset, ayanamsaId: profile.ayanamsaId
             )
-            self.chartData = chart
             await viewModel.calculateShadbala(for: profile, chartData: chart)
         }
     }

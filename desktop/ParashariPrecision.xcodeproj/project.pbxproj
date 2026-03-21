@@ -11,6 +11,7 @@
 		0D51116997DC14FB9E27B380 /* AstrologyCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA460CE054F79F109B5082D1 /* AstrologyCore.swift */; };
 		1082783F13423C762DB588D3 /* ChartData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E645FF607C427919B290972B /* ChartData.swift */; };
 		158578BE94B77125308CC8DA /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92ECAFFCC1E19D0B69474096 /* Profile.swift */; };
+		1726716C04F091BF4A335B8B /* ParashariPrecisionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB54088D79CEDA82D6B2321 /* ParashariPrecisionUITests.swift */; };
 		1C37E54306FE5D0157847A0C /* DashaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A206F2BF6C43AD024662DE60 /* DashaView.swift */; };
 		1C9C94C8F5699520749E7FED /* ChartViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD3B74D7395808F0EDEDC384 /* ChartViewModelTests.swift */; };
 		20D1812963259980E8FBC2AA /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FB9F915EA263EECF713CBD3 /* Types.swift */; };
@@ -28,6 +29,7 @@
 		50B5A91F41708B25D13A819C /* ProfilesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AE1D462CF84699F0856A96A /* ProfilesViewModel.swift */; };
 		5352F5AA308AB1B757EF614E /* YogaViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB01FB782C3B0B946E7E332 /* YogaViewModel.swift */; };
 		55CAA225D6807BC491DCAAA4 /* YogaViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48835E8844EA250CF18FCB76 /* YogaViewModelTests.swift */; };
+		5742FA40AA097FADD1DCD164 /* MainViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EBB67F3D6DB1D61D669DD56 /* MainViewTests.swift */; };
 		59C0AEA45A8406092F302550 /* ShadbalaResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80419A6D11431A55B1FCAC08 /* ShadbalaResult.swift */; };
 		5C1F39C4A297CA209AB42080 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0927BA042D6D52A0029D1967 /* MainView.swift */; };
 		66A999AF4DE84D2DD38A5E2F /* ShadbalaViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D23482E33ABB858B6890AF9 /* ShadbalaViewModel.swift */; };
@@ -66,6 +68,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		2FFD3A13DA82C48A16ECC4A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 99EFFEF4C67E26F8B75B70A5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C7EFAA553DF1DCDB049D72EE;
+			remoteInfo = ParashariPrecision;
+		};
 		90537D6ABEE711230DBE428D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 99EFFEF4C67E26F8B75B70A5 /* Project object */;
@@ -83,6 +92,7 @@
 		0CB01FB782C3B0B946E7E332 /* YogaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YogaViewModel.swift; sourceTree = "<group>"; };
 		0F663A568ED4F5100AE1B847 /* ProfileListViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileListViewTests.swift; sourceTree = "<group>"; };
 		17D69CF6F3E7CA6EB758C518 /* DatabaseServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseServiceTests.swift; sourceTree = "<group>"; };
+		1AB54088D79CEDA82D6B2321 /* ParashariPrecisionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParashariPrecisionUITests.swift; sourceTree = "<group>"; };
 		1BA914BAF729CBB589948230 /* ProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileTests.swift; sourceTree = "<group>"; };
 		1C4FB7CDF15A9120EC9992B4 /* DashaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaViewModel.swift; sourceTree = "<group>"; };
 		1CA9EB28DC8A3823F7AFF9DB /* DatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseService.swift; sourceTree = "<group>"; };
@@ -104,11 +114,13 @@
 		5D23482E33ABB858B6890AF9 /* ShadbalaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadbalaViewModel.swift; sourceTree = "<group>"; };
 		5D3BD310AE77CE914785FA10 /* AshtakavargaViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AshtakavargaViewTests.swift; sourceTree = "<group>"; };
 		646B0553050BF5CA00B49E78 /* SouthIndianChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SouthIndianChartView.swift; sourceTree = "<group>"; };
+		6EC4138C4A212297AC988698 /* ParashariPrecisionUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ParashariPrecisionUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6FC50F4BC4D0FB2EC1C2E63A /* ProfilesViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesViewModelTests.swift; sourceTree = "<group>"; };
 		765AD55975DA2703C8D51898 /* YogaListViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YogaListViewTests.swift; sourceTree = "<group>"; };
 		79C527E8215FDB71498F7D50 /* ShadbalaViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadbalaViewModelTests.swift; sourceTree = "<group>"; };
 		7BF0D5BED7A723FB8243F9C4 /* ParashariPrecisionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParashariPrecisionApp.swift; sourceTree = "<group>"; };
 		7D9C5C3807ADE4B1893CCB95 /* YogaResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YogaResult.swift; sourceTree = "<group>"; };
+		7EBB67F3D6DB1D61D669DD56 /* MainViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewTests.swift; sourceTree = "<group>"; };
 		7FB9F915EA263EECF713CBD3 /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
 		7FD6699F0B78E1EBAE30C7FF /* AshtakavargaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AshtakavargaViewModel.swift; sourceTree = "<group>"; };
 		80419A6D11431A55B1FCAC08 /* ShadbalaResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadbalaResult.swift; sourceTree = "<group>"; };
@@ -215,6 +227,7 @@
 				E245A68E0FE8B876200118F9 /* DashaViewTests.swift */,
 				17D69CF6F3E7CA6EB758C518 /* DatabaseServiceTests.swift */,
 				D2F8EF104F54D025E42844DB /* LocalPredictionGeneratorTests.swift */,
+				7EBB67F3D6DB1D61D669DD56 /* MainViewTests.swift */,
 				57EAD5CE60390EA9BA8E38B1 /* NewProfileViewTests.swift */,
 				1EAB7266415C749D52C995C9 /* PredictionsViewModelTests.swift */,
 				ACC3F2A06C38B318D73FE6E8 /* PredictionsViewTests.swift */,
@@ -247,6 +260,7 @@
 			children = (
 				E34D949493EDEF728FF2DD71 /* ParashariPrecision.app */,
 				F58186CA7F518236DEDFE11D /* ParashariPrecisionTests.xctest */,
+				6EC4138C4A212297AC988698 /* ParashariPrecisionUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -282,6 +296,14 @@
 			path = Dasha;
 			sourceTree = "<group>";
 		};
+		AD4B68BD629336D1CB1E24C2 /* ParashariPrecisionUITests */ = {
+			isa = PBXGroup;
+			children = (
+				1AB54088D79CEDA82D6B2321 /* ParashariPrecisionUITests.swift */,
+			);
+			path = ParashariPrecisionUITests;
+			sourceTree = "<group>";
+		};
 		D990A04AB8DF6C83C948E2C0 /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -310,6 +332,7 @@
 			children = (
 				7981F26F2FD8AE69F948F3D1 /* ParashariPrecision */,
 				82E68E47D5C91B9FB19138E0 /* ParashariPrecisionTests */,
+				AD4B68BD629336D1CB1E24C2 /* ParashariPrecisionUITests */,
 				8FBC91813661740963BD4F76 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -352,6 +375,24 @@
 			productReference = F58186CA7F518236DEDFE11D /* ParashariPrecisionTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		6B277D03D8A49793109333F6 /* ParashariPrecisionUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 23853D367463E7378CE38DEF /* Build configuration list for PBXNativeTarget "ParashariPrecisionUITests" */;
+			buildPhases = (
+				899556C7CCC96D29397C5115 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0A91D7E428946C93A5A64DD4 /* PBXTargetDependency */,
+			);
+			name = ParashariPrecisionUITests;
+			packageProductDependencies = (
+			);
+			productName = ParashariPrecisionUITests;
+			productReference = 6EC4138C4A212297AC988698 /* ParashariPrecisionUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		C7EFAA553DF1DCDB049D72EE /* ParashariPrecision */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 689EED72DD910834946C437B /* Build configuration list for PBXNativeTarget "ParashariPrecision" */;
@@ -378,6 +419,11 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					6B277D03D8A49793109333F6 = {
+						TestTargetID = C7EFAA553DF1DCDB049D72EE;
+					};
+				};
 			};
 			buildConfigurationList = A3D46EF8C5407C8FC6E6B29B /* Build configuration list for PBXProject "ParashariPrecision" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -395,6 +441,7 @@
 			targets = (
 				C7EFAA553DF1DCDB049D72EE /* ParashariPrecision */,
 				68986E5ECAFF2CF1E20F420C /* ParashariPrecisionTests */,
+				6B277D03D8A49793109333F6 /* ParashariPrecisionUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -411,6 +458,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		899556C7CCC96D29397C5115 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1726716C04F091BF4A335B8B /* ParashariPrecisionUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97693B08369DC88EA3F17D90 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -426,6 +481,7 @@
 				AA42C86E43D73DAB7B2A0D1E /* DashaViewTests.swift in Sources */,
 				441900AEC04827411099CAEF /* DatabaseServiceTests.swift in Sources */,
 				F9A8E0D4C5056342CF387181 /* LocalPredictionGeneratorTests.swift in Sources */,
+				5742FA40AA097FADD1DCD164 /* MainViewTests.swift in Sources */,
 				DD2814940A3240D882F7B56C /* NewProfileViewTests.swift in Sources */,
 				315E15873F6EC0B536C7CE91 /* PredictionsViewModelTests.swift in Sources */,
 				80E859A71AAD0EB3EF989C3C /* PredictionsViewTests.swift in Sources */,
@@ -483,6 +539,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		0A91D7E428946C93A5A64DD4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C7EFAA553DF1DCDB049D72EE /* ParashariPrecision */;
+			targetProxy = 2FFD3A13DA82C48A16ECC4A3 /* PBXContainerItemProxy */;
+		};
 		74BF7B55BEE9A9A0ABE3452C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C7EFAA553DF1DCDB049D72EE /* ParashariPrecision */;
@@ -522,6 +583,23 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.parashari.precision.tests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ParashariPrecision.app/Contents/MacOS/ParashariPrecision";
+			};
+			name = Release;
+		};
+		4F0A723F6D54FA84DA627B67 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.parashari.precision.uitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = ParashariPrecision;
 			};
 			name = Release;
 		};
@@ -680,9 +758,35 @@
 			};
 			name = Debug;
 		};
+		C94990D4CB233765F114D4EF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.parashari.precision.uitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = ParashariPrecision;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		23853D367463E7378CE38DEF /* Build configuration list for PBXNativeTarget "ParashariPrecisionUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C94990D4CB233765F114D4EF /* Debug */,
+				4F0A723F6D54FA84DA627B67 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		317C45D636462FC9E7877041 /* Build configuration list for PBXNativeTarget "ParashariPrecisionTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
