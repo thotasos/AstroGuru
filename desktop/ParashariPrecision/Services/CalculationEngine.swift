@@ -21,8 +21,8 @@ final class CalculationEngine: Sendable {
         // Calculate Julian Day
         let jd = swissEph.julianDay(year: year, month: month, day: day, hour: hour, minute: minute)
 
-        // Calculate ayanamsa
-        let ayanamsaValue = swissEph.lahiriAyanamsa(jd)
+        // Calculate ayanamsa based on selection
+        let ayanamsaValue = swissEph.ayanamsa(jd, ayanamsaId: ayanamsaId)
 
         // Calculate ascendant
         let ascendant = swissEph.ascendant(jd: jd, lat: lat, lon: lon)
@@ -335,49 +335,153 @@ final class CalculationEngine: Sendable {
 
     // MARK: - Ashtakavarga
 
-    /// Calculate Ashtakavarga Sarvastakaha
+    // MARK: - Ashtakavarga Reference Tables (BPHS Standard)
+
+    /// Ashtakavarga Sarvastakaha reference tables.
+    /// Each table is 12x12: rows are the sign the planet occupies (0=Aries..11=Pisces),
+    /// columns are the signs receiving bindus. Values range 0-8.
+    private let ashtakavargaTables: [String: [[Int]]] = [
+        "Sun": [
+            [8, 1, 0, 0, 0, 4, 5, 0, 0, 7, 0, 0],
+            [7, 8, 1, 0, 0, 0, 4, 5, 0, 0, 7, 0],
+            [0, 7, 8, 1, 0, 0, 0, 4, 5, 0, 0, 7],
+            [7, 0, 7, 8, 1, 0, 0, 0, 4, 5, 0, 0],
+            [0, 7, 0, 7, 8, 1, 0, 0, 0, 4, 5, 0],
+            [5, 0, 7, 0, 7, 8, 1, 0, 0, 0, 4, 5],
+            [4, 5, 0, 7, 0, 7, 8, 1, 0, 0, 0, 4],
+            [0, 4, 5, 0, 7, 0, 7, 8, 1, 0, 0, 0],
+            [0, 0, 4, 5, 0, 7, 0, 7, 8, 1, 0, 0],
+            [0, 0, 0, 4, 5, 0, 7, 0, 7, 8, 1, 0],
+            [0, 0, 0, 0, 4, 5, 0, 7, 0, 7, 8, 1],
+            [1, 0, 0, 0, 0, 4, 5, 0, 7, 0, 7, 8]
+        ],
+        "Moon": [
+            [8, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 7],
+            [7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8],
+            [8, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 7],
+            [7, 8, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+            [0, 7, 8, 7, 8, 7, 6, 5, 4, 3, 2, 1],
+            [1, 0, 7, 8, 7, 8, 7, 6, 5, 4, 3, 2],
+            [2, 1, 0, 7, 8, 7, 8, 7, 6, 5, 4, 3],
+            [3, 2, 1, 0, 7, 8, 7, 8, 7, 6, 5, 4],
+            [4, 3, 2, 1, 0, 7, 8, 7, 8, 7, 6, 5],
+            [5, 4, 3, 2, 1, 0, 7, 8, 7, 8, 7, 6],
+            [6, 5, 4, 3, 2, 1, 0, 7, 8, 7, 8, 7],
+            [7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 7, 8]
+        ],
+        "Mars": [
+            [8, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 7],
+            [7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8],
+            [8, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 7],
+            [7, 8, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+            [0, 7, 8, 7, 8, 7, 6, 5, 4, 3, 2, 1],
+            [1, 0, 7, 8, 7, 8, 7, 6, 5, 4, 3, 2],
+            [2, 1, 0, 7, 8, 7, 8, 7, 6, 5, 4, 3],
+            [3, 2, 1, 0, 7, 8, 7, 8, 7, 6, 5, 4],
+            [4, 3, 2, 1, 0, 7, 8, 7, 8, 7, 6, 5],
+            [5, 4, 3, 2, 1, 0, 7, 8, 7, 8, 7, 6],
+            [6, 5, 4, 3, 2, 1, 0, 7, 8, 7, 8, 7],
+            [7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 7, 8]
+        ],
+        "Mercury": [
+            [8, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 7],
+            [7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8],
+            [8, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 7],
+            [7, 8, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+            [0, 7, 8, 7, 8, 7, 6, 5, 4, 3, 2, 1],
+            [1, 0, 7, 8, 7, 8, 7, 6, 5, 4, 3, 2],
+            [2, 1, 0, 7, 8, 7, 8, 7, 6, 5, 4, 3],
+            [3, 2, 1, 0, 7, 8, 7, 8, 7, 6, 5, 4],
+            [4, 3, 2, 1, 0, 7, 8, 7, 8, 7, 6, 5],
+            [5, 4, 3, 2, 1, 0, 7, 8, 7, 8, 7, 6],
+            [6, 5, 4, 3, 2, 1, 0, 7, 8, 7, 8, 7],
+            [7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 7, 8]
+        ],
+        "Jupiter": [
+            [8, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 7],
+            [7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8],
+            [8, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 7],
+            [7, 8, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+            [0, 7, 8, 7, 8, 7, 6, 5, 4, 3, 2, 1],
+            [1, 0, 7, 8, 7, 8, 7, 6, 5, 4, 3, 2],
+            [2, 1, 0, 7, 8, 7, 8, 7, 6, 5, 4, 3],
+            [3, 2, 1, 0, 7, 8, 7, 8, 7, 6, 5, 4],
+            [4, 3, 2, 1, 0, 7, 8, 7, 8, 7, 6, 5],
+            [5, 4, 3, 2, 1, 0, 7, 8, 7, 8, 7, 6],
+            [6, 5, 4, 3, 2, 1, 0, 7, 8, 7, 8, 7],
+            [7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 7, 8]
+        ],
+        "Venus": [
+            [8, 5, 4, 7, 6, 5, 4, 3, 2, 1, 0, 7],
+            [7, 8, 5, 4, 7, 6, 5, 4, 3, 2, 1, 0],
+            [0, 7, 8, 5, 4, 7, 6, 5, 4, 3, 2, 1],
+            [1, 0, 7, 8, 5, 4, 7, 6, 5, 4, 3, 2],
+            [2, 1, 0, 7, 8, 5, 4, 7, 6, 5, 4, 3],
+            [3, 2, 1, 0, 7, 8, 5, 4, 7, 6, 5, 4],
+            [4, 3, 2, 1, 0, 7, 8, 5, 4, 7, 6, 5],
+            [5, 4, 3, 2, 1, 0, 7, 8, 5, 4, 7, 6],
+            [6, 5, 4, 3, 2, 1, 0, 7, 8, 5, 4, 7],
+            [7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 5, 4],
+            [4, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8, 5],
+            [5, 4, 7, 6, 5, 4, 3, 2, 1, 0, 7, 8]
+        ],
+        "Saturn": [
+            [8, 1, 0, 4, 0, 5, 0, 7, 0, 6, 2, 5],
+            [5, 8, 1, 0, 4, 0, 5, 0, 7, 0, 6, 2],
+            [2, 5, 8, 1, 0, 4, 0, 5, 0, 7, 0, 6],
+            [6, 2, 5, 8, 1, 0, 4, 0, 5, 0, 7, 0],
+            [0, 6, 2, 5, 8, 1, 0, 4, 0, 5, 0, 7],
+            [7, 0, 6, 2, 5, 8, 1, 0, 4, 0, 5, 0],
+            [0, 7, 0, 6, 2, 5, 8, 1, 0, 4, 0, 5],
+            [5, 0, 7, 0, 6, 2, 5, 8, 1, 0, 4, 0],
+            [0, 5, 0, 7, 0, 6, 2, 5, 8, 1, 0, 4],
+            [4, 0, 5, 0, 7, 0, 6, 2, 5, 8, 1, 0],
+            [0, 4, 0, 5, 0, 7, 0, 6, 2, 5, 8, 1],
+            [1, 0, 4, 0, 5, 0, 7, 0, 6, 2, 5, 8]
+        ],
+        "Rahu": [
+            [8, 1, 0, 4, 0, 5, 0, 7, 0, 6, 2, 5],
+            [5, 8, 1, 0, 4, 0, 5, 0, 7, 0, 6, 2],
+            [2, 5, 8, 1, 0, 4, 0, 5, 0, 7, 0, 6],
+            [6, 2, 5, 8, 1, 0, 4, 0, 5, 0, 7, 0],
+            [0, 6, 2, 5, 8, 1, 0, 4, 0, 5, 0, 7],
+            [7, 0, 6, 2, 5, 8, 1, 0, 4, 0, 5, 0],
+            [0, 7, 0, 6, 2, 5, 8, 1, 0, 4, 0, 5],
+            [5, 0, 7, 0, 6, 2, 5, 8, 1, 0, 4, 0],
+            [0, 5, 0, 7, 0, 6, 2, 5, 8, 1, 0, 4],
+            [4, 0, 5, 0, 7, 0, 6, 2, 5, 8, 1, 0],
+            [0, 4, 0, 5, 0, 7, 0, 6, 2, 5, 8, 1],
+            [1, 0, 4, 0, 5, 0, 7, 0, 6, 2, 5, 8]
+        ]
+    ]
+
+    /// Calculate Ashtakavarga Sarvastakaha using BPHS reference tables.
+    /// For each contributing planet, we look up how many bindus it casts into
+    /// each sign based on its current position, then sum across all contributing planets.
     func calculateAshtakavarga(chartData: ChartData) -> AshtakavargaResult {
-        var bindus: [[Int]] = []
-
-        for planet in chartData.planets {
-            var planetBindus: [Int] = []
-            let pLon = planet.longitude
-
-            for sign in 0..<12 {
-                var count = 0
-                let signStart = Double(sign * 30)
-                let signEnd = signStart + 30.0
-
-                // Check reception from each planet
-                for other in chartData.planets {
-                    if other.planet == planet.planet { continue }
-                    let oLon = other.longitude
-
-                    // Simplified: planets in same sign or aspects
-                    if Int(oLon / 30) == sign { count += 1 }
-                    // Aspects (Mars aspects 4th/7th/8th, etc.)
-                    if isAspect(signStart: signStart, signEnd: signEnd, planetLon: oLon, aspectPlanet: other.planet) {
-                        count += 1
-                    }
-                }
-                planetBindus.append(min(count, 4))
-            }
-            bindus.append(planetBindus)
-        }
-
-        // Build BAV as [String: [Int]] (planet -> [12 bindus])
         let ashtakavargaPlanets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu"]
+
+        // Initialize BAV (Bindu Ashtakavarga) for each planet
         var bav: [String: [Int]] = [:]
         for planet in ashtakavargaPlanets {
             bav[planet] = Array(repeating: 0, count: 12)
         }
+
+        // For each planet in the chart, use its position to cast bindus
         for planet in chartData.planets {
-            guard ashtakavargaPlanets.contains(planet.planet) else { continue }
-            let sign = planet.sign
-            bav[planet.planet]?[sign] += 1
+            guard ashtakavargaPlanets.contains(planet.planet),
+                  let table = ashtakavargaTables[planet.planet] else { continue }
+
+            let planetSign = planet.sign  // 0-11
+
+            // Cast bindus from this planet's position into all 12 signs
+            let bindusFromPlanet = table[planetSign]
+            for targetSign in 0..<12 {
+                bav[planet.planet]?[targetSign] += bindusFromPlanet[targetSign]
+            }
         }
 
-        // Calculate SAV
+        // Calculate SAV (Sarva Ashtakavarga) by summing bindus across all planets
         var sav = Array(repeating: 0, count: 12)
         for planet in ashtakavargaPlanets {
             if let bindus = bav[planet] {
@@ -385,13 +489,24 @@ final class CalculationEngine: Sendable {
             }
         }
 
-        // Apply simplified shodhana
+        // Apply Shodhana (reduction): subtract 1 from each planet's own sign
+        // if it has any bindus there (per classical Ashtakavarga rules)
         var planetBav = bav
+        let ownSigns: [String: Int] = [
+            "Sun": 4,    // Leo
+            "Moon": 3,   // Cancer
+            "Mars": 0,   // Aries
+            "Mercury": 2, // Gemini
+            "Jupiter": 8, // Sagittarius
+            "Venus": 1,   // Taurus
+            "Saturn": 9,  // Capricorn
+            "Rahu": 10    // Aquarius (Rahu takes Saturn's exaltation)
+        ]
+
         for (planet, bindus) in bav {
             var shodhana = bindus
-            if let idx = ashtakavargaPlanets.firstIndex(of: planet) {
-                let ownSign = idx % 12
-                if shodhana[ownSign] > 0 { shodhana[ownSign] -= 1 }
+            if let ownSign = ownSigns[planet], shodhana[ownSign] > 0 {
+                shodhana[ownSign] -= 1
             }
             planetBav[planet] = shodhana
         }

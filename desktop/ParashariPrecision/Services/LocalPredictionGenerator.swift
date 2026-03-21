@@ -120,7 +120,9 @@ final class LocalPredictionGenerator {
             // Sign placement
             let signName = Sign(rawValue: planetPos.sign)?.name ?? "Unknown"
             let signTraits = self.signTraits[planetPos.sign] ?? []
-            let trait = signTraits.randomElement() ?? "unique"
+            // Deterministic trait selection using planet name hash
+            let hash = stableHash(planetName)
+            let trait = signTraits[hash % signTraits.count] ?? "unique"
 
             prediction += "In \(signName), you exhibit \(trait) qualities. "
 
@@ -256,7 +258,14 @@ final class LocalPredictionGenerator {
         let ascendantSign = Sign(rawValue: ascendant)?.name ?? "Unknown"
         prediction += "## Ascendant Analysis\n"
         prediction += "Your ascendant is in **\(ascendantSign)**, "
-        prediction += "giving you \(signTraits[ascendant]?.randomElement() ?? "distinct") qualities.\n\n"
+        // Deterministic trait selection using profile name hash
+        let ascendantHash = stableHash(profile.name)
+        if let traits = signTraits[ascendant] {
+            let selectedTrait = traits[ascendantHash % traits.count]
+            prediction += "giving you \(selectedTrait) qualities.\n\n"
+        } else {
+            prediction += "giving you distinct qualities.\n\n"
+        }
 
         // Life areas
         prediction += "## Key Life Areas\n"
@@ -421,5 +430,169 @@ final class LocalPredictionGenerator {
         }
 
         return aspects
+    }
+
+    // MARK: - Hora & Trend Engine
+
+    /// Chaldean planetary hour sequence
+    private let chaldeanOrder = ["Sun", "Venus", "Mercury", "Moon", "Saturn", "Jupiter", "Mars"]
+
+    /// Day lord by weekday (0 = Sunday)
+    private let weekdayLords = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+
+    /// Planet affinity for each life area (0.0–1.0)
+    private let planetAffinity: [String: [String: Double]] = [
+        "Sun":     ["career": 0.85, "finance": 0.55, "health": 0.70, "relationships": 0.40, "spirituality": 0.55],
+        "Moon":    ["career": 0.50, "finance": 0.62, "health": 0.72, "relationships": 0.90, "spirituality": 0.70],
+        "Mars":    ["career": 0.80, "finance": 0.50, "health": 0.55, "relationships": 0.40, "spirituality": 0.30],
+        "Mercury": ["career": 0.82, "finance": 0.75, "health": 0.55, "relationships": 0.55, "spirituality": 0.40],
+        "Jupiter": ["career": 0.80, "finance": 0.85, "health": 0.65, "relationships": 0.80, "spirituality": 0.90],
+        "Venus":   ["career": 0.45, "finance": 0.80, "health": 0.70, "relationships": 0.95, "spirituality": 0.60],
+        "Saturn":  ["career": 0.65, "finance": 0.55, "health": 0.42, "relationships": 0.35, "spirituality": 0.70],
+        "Rahu":    ["career": 0.60, "finance": 0.60, "health": 0.32, "relationships": 0.45, "spirituality": 0.35],
+        "Ketu":    ["career": 0.30, "finance": 0.30, "health": 0.50, "relationships": 0.30, "spirituality": 0.90],
+    ]
+
+    /// Stable string hash (does not use Swift's randomised hashValue)
+    private func stableHash(_ s: String) -> Int {
+        s.unicodeScalars.reduce(0) { ($0 &* 31) &+ Int($1.value) }
+    }
+
+    /// Planetary hora lord for a given date and civil hour (0–23)
+    private func horaLord(date: Date, hour: Int) -> String {
+        let weekday = Calendar.current.component(.weekday, from: date) - 1  // 0 = Sunday
+        let dayLord = weekdayLords[weekday]
+        let startIdx = chaldeanOrder.firstIndex(of: dayLord) ?? 0
+        return chaldeanOrder[(startIdx + hour) % 7]
+    }
+
+    /// Day lord for a date
+    private func dayLord(date: Date) -> String {
+        let weekday = Calendar.current.component(.weekday, from: date) - 1
+        return weekdayLords[weekday]
+    }
+
+    /// Compute trend scores for a hora lord + dasha context with a deterministic seed
+    private func trendScores(
+        horaLord: String,
+        dashaLord: String,
+        antardashaLord: String,
+        seed: Int
+    ) -> (career: Double, finance: Double, health: Double, relationships: Double, spirituality: Double) {
+        let cats: [(String, KeyPath<(career: Double, finance: Double, health: Double, relationships: Double, spirituality: Double), Double>)] = []
+        _ = cats  // silence unused
+        func score(_ cat: String, offset: Int) -> Double {
+            let hora  = planetAffinity[horaLord]?[cat] ?? 0.5
+            let dasha = planetAffinity[dashaLord]?[cat] ?? 0.5
+            let antar = planetAffinity[antardashaLord]?[cat] ?? 0.5
+            let base  = hora * 0.50 + dasha * 0.30 + antar * 0.20
+            // deterministic micro-variation (±7%)
+            let h = abs((seed &+ stableHash(cat) &* 397) % 200)
+            let variation = Double(h) / 200.0 * 0.14 - 0.07
+            return min(0.97, max(0.08, base + variation))
+        }
+        return (
+            career:        score("career",        offset: 1),
+            finance:       score("finance",       offset: 2),
+            health:        score("health",        offset: 3),
+            relationships: score("relationships", offset: 4),
+            spirituality:  score("spirituality",  offset: 5)
+        )
+    }
+
+    /// One-line plain-language summary for a day
+    private func daySummary(dayLord: String, dashaLord: String, antardashaLord: String, overall: Double) -> String {
+        let quality = overall >= 0.70 ? "favourable" : overall >= 0.50 ? "moderate" : "challenging"
+        return "\(dayLord)-ruled day brings a \(quality) influence under the \(dashaLord)–\(antardashaLord) dasha period. Focus where scores are highest."
+    }
+
+    // MARK: - Day Prediction
+
+    func generateDayPrediction(
+        date: Date,
+        dashaLord: String,
+        antardashaLord: String
+    ) -> DayPrediction {
+        let dl = dayLord(date: date)
+        let calendar = Calendar.current
+        let dayOfYear = calendar.ordinality(of: .day, in: .year, for: date) ?? 1
+        let yearVal   = calendar.component(.year, from: date)
+
+        var hours: [HourPrediction] = []
+        for h in 0..<24 {
+            let hora = horaLord(date: date, hour: h)
+            let seed = abs(yearVal &* 1009 &+ dayOfYear &* 397 &+ h &* 31)
+            let s = trendScores(horaLord: hora, dashaLord: dashaLord, antardashaLord: antardashaLord, seed: seed)
+            hours.append(HourPrediction(
+                hour: h,
+                horaLord: hora,
+                career: s.career,
+                finance: s.finance,
+                health: s.health,
+                relationships: s.relationships,
+                spirituality: s.spirituality
+            ))
+        }
+
+        let overall = hours.map(\.overallScore).reduce(0, +) / Double(hours.count)
+        let summary = daySummary(dayLord: dl, dashaLord: dashaLord, antardashaLord: antardashaLord, overall: overall)
+
+        return DayPrediction(
+            date: date,
+            dayLord: dl,
+            dashaLord: dashaLord,
+            antardashaLord: antardashaLord,
+            hours: hours,
+            summary: summary
+        )
+    }
+
+    // MARK: - Month Prediction
+
+    func generateMonthPrediction(
+        year: Int,
+        month: Int,
+        dashaLord: String,
+        antardashaLord: String
+    ) -> MonthPrediction {
+        var comps = DateComponents()
+        comps.year = year; comps.month = month; comps.day = 1
+        let calendar = Calendar.current
+        guard let firstDay = calendar.date(from: comps),
+              let range   = calendar.range(of: .day, in: .month, for: firstDay) else {
+            return MonthPrediction(year: year, month: month, dashaLord: dashaLord,
+                                   antardashaLord: antardashaLord, days: [], summary: "")
+        }
+
+        var days: [DailyTrend] = []
+        for day in range {
+            comps.day = day
+            guard let date = calendar.date(from: comps) else { continue }
+            let dl   = dayLord(date: date)
+            let seed = abs(year &* 1009 &+ month &* 31 &+ day &* 7)
+            let s    = trendScores(horaLord: dl, dashaLord: dashaLord, antardashaLord: antardashaLord, seed: seed)
+            days.append(DailyTrend(
+                date: date,
+                dayOfMonth: day,
+                dayLord: dl,
+                career: s.career,
+                finance: s.finance,
+                health: s.health,
+                relationships: s.relationships,
+                spirituality: s.spirituality
+            ))
+        }
+
+        let overall = days.map(\.overallScore).reduce(0, +) / max(1, Double(days.count))
+        let quality = overall >= 0.70 ? "generally auspicious" : overall >= 0.50 ? "mixed" : "requiring caution"
+        let df = DateFormatter(); df.dateFormat = "MMMM yyyy"
+        let title = df.string(from: firstDay)
+        let summary = "\(title) is \(quality) under the \(dashaLord)–\(antardashaLord) dasha period. Best days highlighted in green; proceed with care on red-coded days."
+
+        return MonthPrediction(
+            year: year, month: month,
+            dashaLord: dashaLord, antardashaLord: antardashaLord,
+            days: days, summary: summary
+        )
     }
 }

@@ -44,6 +44,13 @@ struct SidebarView: View {
                             }
                         }
                     }
+                    .contextMenu {
+                        Button {
+                            profilesViewModel.editingProfile = profile
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                    }
                 }
             }
         }
@@ -62,6 +69,13 @@ struct SidebarView: View {
                 profilesViewModel.showingNewProfile = false
                 profilesViewModel.loadProfiles()
             })
+            .environmentObject(profilesViewModel)
+        }
+        .sheet(item: $profilesViewModel.editingProfile) { profile in
+            NewProfileView(onDismiss: {
+                profilesViewModel.editingProfile = nil
+                profilesViewModel.loadProfiles()
+            }, editingProfile: profile)
             .environmentObject(profilesViewModel)
         }
         .overlay {

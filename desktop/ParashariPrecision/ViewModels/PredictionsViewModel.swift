@@ -8,6 +8,13 @@ final class PredictionsViewModel: ObservableObject {
     @Published var dashaPrediction: String = ""
     @Published var yogaImpact: String = ""
     @Published var dashas: [DashaPeriod] = []
+    @Published var dayPrediction: DayPrediction?
+    @Published var monthPrediction: MonthPrediction?
+    @Published var selectedDay: Date = Date()
+    @Published var selectedMonthYear: DateComponents = {
+        var c = Calendar.current.dateComponents([.year, .month], from: Date())
+        return c
+    }()
     @Published var isGenerating = false
     @Published var errorMessage: String?
 
@@ -92,6 +99,67 @@ final class PredictionsViewModel: ObservableObject {
         )
 
         self.isGenerating = false
+    }
+
+    func generateDayPrediction(for profile: Profile) async {
+        // Re-use dasha data already computed; re-compute if needed
+        if dashas.isEmpty {
+            let (year, month, day, hour, minute) = parseDateComponents(from: profile)
+            self.dashas = engine.calculateDashas(
+                year: year, month: month, day: day,
+                hour: hour, minute: minute,
+                lat: profile.latitude, lon: profile.longitude
+            )
+        }
+        let (dashaLord, antarLord) = activeDashaLords(on: selectedDay)
+        dayPrediction = predictionGenerator.generateDayPrediction(
+            date: selectedDay,
+            dashaLord: dashaLord,
+            antardashaLord: antarLord
+        )
+    }
+
+    func generateMonthPrediction(for profile: Profile) async {
+        if dashas.isEmpty {
+            let (year, month, day, hour, minute) = parseDateComponents(from: profile)
+            self.dashas = engine.calculateDashas(
+                year: year, month: month, day: day,
+                hour: hour, minute: minute,
+                lat: profile.latitude, lon: profile.longitude
+            )
+        }
+        let yr  = selectedMonthYear.year  ?? Calendar.current.component(.year,  from: Date())
+        let mon = selectedMonthYear.month ?? Calendar.current.component(.month, from: Date())
+        var midComps = DateComponents(); midComps.year = yr; midComps.month = mon; midComps.day = 15
+        let midDate = Calendar.current.date(from: midComps) ?? Date()
+        let (dashaLord, antarLord) = activeDashaLords(on: midDate)
+        monthPrediction = predictionGenerator.generateMonthPrediction(
+            year: yr, month: mon,
+            dashaLord: dashaLord, antardashaLord: antarLord
+        )
+    }
+
+    /// Find active mahadasha and antardasha lords for a given date
+    private func activeDashaLords(on date: Date) -> (String, String) {
+        let calendar = Calendar.current
+        let y = calendar.component(.year, from: date)
+        let m = calendar.component(.month, from: date)
+        for dasha in dashas {
+            let dStart = dasha.startYear * 12 + dasha.startMonth
+            let dEnd   = dasha.endYear   * 12 + dasha.endMonth
+            let cur    = y * 12 + m
+            if cur >= dStart && cur <= dEnd {
+                for antar in dasha.antardashas {
+                    let aStart = antar.startYear * 12 + antar.startMonth
+                    let aEnd   = antar.endYear   * 12 + antar.endMonth
+                    if cur >= aStart && cur <= aEnd {
+                        return (dasha.lord, antar.lord)
+                    }
+                }
+                return (dasha.lord, dasha.antardashas.first?.lord ?? dasha.lord)
+            }
+        }
+        return (dashas.first?.lord ?? "Jupiter", dashas.first?.antardashas.first?.lord ?? "Jupiter")
     }
 
     private func parseDateComponents(from profile: Profile) -> (Int, Int, Int, Int, Int) {

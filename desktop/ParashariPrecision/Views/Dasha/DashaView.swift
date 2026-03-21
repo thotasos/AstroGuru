@@ -41,7 +41,8 @@ struct DashaListView: View {
                     depth: 0,
                     isCurrent: isCurrentDasha(dasha),
                     selectedDasha: $viewModel.selectedDasha,
-                    currentDasha: viewModel.currentDasha
+                    currentDasha: viewModel.currentDasha,
+                    isExpanded: isCurrentDasha(dasha)
                 )
             }
         }
@@ -61,7 +62,13 @@ struct DashaRowView: View {
     let isCurrent: Bool
     @Binding var selectedDasha: DashaPeriod?
     let currentDasha: DashaPeriod?
-    @State private var isExpanded = true
+    var isExpanded: Bool = false
+
+    @State private var localIsExpanded = false
+
+    private var expanded: Bool {
+        isExpanded || localIsExpanded
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -69,10 +76,10 @@ struct DashaRowView: View {
                 if !dasha.antardashas.isEmpty {
                     Button {
                         withAnimation {
-                            isExpanded.toggle()
+                            localIsExpanded.toggle()
                         }
                     } label: {
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        Image(systemName: expanded ? "chevron.down" : "chevron.right")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -106,9 +113,7 @@ struct DashaRowView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                if isCurrent {
-                    selectedDasha = dasha
-                }
+                selectedDasha = dasha
             }
 
             if isCurrent {
@@ -121,14 +126,15 @@ struct DashaRowView: View {
                 .foregroundStyle(.secondary)
             }
 
-            if isExpanded && !dasha.antardashas.isEmpty {
+            if expanded && !dasha.antardashas.isEmpty {
                 ForEach(dasha.antardashas, id: \.startDate) { antardasha in
                     AntardashaRowView(
                         antardasha: antardasha,
                         depth: depth + 1,
                         isCurrent: isCurrentDasha(antardasha),
                         selectedDasha: $selectedDasha,
-                        currentDasha: currentDasha
+                        currentDasha: currentDasha,
+                        isExpanded: isCurrentDasha(antardasha)
                     )
                 }
             }
@@ -153,7 +159,13 @@ struct AntardashaRowView: View {
     let isCurrent: Bool
     @Binding var selectedDasha: DashaPeriod?
     let currentDasha: DashaPeriod?
-    @State private var isExpanded = true
+    var isExpanded: Bool = false
+
+    @State private var localIsExpanded = false
+
+    private var expanded: Bool {
+        isExpanded || localIsExpanded
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -161,10 +173,10 @@ struct AntardashaRowView: View {
                 if !antardasha.antardashas.isEmpty {
                     Button {
                         withAnimation {
-                            isExpanded.toggle()
+                            localIsExpanded.toggle()
                         }
                     } label: {
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        Image(systemName: expanded ? "chevron.down" : "chevron.right")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -194,9 +206,7 @@ struct AntardashaRowView: View {
             .padding(.leading, CGFloat(depth * 16))
             .contentShape(Rectangle())
             .onTapGesture {
-                if isCurrent {
-                    selectedDasha = antardasha
-                }
+                selectedDasha = antardasha
             }
 
             if isCurrent {
@@ -210,7 +220,7 @@ struct AntardashaRowView: View {
                 .padding(.leading, CGFloat(depth * 16))
             }
 
-            if isExpanded && !antardasha.antardashas.isEmpty {
+            if expanded && !antardasha.antardashas.isEmpty {
                 ForEach(antardasha.antardashas, id: \.startDate) { pratyantardasha in
                     PratyantardashaRowView(
                         pratyantardasha: pratyantardasha,
@@ -269,9 +279,7 @@ struct PratyantardashaRowView: View {
         .padding(.vertical, 1)
         .contentShape(Rectangle())
         .onTapGesture {
-            if isCurrent {
-                selectedDasha = pratyantardasha
-            }
+            selectedDasha = pratyantardasha
         }
     }
 }

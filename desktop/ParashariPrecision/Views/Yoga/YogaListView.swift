@@ -94,6 +94,7 @@ struct YogaFilterView: View {
 
 struct YogaRowView: View {
     let yoga: YogaResult
+    @State private var isExpanded = false
 
     private var isRareYoga: Bool {
         yoga.strength >= 0.9 || yoga.category.lowercased().contains("rare")
@@ -178,10 +179,17 @@ struct YogaRowView: View {
                 }
             }
 
-            Text(yoga.description)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+            DisclosureGroup(isExpanded: $isExpanded) {
+                Text(yoga.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+            } label: {
+                Text(yoga.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(isExpanded ? nil : 2)
+            }
         }
         .padding(.vertical, 6)
         .background(
