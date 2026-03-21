@@ -45,4 +45,26 @@ final class DatabaseServiceTests: XCTestCase {
         let fetched = try db.fetchProfile(id: profile.id)
         XCTAssertNil(fetched)
     }
+
+    func testSaveProfileWithOptionalFieldsPersistsCorrectly() throws {
+        let db = try DatabaseService(inMemory: true)
+        try db.initialize()
+
+        let profile = Profile(
+            name: "Full Test",
+            dobUTC: "1990-01-01T00:00:00+00:00",
+            latitude: 51.5, longitude: -0.1,
+            timezone: "Europe/London", utcOffset: 0,
+            placeName: "London, UK",
+            ayanamsaId: 2,
+            notes: "Important notes"
+        )
+        try db.saveProfile(profile)
+
+        let fetched = try db.fetchProfile(id: profile.id)
+        XCTAssertNotNil(fetched)
+        XCTAssertEqual(fetched?.placeName, "London, UK")
+        XCTAssertEqual(fetched?.notes, "Important notes")
+        XCTAssertEqual(fetched?.ayanamsaId, 2)
+    }
 }

@@ -1,6 +1,8 @@
 import Foundation
 import SQLite3
 
+private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+
 final class DatabaseService: @unchecked Sendable {
     private nonisolated(unsafe) var db: OpaquePointer?
     private let dbPath: String
@@ -101,23 +103,23 @@ final class DatabaseService: @unchecked Sendable {
             let dobCStr = profile.dobUTC.cString(using: .utf8)!
             let tzCStr = profile.timezone.cString(using: .utf8)!
 
-            sqlite3_bind_text(s, 1, idCStr, -1, nil)
-            sqlite3_bind_text(s, 2, nameCStr, -1, nil)
-            sqlite3_bind_text(s, 3, dobCStr, -1, nil)
+            sqlite3_bind_text(s, 1, idCStr, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(s, 2, nameCStr, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(s, 3, dobCStr, -1, SQLITE_TRANSIENT)
             sqlite3_bind_double(s, 4, profile.latitude)
             sqlite3_bind_double(s, 5, profile.longitude)
-            sqlite3_bind_text(s, 6, tzCStr, -1, nil)
+            sqlite3_bind_text(s, 6, tzCStr, -1, SQLITE_TRANSIENT)
             sqlite3_bind_double(s, 7, profile.utcOffset)
             if let place = profile.placeName {
                 let placeCStr = place.cString(using: .utf8)!
-                sqlite3_bind_text(s, 8, placeCStr, -1, nil)
+                sqlite3_bind_text(s, 8, placeCStr, -1, SQLITE_TRANSIENT)
             } else {
                 sqlite3_bind_null(s, 8)
             }
             sqlite3_bind_int(s, 9, Int32(profile.ayanamsaId))
             if let notes = profile.notes {
                 let notesCStr = notes.cString(using: .utf8)!
-                sqlite3_bind_text(s, 10, notesCStr, -1, nil)
+                sqlite3_bind_text(s, 10, notesCStr, -1, SQLITE_TRANSIENT)
             } else {
                 sqlite3_bind_null(s, 10)
             }
@@ -138,7 +140,7 @@ final class DatabaseService: @unchecked Sendable {
             defer { sqlite3_finalize(s) }
 
             let idCStr = profileId.cString(using: .utf8)!
-            sqlite3_bind_text(s, 1, idCStr, -1, nil)
+            sqlite3_bind_text(s, 1, idCStr, -1, SQLITE_TRANSIENT)
 
             if sqlite3_step(s) == SQLITE_ROW {
                 return profileFromRow(s)
@@ -174,7 +176,7 @@ final class DatabaseService: @unchecked Sendable {
             defer { sqlite3_finalize(s) }
 
             let idCStr = profileId.cString(using: .utf8)!
-            sqlite3_bind_text(s, 1, idCStr, -1, nil)
+            sqlite3_bind_text(s, 1, idCStr, -1, SQLITE_TRANSIENT)
 
             guard sqlite3_step(s) == SQLITE_DONE else {
                 throw DatabaseError.stepFailed(0)
@@ -193,8 +195,8 @@ final class DatabaseService: @unchecked Sendable {
 
             let idCStr = profileId.cString(using: .utf8)!
             let jsonCStr = chartJson.cString(using: .utf8)!
-            sqlite3_bind_text(s, 1, idCStr, -1, nil)
-            sqlite3_bind_text(s, 2, jsonCStr, -1, nil)
+            sqlite3_bind_text(s, 1, idCStr, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(s, 2, jsonCStr, -1, SQLITE_TRANSIENT)
 
             guard sqlite3_step(s) == SQLITE_DONE else {
                 throw DatabaseError.stepFailed(0)
@@ -212,7 +214,7 @@ final class DatabaseService: @unchecked Sendable {
             defer { sqlite3_finalize(s) }
 
             let idCStr = profileId.cString(using: .utf8)!
-            sqlite3_bind_text(s, 1, idCStr, -1, nil)
+            sqlite3_bind_text(s, 1, idCStr, -1, SQLITE_TRANSIENT)
 
             if sqlite3_step(s) == SQLITE_ROW {
                 if let text = sqlite3_column_text(s, 0) {
