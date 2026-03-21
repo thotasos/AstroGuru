@@ -1,0 +1,45 @@
+name: ParashariPrecision
+options:
+  bundleIdPrefix: com.parashari
+  deploymentTarget:
+    macOS: "14.0"
+  developmentRegion: en
+  xcodeVersion: "15.4"
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+
+targets:
+  ParashariPrecision:
+    type: application
+    platform: macOS
+    sources:
+      - path: ParashariPrecision
+        excludes:
+          - "**/.DS_Store"
+          - "**/*.md"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.parashari.precision
+        INFOPLIST_FILE: ParashariPrecision/Resources/Info.plist
+        SWIFT_EMIT_LOC_STRINGS: YES
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: ParashariPrecision/Resources/Info.plist
+
+  ParashariPrecisionTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: ParashariPrecisionTests
+        excludes:
+          - "**/.DS_Store"
+    dependencies:
+      - target: ParashariPrecision
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.parashari.precision.tests
+        GENERATE_INFOPLIST_FILE: YES
