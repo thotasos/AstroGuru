@@ -62,6 +62,19 @@ struct NewProfileView: View {
                             Text(tz).tag(tz)
                         }
                     }
+                    .onChange(of: formState.timezone) { _, newTimezone in
+                        formState.utcOffset = offsetFromTimezone(newTimezone)
+                    }
+                    .onAppear {
+                        formState.utcOffset = offsetFromTimezone(formState.timezone)
+                    }
+
+                    HStack {
+                        Text("UTC Offset")
+                            .frame(width: 80, alignment: .leading)
+                        Text(String(format: "%.1f hours", formState.utcOffset))
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Calculation Settings") {
@@ -123,6 +136,12 @@ struct NewProfileView: View {
         ]
     }
 
+    private func offsetFromTimezone(_ timezone: String) -> Double {
+        guard let tz = TimeZone(identifier: timezone) else { return 0.0 }
+        let seconds = Double(tz.secondsFromGMT())
+        return seconds / 3600.0
+    }
+
     private func saveProfile() {
         guard formState.isValid else {
             validationErrorMessage = "Please fill in all required fields correctly."
@@ -132,10 +151,11 @@ struct NewProfileView: View {
 
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)  // Always store as UTC
 
         let profile = Profile(
             name: formState.name.trimmingCharacters(in: .whitespaces),
-            dobUTC: formatter.string(from: formState.dob) + "Z",
+            dobUTC: formatter.string(from: formState.dob),  // formatter handles timezone — no "Z" appended
             latitude: formState.latitude,
             longitude: formState.longitude,
             timezone: formState.timezone,

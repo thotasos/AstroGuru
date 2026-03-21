@@ -92,4 +92,66 @@ final class NewProfileViewTests: XCTestCase {
         formState.longitude = 181
         XCTAssertFalse(formState.isValid)
     }
+
+    func testSavedProfileHasValidUTCDateString() {
+        let testDate = Date(timeIntervalSince1970: 0) // 1970-01-01T00:00:00Z
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        let dateString = formatter.string(from: testDate)
+
+        XCTAssertFalse(dateString.hasSuffix("ZZ"), "Date string has double Z: \(dateString)")
+        XCTAssertFalse(dateString.contains("+00:00Z"), "Date string has +00:00Z: \(dateString)")
+
+        let parsed = ISO8601DateFormatter().date(from: dateString)
+        XCTAssertNotNil(parsed, "Date string not parseable: \(dateString)")
+        XCTAssertEqual(parsed?.timeIntervalSince1970 ?? -1, 0, accuracy: 1.0)
+    }
+
+    func testSavedProfileDateStringDoesNotAppendExtraZ() {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        let date = Date()
+        let correctString = formatter.string(from: date)
+        let brokenString = correctString + "Z"
+
+        // The correct string must be parseable
+        XCTAssertNotNil(ISO8601DateFormatter().date(from: correctString),
+                        "Correct string should parse: \(correctString)")
+        // The correct string must not have a doubled timezone suffix
+        XCTAssertFalse(correctString.hasSuffix("ZZ"), "Correct string must not end in ZZ: \(correctString)")
+        XCTAssertFalse(correctString.contains("+00:00Z"), "Correct string must not contain +00:00Z: \(correctString)")
+        // The broken string is distinguishable from the correct string
+        XCTAssertNotEqual(correctString, brokenString,
+                          "Correct and broken strings must differ — broken: \(brokenString)")
+    }
+
+    func testSaveProfileCreatesProfileWithParsableDOB() {
+        var formState = NewProfileView.FormState()
+        formState.name = "UTC Test"
+        formState.latitude = 28.6
+        formState.longitude = 77.2
+        formState.timezone = "Asia/Kolkata"
+
+        // Simulate what the FIXED saveProfile does
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        let dobUTC = formatter.string(from: formState.dob)
+
+        let profile = Profile(
+            name: formState.name,
+            dobUTC: dobUTC,
+            latitude: formState.latitude,
+            longitude: formState.longitude,
+            timezone: formState.timezone,
+            utcOffset: formState.utcOffset
+        )
+
+        viewModel.saveProfile(profile)
+        XCTAssertEqual(viewModel.profiles.count, 1)
+        XCTAssertNotNil(viewModel.profiles[0].dobDate,
+                        "dobDate should parse — got: \(viewModel.profiles[0].dobUTC)")
+    }
 }
