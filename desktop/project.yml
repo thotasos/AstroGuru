@@ -43,3 +43,17 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.parashari.precision.tests
         GENERATE_INFOPLIST_FILE: YES
+
+  ParashariPrecisionUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: ParashariPrecisionUITests
+        excludes:
+          - "**/.DS_Store"
+    dependencies:
+      - target: ParashariPrecision
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.parashari.precision.uitests
+        GENERATE_INFOPLIST_FILE: YES
