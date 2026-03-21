@@ -5,7 +5,7 @@ struct PredictionsView: View {
     @StateObject private var viewModel = PredictionsViewModel()
     @State private var selectedTab = 0
 
-    private let tabTitles = ["Overview", "Dasha", "Planets", "Yogas"]
+    private let tabTitles = ["Overview", "Dasha", "Planets", "Yogas", "Day", "Month"]
 
     var body: some View {
         Group {
@@ -34,7 +34,7 @@ struct PredictionsView: View {
                     Divider()
 
                     // Tab content
-                    TabContent(selectedTab: selectedTab, viewModel: viewModel)
+                    TabContent(selectedTab: selectedTab, profile: profile, viewModel: viewModel)
                 }
                 .navigationTitle("Predictions")
             }
@@ -89,6 +89,7 @@ struct TabSelector: View {
 
 struct TabContent: View {
     let selectedTab: Int
+    let profile: Profile
     @ObservedObject var viewModel: PredictionsViewModel
 
     var body: some View {
@@ -101,6 +102,10 @@ struct TabContent: View {
             PlanetPredictionsContentView(viewModel: viewModel)
         case 3:
             YogaImpactContentView(viewModel: viewModel)
+        case 4:
+            DayPredictionTabView(profile: profile, viewModel: viewModel)
+        case 5:
+            MonthPredictionTabView(profile: profile, viewModel: viewModel)
         default:
             OverviewContentView(prediction: viewModel.prediction)
         }
@@ -407,6 +412,333 @@ struct HighlightedTextView: View {
                 break
             }
         }
+    }
+}
+
+// MARK: - Shared Helpers
+
+private func planetSymbol(_ planet: String) -> String {
+    switch planet {
+    case "Sun": return "☀️"
+    case "Moon": return "🌙"
+    case "Mars": return "♂"
+    case "Mercury": return "☿"
+    case "Jupiter": return "♃"
+    case "Venus": return "♀"
+    case "Saturn": return "♄"
+    case "Rahu": return "☊"
+    case "Ketu": return "☋"
+    default: return "⚪"
+    }
+}
+
+// MARK: - Trend Bar
+
+struct TrendBar: View {
+    let value: Double  // 0.0–1.0
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.gray.opacity(0.2))
+                Capsule()
+                    .fill(value >= 0.7 ? Color.green : value >= 0.5 ? Color.yellow : Color.red)
+                    .frame(width: max(2, geo.size.width * value))
+            }
+        }
+        .frame(height: 6)
+    }
+}
+
+// MARK: - Day Prediction Tab
+
+struct DayPredictionTabView: View {
+    let profile: Profile
+    @ObservedObject var viewModel: PredictionsViewModel
+    @State private var selectedDay = Date()
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                DatePicker("Date", selection: $selectedDay, displayedComponents: .date)
+                    .labelsHidden()
+                Spacer()
+                if let dp = viewModel.dayPrediction {
+                    Text("Day Lord: \(planetSymbol(dp.dayLord)) \(dp.dayLord)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+            .background(Color(nsColor: .controlBackgroundColor))
+
+            Divider()
+
+            if let dp = viewModel.dayPrediction {
+                DayPredictionContentView(prediction: dp)
+            } else {
+                ProgressView("Generating day prediction…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task(id: selectedDay) {
+            viewModel.selectedDay = selectedDay
+            await viewModel.generateDayPrediction(for: profile)
+        }
+    }
+}
+
+struct DayPredictionContentView: View {
+    let prediction: DayPrediction
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(prediction.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                if let best = prediction.bestHour, let worst = prediction.challengingHour {
+                    HStack(spacing: 12) {
+                        HourCalloutCard(title: "Best Hour", hour: best, tint: .green)
+                        HourCalloutCard(title: "Challenging Hour", hour: worst, tint: .red)
+                    }
+                    .padding(.horizontal)
+                }
+
+                // Column headers
+                HStack(spacing: 8) {
+                    Text("Hour").frame(width: 90, alignment: .leading).font(.caption2).foregroundStyle(.secondary)
+                    Text("Hora").frame(width: 44, alignment: .center).font(.caption2).foregroundStyle(.secondary)
+                    ForEach(["Career", "Finance", "Health", "Rels.", "Spirit."], id: \.self) { col in
+                        Text(col).frame(maxWidth: .infinity, alignment: .center).font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 4)
+
+                Divider()
+
+                LazyVStack(spacing: 0) {
+                    ForEach(prediction.hours) { hour in
+                        HourRow(hour: hour)
+                        Divider()
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+struct HourCalloutCard: View {
+    let title: String
+    let hour: HourPrediction
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(tint)
+                .fontWeight(.semibold)
+            Text(hour.hourRange)
+                .font(.headline)
+            Text(planetSymbol(hour.horaLord) + " " + hour.horaLord + " hora")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(String(format: "Overall: %.0f%%", hour.overallScore * 100))
+                .font(.caption)
+                .foregroundStyle(tint)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tint.opacity(0.1))
+        .cornerRadius(8)
+    }
+}
+
+struct HourRow: View {
+    let hour: HourPrediction
+
+    private var rowBackground: Color {
+        hour.overallScore >= 0.7 ? Color.green.opacity(0.08) :
+        hour.overallScore < 0.5  ? Color.red.opacity(0.08)   : Color.clear
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(hour.hourRange)
+                .font(.caption)
+                .frame(width: 90, alignment: .leading)
+            Text(planetSymbol(hour.horaLord))
+                .font(.caption)
+                .frame(width: 44, alignment: .center)
+            TrendBar(value: hour.career)
+            TrendBar(value: hour.finance)
+            TrendBar(value: hour.health)
+            TrendBar(value: hour.relationships)
+            TrendBar(value: hour.spirituality)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 6)
+        .background(rowBackground)
+    }
+}
+
+// MARK: - Month Prediction Tab
+
+struct MonthPredictionTabView: View {
+    let profile: Profile
+    @ObservedObject var viewModel: PredictionsViewModel
+
+    private var selectedMonthDate: Date {
+        var comps = viewModel.selectedMonthYear
+        comps.day = 1
+        return Calendar.current.date(from: comps) ?? Date()
+    }
+
+    private var monthLabel: String {
+        let df = DateFormatter()
+        df.dateFormat = "MMMM yyyy"
+        return df.string(from: selectedMonthDate)
+    }
+
+    private func adjustMonth(by delta: Int) {
+        let year  = viewModel.selectedMonthYear.year  ?? Calendar.current.component(.year,  from: Date())
+        let month = viewModel.selectedMonthYear.month ?? Calendar.current.component(.month, from: Date())
+        var comps = DateComponents()
+        comps.year = year; comps.month = month; comps.day = 1
+        if let d  = Calendar.current.date(from: comps),
+           let nd = Calendar.current.date(byAdding: .month, value: delta, to: d) {
+            viewModel.selectedMonthYear = Calendar.current.dateComponents([.year, .month], from: nd)
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button(action: { adjustMonth(by: -1) }) {
+                    Image(systemName: "chevron.left")
+                }
+                .buttonStyle(.plain)
+
+                Text(monthLabel)
+                    .font(.headline)
+                    .frame(minWidth: 160)
+
+                Button(action: { adjustMonth(by: 1) }) {
+                    Image(systemName: "chevron.right")
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                if let mp = viewModel.monthPrediction {
+                    Text("Dasha: \(mp.dashaLord)–\(mp.antardashaLord)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+            .background(Color(nsColor: .controlBackgroundColor))
+
+            Divider()
+
+            if let mp = viewModel.monthPrediction {
+                MonthPredictionContentView(prediction: mp)
+            } else {
+                ProgressView("Generating month prediction…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task(id: viewModel.selectedMonthYear) {
+            await viewModel.generateMonthPrediction(for: profile)
+        }
+    }
+}
+
+struct MonthPredictionContentView: View {
+    let prediction: MonthPrediction
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(prediction.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                // Column headers
+                HStack(spacing: 8) {
+                    Text("Day").frame(width: 40, alignment: .leading).font(.caption2).foregroundStyle(.secondary)
+                    Text("Lord").frame(width: 36, alignment: .center).font(.caption2).foregroundStyle(.secondary)
+                    ForEach(["Career", "Finance", "Health", "Rels.", "Spirit."], id: \.self) { col in
+                        Text(col).frame(maxWidth: .infinity, alignment: .center).font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Text("Overall").frame(width: 52, alignment: .trailing).font(.caption2).foregroundStyle(.secondary)
+                }
+                .padding(.horizontal)
+
+                Divider()
+
+                LazyVStack(spacing: 0) {
+                    ForEach(prediction.days) { day in
+                        DailyTrendRow(trend: day)
+                        Divider()
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+struct DailyTrendRow: View {
+    let trend: DailyTrend
+
+    private var rowBackground: Color {
+        trend.overallScore >= 0.7 ? Color.green.opacity(0.08) :
+        trend.overallScore < 0.5  ? Color.red.opacity(0.08)   : Color.clear
+    }
+
+    private func weekdayAbbrev(_ date: Date) -> String {
+        let df = DateFormatter(); df.dateFormat = "EEE"; return df.string(from: date)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(String(format: "%02d", trend.dayOfMonth))
+                    .font(.caption.bold())
+                Text(weekdayAbbrev(trend.date))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(width: 40, alignment: .leading)
+
+            Text(planetSymbol(trend.dayLord))
+                .font(.caption)
+                .frame(width: 36, alignment: .center)
+
+            TrendBar(value: trend.career)
+            TrendBar(value: trend.finance)
+            TrendBar(value: trend.health)
+            TrendBar(value: trend.relationships)
+            TrendBar(value: trend.spirituality)
+
+            Text(String(format: "%.0f%%", trend.overallScore * 100))
+                .font(.caption2.bold())
+                .foregroundStyle(
+                    trend.overallScore >= 0.7 ? Color.green :
+                    trend.overallScore < 0.5  ? Color.red   : Color.orange
+                )
+                .frame(width: 52, alignment: .trailing)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 5)
+        .background(rowBackground)
     }
 }
 
