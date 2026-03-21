@@ -11,19 +11,26 @@
 		0D51116997DC14FB9E27B380 /* AstrologyCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA460CE054F79F109B5082D1 /* AstrologyCore.swift */; };
 		1082783F13423C762DB588D3 /* ChartData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E645FF607C427919B290972B /* ChartData.swift */; };
 		158578BE94B77125308CC8DA /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92ECAFFCC1E19D0B69474096 /* Profile.swift */; };
+		1C37E54306FE5D0157847A0C /* DashaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A206F2BF6C43AD024662DE60 /* DashaView.swift */; };
+		1C9C94C8F5699520749E7FED /* ChartViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD3B74D7395808F0EDEDC384 /* ChartViewModelTests.swift */; };
 		20D1812963259980E8FBC2AA /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FB9F915EA263EECF713CBD3 /* Types.swift */; };
 		2F08FCD2003AFB76F0604C90 /* DashaPeriod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC4F2673CA1E69112A05F09 /* DashaPeriod.swift */; };
+		355058EB42188FBF50F02B4D /* SouthIndianChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646B0553050BF5CA00B49E78 /* SouthIndianChartView.swift */; };
 		441900AEC04827411099CAEF /* DatabaseServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D69CF6F3E7CA6EB758C518 /* DatabaseServiceTests.swift */; };
 		4DC518DC916B35269A1997FC /* YogaResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D9C5C3807ADE4B1893CCB95 /* YogaResult.swift */; };
 		50B5A91F41708B25D13A819C /* ProfilesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AE1D462CF84699F0856A96A /* ProfilesViewModel.swift */; };
 		59C0AEA45A8406092F302550 /* ShadbalaResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80419A6D11431A55B1FCAC08 /* ShadbalaResult.swift */; };
 		5C1F39C4A297CA209AB42080 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0927BA042D6D52A0029D1967 /* MainView.swift */; };
+		7E020FE9C92F7B65C550E9DE /* ChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3CF95E59E94C5BDFFD351F3 /* ChartViewModel.swift */; };
 		7FF38461A0AD43BC205D3709 /* ProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D533BD54018FCF31D83A5F6C /* ProfileListView.swift */; };
 		8912E6F9B6880AC3A3DB365C /* ShadbalaResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A27CFF4C88999C461B94083 /* ShadbalaResultTests.swift */; };
 		A69AA7C42830AE75DCE19B4B /* AshtakavargaResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CBCF18BB8F078466E957F1 /* AshtakavargaResult.swift */; };
+		AA42C86E43D73DAB7B2A0D1E /* DashaViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E245A68E0FE8B876200118F9 /* DashaViewTests.swift */; };
 		AC67D89004BB139C8552F805 /* NewProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F6BC97124F43477601AD0F /* NewProfileView.swift */; };
 		AF0F903AD491391F9B231837 /* ProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA914BAF729CBB589948230 /* ProfileTests.swift */; };
+		B05EDA9622DF965B84E50FFE /* DashaViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4FB7CDF15A9120EC9992B4 /* DashaViewModel.swift */; };
 		B47831D536F01E337E233274 /* DashaPeriodTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C919C7BFA857C4DE4C430720 /* DashaPeriodTests.swift */; };
+		C5C3F9337F5ACCC607AE92D3 /* DashaViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD63E7985A7F9094E70AD002 /* DashaViewModelTests.swift */; };
 		D53177985DC7245F4E9E4E38 /* YogaResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B76AE2BA1DDE7AFCE6DFE3 /* YogaResultTests.swift */; };
 		D7363E38CECD710B24507C97 /* ProfilesViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC50F4BC4D0FB2EC1C2E63A /* ProfilesViewModelTests.swift */; };
 		DD2814940A3240D882F7B56C /* NewProfileViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57EAD5CE60390EA9BA8E38B1 /* NewProfileViewTests.swift */; };
@@ -32,6 +39,7 @@
 		E9B4D7AEFD5CD72F9E0B5322 /* ChartDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 450573613711044DC73BA905 /* ChartDataTests.swift */; };
 		EC8404DE579C274F500973A4 /* AshtakavargaResultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3136896C822F1C7A52B7872C /* AshtakavargaResultTests.swift */; };
 		EDF84C4BC2114AF6D00C3A48 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A8A4A681309C0A0115F7C27D /* Assets.xcassets */; };
+		F0E70198054517CD0EFB24CA /* SouthIndianChartViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B0DA9AE76529D88569B456B /* SouthIndianChartViewTests.swift */; };
 		FA9ABB1D7F8AA35DD25878FA /* ParashariPrecisionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF0D5BED7A723FB8243F9C4 /* ParashariPrecisionApp.swift */; };
 		FD3A6D1594BED85E63226FF7 /* ProfileListViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F663A568ED4F5100AE1B847 /* ProfileListViewTests.swift */; };
 /* End PBXBuildFile section */
@@ -54,6 +62,7 @@
 		0F663A568ED4F5100AE1B847 /* ProfileListViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileListViewTests.swift; sourceTree = "<group>"; };
 		17D69CF6F3E7CA6EB758C518 /* DatabaseServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseServiceTests.swift; sourceTree = "<group>"; };
 		1BA914BAF729CBB589948230 /* ProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileTests.swift; sourceTree = "<group>"; };
+		1C4FB7CDF15A9120EC9992B4 /* DashaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaViewModel.swift; sourceTree = "<group>"; };
 		1CA9EB28DC8A3823F7AFF9DB /* DatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseService.swift; sourceTree = "<group>"; };
 		22F6BC97124F43477601AD0F /* NewProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewProfileView.swift; sourceTree = "<group>"; };
 		3136896C822F1C7A52B7872C /* AshtakavargaResultTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AshtakavargaResultTests.swift; sourceTree = "<group>"; };
@@ -63,17 +72,24 @@
 		4CC4F2673CA1E69112A05F09 /* DashaPeriod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaPeriod.swift; sourceTree = "<group>"; };
 		57EAD5CE60390EA9BA8E38B1 /* NewProfileViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewProfileViewTests.swift; sourceTree = "<group>"; };
 		59CBCF18BB8F078466E957F1 /* AshtakavargaResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AshtakavargaResult.swift; sourceTree = "<group>"; };
+		646B0553050BF5CA00B49E78 /* SouthIndianChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SouthIndianChartView.swift; sourceTree = "<group>"; };
 		6FC50F4BC4D0FB2EC1C2E63A /* ProfilesViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesViewModelTests.swift; sourceTree = "<group>"; };
 		7BF0D5BED7A723FB8243F9C4 /* ParashariPrecisionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParashariPrecisionApp.swift; sourceTree = "<group>"; };
 		7D9C5C3807ADE4B1893CCB95 /* YogaResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YogaResult.swift; sourceTree = "<group>"; };
 		7FB9F915EA263EECF713CBD3 /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
 		80419A6D11431A55B1FCAC08 /* ShadbalaResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadbalaResult.swift; sourceTree = "<group>"; };
+		8B0DA9AE76529D88569B456B /* SouthIndianChartViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SouthIndianChartViewTests.swift; sourceTree = "<group>"; };
 		92ECAFFCC1E19D0B69474096 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		968E802D4698FC074C83C7E3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A206F2BF6C43AD024662DE60 /* DashaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaView.swift; sourceTree = "<group>"; };
+		A3CF95E59E94C5BDFFD351F3 /* ChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartViewModel.swift; sourceTree = "<group>"; };
 		A8A4A681309C0A0115F7C27D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BD3B74D7395808F0EDEDC384 /* ChartViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartViewModelTests.swift; sourceTree = "<group>"; };
 		C919C7BFA857C4DE4C430720 /* DashaPeriodTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaPeriodTests.swift; sourceTree = "<group>"; };
 		D533BD54018FCF31D83A5F6C /* ProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileListView.swift; sourceTree = "<group>"; };
 		DA460CE054F79F109B5082D1 /* AstrologyCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstrologyCore.swift; sourceTree = "<group>"; };
+		DD63E7985A7F9094E70AD002 /* DashaViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaViewModelTests.swift; sourceTree = "<group>"; };
+		E245A68E0FE8B876200118F9 /* DashaViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaViewTests.swift; sourceTree = "<group>"; };
 		E34D949493EDEF728FF2DD71 /* ParashariPrecision.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ParashariPrecision.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E645FF607C427919B290972B /* ChartData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartData.swift; sourceTree = "<group>"; };
 		F58186CA7F518236DEDFE11D /* ParashariPrecisionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ParashariPrecisionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -92,6 +108,8 @@
 		63047165E0880A5D108EDD8D /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				A3CF95E59E94C5BDFFD351F3 /* ChartViewModel.swift */,
+				1C4FB7CDF15A9120EC9992B4 /* DashaViewModel.swift */,
 				0AE1D462CF84699F0856A96A /* ProfilesViewModel.swift */,
 			);
 			path = ViewModels;
@@ -116,13 +134,17 @@
 				3136896C822F1C7A52B7872C /* AshtakavargaResultTests.swift */,
 				472DABEC336AD17DDC76BCDF /* AstrologyCoreTests.swift */,
 				450573613711044DC73BA905 /* ChartDataTests.swift */,
+				BD3B74D7395808F0EDEDC384 /* ChartViewModelTests.swift */,
 				C919C7BFA857C4DE4C430720 /* DashaPeriodTests.swift */,
+				DD63E7985A7F9094E70AD002 /* DashaViewModelTests.swift */,
+				E245A68E0FE8B876200118F9 /* DashaViewTests.swift */,
 				17D69CF6F3E7CA6EB758C518 /* DatabaseServiceTests.swift */,
 				57EAD5CE60390EA9BA8E38B1 /* NewProfileViewTests.swift */,
 				0F663A568ED4F5100AE1B847 /* ProfileListViewTests.swift */,
 				6FC50F4BC4D0FB2EC1C2E63A /* ProfilesViewModelTests.swift */,
 				1BA914BAF729CBB589948230 /* ProfileTests.swift */,
 				0A27CFF4C88999C461B94083 /* ShadbalaResultTests.swift */,
+				8B0DA9AE76529D88569B456B /* SouthIndianChartViewTests.swift */,
 				04B17D788D126BAC1F77BBF1 /* TypesTests.swift */,
 				46B76AE2BA1DDE7AFCE6DFE3 /* YogaResultTests.swift */,
 			);
@@ -170,6 +192,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		A8A47D23EB6E3ABA87F5ABB8 /* Dasha */ = {
+			isa = PBXGroup;
+			children = (
+				A206F2BF6C43AD024662DE60 /* DashaView.swift */,
+			);
+			path = Dasha;
+			sourceTree = "<group>";
+		};
 		D990A04AB8DF6C83C948E2C0 /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -183,6 +213,7 @@
 			children = (
 				0927BA042D6D52A0029D1967 /* MainView.swift */,
 				F903D427756D81E57C066696 /* Chart */,
+				A8A47D23EB6E3ABA87F5ABB8 /* Dasha */,
 				8D8A9B61F1D699CD26427913 /* Profile */,
 			);
 			path = Views;
@@ -200,6 +231,7 @@
 		F903D427756D81E57C066696 /* Chart */ = {
 			isa = PBXGroup;
 			children = (
+				646B0553050BF5CA00B49E78 /* SouthIndianChartView.swift */,
 			);
 			path = Chart;
 			sourceTree = "<group>";
@@ -291,13 +323,17 @@
 				EC8404DE579C274F500973A4 /* AshtakavargaResultTests.swift in Sources */,
 				01158529133D8D850A11651B /* AstrologyCoreTests.swift in Sources */,
 				E9B4D7AEFD5CD72F9E0B5322 /* ChartDataTests.swift in Sources */,
+				1C9C94C8F5699520749E7FED /* ChartViewModelTests.swift in Sources */,
 				B47831D536F01E337E233274 /* DashaPeriodTests.swift in Sources */,
+				C5C3F9337F5ACCC607AE92D3 /* DashaViewModelTests.swift in Sources */,
+				AA42C86E43D73DAB7B2A0D1E /* DashaViewTests.swift in Sources */,
 				441900AEC04827411099CAEF /* DatabaseServiceTests.swift in Sources */,
 				DD2814940A3240D882F7B56C /* NewProfileViewTests.swift in Sources */,
 				FD3A6D1594BED85E63226FF7 /* ProfileListViewTests.swift in Sources */,
 				AF0F903AD491391F9B231837 /* ProfileTests.swift in Sources */,
 				D7363E38CECD710B24507C97 /* ProfilesViewModelTests.swift in Sources */,
 				8912E6F9B6880AC3A3DB365C /* ShadbalaResultTests.swift in Sources */,
+				F0E70198054517CD0EFB24CA /* SouthIndianChartViewTests.swift in Sources */,
 				E6BE3F98595926781A59AE99 /* TypesTests.swift in Sources */,
 				D53177985DC7245F4E9E4E38 /* YogaResultTests.swift in Sources */,
 			);
@@ -310,7 +346,10 @@
 				A69AA7C42830AE75DCE19B4B /* AshtakavargaResult.swift in Sources */,
 				0D51116997DC14FB9E27B380 /* AstrologyCore.swift in Sources */,
 				1082783F13423C762DB588D3 /* ChartData.swift in Sources */,
+				7E020FE9C92F7B65C550E9DE /* ChartViewModel.swift in Sources */,
 				2F08FCD2003AFB76F0604C90 /* DashaPeriod.swift in Sources */,
+				1C37E54306FE5D0157847A0C /* DashaView.swift in Sources */,
+				B05EDA9622DF965B84E50FFE /* DashaViewModel.swift in Sources */,
 				E03726350B615C0D4A760CD7 /* DatabaseService.swift in Sources */,
 				5C1F39C4A297CA209AB42080 /* MainView.swift in Sources */,
 				AC67D89004BB139C8552F805 /* NewProfileView.swift in Sources */,
@@ -319,6 +358,7 @@
 				7FF38461A0AD43BC205D3709 /* ProfileListView.swift in Sources */,
 				50B5A91F41708B25D13A819C /* ProfilesViewModel.swift in Sources */,
 				59C0AEA45A8406092F302550 /* ShadbalaResult.swift in Sources */,
+				355058EB42188FBF50F02B4D /* SouthIndianChartView.swift in Sources */,
 				20D1812963259980E8FBC2AA /* Types.swift in Sources */,
 				4DC518DC916B35269A1997FC /* YogaResult.swift in Sources */,
 			);
