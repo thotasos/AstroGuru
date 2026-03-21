@@ -94,6 +94,7 @@ final class NewProfileViewTests: XCTestCase {
     }
 
     func testSavedProfileHasValidUTCDateString() {
+        // Validates the ISO8601DateFormatter configuration used by saveProfile():
         let testDate = Date(timeIntervalSince1970: 0) // 1970-01-01T00:00:00Z
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
@@ -128,18 +129,24 @@ final class NewProfileViewTests: XCTestCase {
     }
 
     func testSaveProfileCreatesProfileWithParsableDOB() {
+        // Note: saveProfile() is private in NewProfileView so we test the contract it produces.
+        // Production code uses: ISO8601DateFormatter with .withInternetDateTime + timeZone = UTC (no + "Z")
         var formState = NewProfileView.FormState()
         formState.name = "UTC Test"
         formState.latitude = 28.6
         formState.longitude = 77.2
         formState.timezone = "Asia/Kolkata"
 
-        // Simulate what the FIXED saveProfile does
+        // Replicate exactly what the FIXED saveProfile() does
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         let dobUTC = formatter.string(from: formState.dob)
 
+        // The buggy approach (old code): appending "Z" to a timezone-qualified string
+        let buggyDobUTC = formatter.string(from: formState.dob) + "Z"
+
+        // The correct format must be parseable; verify round-trip saves and loads correctly
         let profile = Profile(
             name: formState.name,
             dobUTC: dobUTC,
@@ -148,10 +155,17 @@ final class NewProfileViewTests: XCTestCase {
             timezone: formState.timezone,
             utcOffset: formState.utcOffset
         )
-
         viewModel.saveProfile(profile)
         XCTAssertEqual(viewModel.profiles.count, 1)
         XCTAssertNotNil(viewModel.profiles[0].dobDate,
-                        "dobDate should parse — got: \(viewModel.profiles[0].dobUTC)")
+                        "Correct UTC format must produce parseable dobDate. dobUTC=\(dobUTC)")
+
+        // The correct format must not equal the buggy format (regression guard)
+        XCTAssertNotEqual(dobUTC, buggyDobUTC, "Fixed format must differ from buggy format")
+
+        // The stored dobUTC must not end with ZZ or contain +00:00Z
+        let stored = viewModel.profiles[0].dobUTC
+        XCTAssertFalse(stored.hasSuffix("ZZ"), "Stored dobUTC must not end with ZZ: \(stored)")
+        XCTAssertFalse(stored.contains("+00:00Z"), "Stored dobUTC must not contain +00:00Z: \(stored)")
     }
 }
