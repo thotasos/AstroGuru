@@ -174,6 +174,88 @@ final class AstrologyCore {
 
         return try JSONDecoder().decode([DashaPeriod].self, from: data)
     }
+
+    func calculateShadbala(birthData: [String: Any]) throws -> [ShadbalaResult] {
+        if useProcessBridge {
+            guard let bridge = processBridge else {
+                throw AstrologyCoreError.calculationFailed
+            }
+            return try bridge.calculateShadbala(birthData: birthData)
+        }
+
+        guard let ctx = context else {
+            throw AstrologyCoreError.calculationFailed
+        }
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: birthData),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            throw AstrologyCoreError.invalidInput
+        }
+
+        let escapedString = jsonString
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\n", with: "\\n")
+
+        let jsCode = """
+            var birthData = JSON.parse('\(escapedString)');
+            var result = new AstrologyEngine().calculateShadbala(birthData);
+            JSON.stringify(result);
+        """
+
+        guard let jsResult = ctx.evaluateScript(jsCode),
+              let resultString = jsResult.toString(),
+              !resultString.isEmpty else {
+            throw AstrologyCoreError.calculationFailed
+        }
+
+        guard let data = resultString.data(using: .utf8) else {
+            throw AstrologyCoreError.invalidResponse
+        }
+
+        return try JSONDecoder().decode([ShadbalaResult].self, from: data)
+    }
+
+    func calculateYogas(birthData: [String: Any]) throws -> [YogaResult] {
+        if useProcessBridge {
+            guard let bridge = processBridge else {
+                throw AstrologyCoreError.calculationFailed
+            }
+            return try bridge.calculateYogas(birthData: birthData)
+        }
+
+        guard let ctx = context else {
+            throw AstrologyCoreError.calculationFailed
+        }
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: birthData),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            throw AstrologyCoreError.invalidInput
+        }
+
+        let escapedString = jsonString
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\n", with: "\\n")
+
+        let jsCode = """
+            var birthData = JSON.parse('\(escapedString)');
+            var result = new AstrologyEngine().calculateYogas(birthData);
+            JSON.stringify(result);
+        """
+
+        guard let jsResult = ctx.evaluateScript(jsCode),
+              let resultString = jsResult.toString(),
+              !resultString.isEmpty else {
+            throw AstrologyCoreError.calculationFailed
+        }
+
+        guard let data = resultString.data(using: .utf8) else {
+            throw AstrologyCoreError.invalidResponse
+        }
+
+        return try JSONDecoder().decode([YogaResult].self, from: data)
+    }
 }
 
 // MARK: - Process Bridge Fallback
@@ -246,6 +328,17 @@ final class AstrologyCoreProcessBridge {
             """, input: input)
 
         return try JSONDecoder().decode([DashaPeriod].self, from: output)
+    }
+
+    func calculateShadbala(birthData: [String: Any]) throws -> [ShadbalaResult] {
+        let input = try JSONSerialization.data(withJSONObject: birthData)
+        let output = try runNodeScript(script: """
+            const engine = require('@parashari/core');
+            const birthData = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+            console.log(JSON.stringify(engine.calculateShadbala(birthData)));
+            """, input: input)
+
+        return try JSONDecoder().decode([ShadbalaResult].self, from: output)
     }
 
     private func runNodeScript(script: String, input: Data) throws -> Data {
