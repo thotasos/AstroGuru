@@ -10,7 +10,12 @@ final class ProfilesViewModel: ObservableObject {
     private let database: DatabaseService
 
     init(database: DatabaseService? = nil) {
-        self.database = database ?? (try? DatabaseService())!
+        if let db = database {
+            self.database = db
+        } else {
+            // Attempt persistent DB, fallback to in-memory (never throws)
+            self.database = (try? DatabaseService()) ?? (try! DatabaseService(inMemory: true))
+        }
     }
 
     func initialize() {

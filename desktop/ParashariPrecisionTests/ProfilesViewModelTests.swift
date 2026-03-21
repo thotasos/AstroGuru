@@ -56,4 +56,10 @@ final class ProfilesViewModelTests: XCTestCase {
         XCTAssertTrue(names.contains("Mahatma Gandhi"))
         XCTAssertTrue(names.contains("Steve Jobs"))
     }
+
+    func testViewModelInitDoesNotCrashWithDefaultDatabase() {
+        // If the init crashes, this test will crash (not graceful XCTFail)
+        let vm = ProfilesViewModel()
+        XCTAssertNotNil(vm)
+    }
 }
