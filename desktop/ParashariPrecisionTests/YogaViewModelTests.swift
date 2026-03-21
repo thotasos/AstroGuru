@@ -216,4 +216,38 @@ final class YogaViewModelTests: XCTestCase {
         viewModel.isCalculating = true
         XCTAssertTrue(viewModel.isCalculating)
     }
+
+    func testAllYogaStrengthsInValidRange() async {
+        await viewModel.calculateYogas(for: sampleProfile)
+        for yoga in viewModel.yogas {
+            XCTAssertGreaterThanOrEqual(yoga.strength, 0.0, "\(yoga.name) strength < 0")
+            XCTAssertLessThanOrEqual(yoga.strength, 1.0, "\(yoga.name) strength > 1")
+        }
+    }
+
+    func testAllYogasCategoryNonEmpty() async {
+        await viewModel.calculateYogas(for: sampleProfile)
+        for yoga in viewModel.yogas {
+            XCTAssertFalse(yoga.category.isEmpty, "\(yoga.name) has empty category")
+        }
+    }
+
+    func testDisplayedYogasRespectsSortOption() async {
+        await viewModel.calculateYogas(for: sampleProfile)
+        viewModel.sortOption = .strength
+        let displayed = viewModel.displayedYogas
+        for i in 0..<(displayed.count - 1) {
+            XCTAssertGreaterThanOrEqual(displayed[i].strength, displayed[i+1].strength)
+        }
+    }
+
+    func testDisplayedYogasFilteredByCategory() async {
+        await viewModel.calculateYogas(for: sampleProfile)
+        guard let firstCategory = viewModel.availableCategories.first else { return }
+        viewModel.selectedCategory = firstCategory
+        let filtered = viewModel.displayedYogas
+        for yoga in filtered {
+            XCTAssertEqual(yoga.category, firstCategory)
+        }
+    }
 }

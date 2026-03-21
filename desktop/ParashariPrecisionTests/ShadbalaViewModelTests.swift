@@ -132,4 +132,43 @@ final class ShadbalaViewModelTests: XCTestCase {
         XCTAssertFalse(atExaltedThreshold.isExalted) // 599.99 < 600
         XCTAssertTrue(justBelowDebilitatedThreshold.isDebilitated) // 299.99 < 300
     }
+
+    func testShadbalaResultsHaveNinePlanets() async {
+        await viewModel.calculateShadbala(for: sampleProfile)
+        XCTAssertEqual(viewModel.shadbalaResults.count, 9)
+    }
+
+    func testAllShadbalaComponentsNonNegative() async {
+        await viewModel.calculateShadbala(for: sampleProfile)
+        for result in viewModel.shadbalaResults {
+            XCTAssertGreaterThanOrEqual(result.sthAnaBala, 0, "\(result.planet) sthAnaBala negative")
+            XCTAssertGreaterThanOrEqual(result.digBala, 0, "\(result.planet) digBala negative")
+            XCTAssertGreaterThanOrEqual(result.kalaBala, 0, "\(result.planet) kalaBala negative")
+            XCTAssertGreaterThanOrEqual(result.naisargikaBala, 0, "\(result.planet) naisargikaBala negative")
+        }
+    }
+
+    func testShadbalaStrengthInVirupasAtMost600() async {
+        await viewModel.calculateShadbala(for: sampleProfile)
+        for result in viewModel.shadbalaResults {
+            XCTAssertLessThanOrEqual(result.strengthInVirupas, 600,
+                "\(result.planet) virupas exceeds 600")
+        }
+    }
+
+    func testSortedResultsDescendingByTotal() async {
+        await viewModel.calculateShadbala(for: sampleProfile)
+        let sorted = viewModel.sortedResults
+        for i in 0..<(sorted.count - 1) {
+            XCTAssertGreaterThanOrEqual(sorted[i].total, sorted[i+1].total)
+        }
+    }
+
+    func testIsExaltedAndDebilitatedMutuallyExclusive() async {
+        await viewModel.calculateShadbala(for: sampleProfile)
+        for result in viewModel.shadbalaResults {
+            XCTAssertFalse(result.isExalted && result.isDebilitated,
+                "\(result.planet) cannot be both exalted and debilitated")
+        }
+    }
 }

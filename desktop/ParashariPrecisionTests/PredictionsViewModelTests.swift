@@ -72,4 +72,29 @@ final class PredictionsViewModelTests: XCTestCase {
         XCTAssertNotNil(viewModel)
         XCTAssertFalse(viewModel.isGenerating)
     }
+
+    func testGeneratePredictionsPopulatesPlanetPredictions() async {
+        await viewModel.generateAllPredictions(for: sampleProfile!)
+        XCTAssertFalse(viewModel.planetPredictions.isEmpty)
+    }
+
+    func testGeneratePredictionsPopulatesDashaPrediction() async {
+        await viewModel.generateAllPredictions(for: sampleProfile!)
+        XCTAssertFalse(viewModel.dashaPrediction.isEmpty)
+    }
+
+    func testGeneratePredictionsPopulatesYogaImpact() async {
+        await viewModel.generateAllPredictions(for: sampleProfile!)
+        XCTAssertFalse(viewModel.yogaImpact.isEmpty)
+    }
+
+    func testIsGeneratingFalseAfterComplete() async {
+        await viewModel.generateAllPredictions(for: sampleProfile!)
+        XCTAssertFalse(viewModel.isGenerating)
+    }
+
+    func testErrorNilAfterSuccessfulGeneration() async {
+        await viewModel.generateAllPredictions(for: sampleProfile!)
+        XCTAssertNil(viewModel.errorMessage)
+    }
 }

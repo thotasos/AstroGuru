@@ -59,4 +59,50 @@ final class AshtakavargaViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.binduColorIntensity(for: 8), 1.0)
         XCTAssertEqual(viewModel.binduColorIntensity(for: 10), 1.0)
     }
+
+    func testBAVHasEightPlanets() async {
+        await viewModel.calculateAshtakavarga(for: sampleProfile)
+        guard let result = viewModel.ashtakavargaResult else { XCTFail("No result"); return }
+        XCTAssertEqual(result.bav.keys.count, 8)
+    }
+
+    func testBAVEachPlanetHasTwelveSignBindus() async {
+        await viewModel.calculateAshtakavarga(for: sampleProfile)
+        guard let result = viewModel.ashtakavargaResult else { return }
+        for (planet, bindus) in result.bav {
+            XCTAssertEqual(bindus.count, 12, "\(planet) BAV should have 12 sign entries")
+        }
+    }
+
+    func testSAVHasTwelveEntries() async {
+        await viewModel.calculateAshtakavarga(for: sampleProfile)
+        guard let result = viewModel.ashtakavargaResult else { return }
+        XCTAssertEqual(result.sav.count, 12)
+    }
+
+    func testBindusAreNonNegative() async {
+        await viewModel.calculateAshtakavarga(for: sampleProfile)
+        guard let result = viewModel.ashtakavargaResult else { return }
+        for (planet, bindus) in result.bav {
+            for bindu in bindus {
+                XCTAssertGreaterThanOrEqual(bindu, 0, "\(planet) has negative bindu")
+            }
+        }
+    }
+
+    func testPlanetTotalBindusNonNegative() async {
+        await viewModel.calculateAshtakavarga(for: sampleProfile)
+        for planet in viewModel.ashtakavargaPlanets {
+            XCTAssertGreaterThanOrEqual(viewModel.planetTotalBindus(for: planet), 0)
+        }
+    }
+
+    func testSAVTotalBindusNonNegative() async {
+        await viewModel.calculateAshtakavarga(for: sampleProfile)
+        XCTAssertGreaterThanOrEqual(viewModel.savTotalBindus(), 0)
+    }
+
+    func testUnknownPlanetTotalBindusReturnsZero() {
+        XCTAssertEqual(viewModel.planetTotalBindus(for: "Pluto"), 0)
+    }
 }
