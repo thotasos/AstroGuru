@@ -3,18 +3,17 @@ import SwiftUI
 struct MainView: View {
     @EnvironmentObject var profilesViewModel: ProfilesViewModel
     @State private var selectedProfile: Profile?
-    @State private var selectedTab: MainTab = .chart
 
-    enum MainTab {
+    enum MainTab: Hashable {
         case chart, dasha, shadbala, ashtakavarga, yogas, predictions
     }
 
     var body: some View {
         NavigationSplitView {
-            SidebarView(selectedProfile: $selectedProfile, selectedTab: $selectedTab)
+            SidebarView(selectedProfile: $selectedProfile)
         } detail: {
             if let profile = selectedProfile {
-                DetailView(profile: profile, selectedTab: selectedTab)
+                DetailView(profile: profile)
             } else {
                 ContentUnavailableView(
                     "Select a Profile",
@@ -28,7 +27,6 @@ struct MainView: View {
 
 struct SidebarView: View {
     @Binding var selectedProfile: Profile?
-    @Binding var selectedTab: MainView.MainTab
     @EnvironmentObject var profilesViewModel: ProfilesViewModel
 
     var body: some View {
@@ -48,45 +46,77 @@ struct SidebarView: View {
                     }
                 }
             }
-
-            Section("Analysis") {
-                Label("Chart", systemImage: "chart.bar")
-                    .tag(MainView.MainTab.chart)
-                Label("Dasha", systemImage: "timeline.selection")
-                    .tag(MainView.MainTab.dasha)
-                Label("Shadbala", systemImage: "scalemass")
-                    .tag(MainView.MainTab.shadbala)
-                Label("Ashtakavarga", systemImage: "square.grid.3x3")
-                    .tag(MainView.MainTab.ashtakavarga)
-                Label("Yogas", systemImage: "sparkles")
-                    .tag(MainView.MainTab.yogas)
-                Label("Predictions", systemImage: "crystal.ball")
-                    .tag(MainView.MainTab.predictions)
-            }
         }
         .navigationTitle("AstroGuru")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    profilesViewModel.showingNewProfile = true
+                } label: {
+                    Label("New Profile", systemImage: "plus")
+                }
+            }
+        }
+        .sheet(isPresented: $profilesViewModel.showingNewProfile) {
+            NewProfileView(onDismiss: {
+                profilesViewModel.showingNewProfile = false
+                profilesViewModel.loadProfiles()
+            })
+            .environmentObject(profilesViewModel)
+        }
+        .overlay {
+            if profilesViewModel.profiles.isEmpty {
+                ContentUnavailableView(
+                    "No Profiles",
+                    systemImage: "person.crop.circle.badge.plus",
+                    description: Text("Create a profile to get started")
+                )
+            }
+        }
     }
 }
 
 struct DetailView: View {
     let profile: Profile
-    let selectedTab: MainView.MainTab
+    @State private var selectedTab: MainView.MainTab = .chart
 
     var body: some View {
-        switch selectedTab {
-        case .chart:
-            ChartView(profile: profile)
-        case .dasha:
-            DashaView(profile: profile)
-        case .shadbala:
-            ShadbalaView(profile: profile)
-        case .ashtakavarga:
-            AshtakavargaView(profile: profile)
-        case .yogas:
-            YogaListView(profile: profile)
-        case .predictions:
-            PredictionsView(profile: profile)
+        VStack(spacing: 0) {
+            Picker("", selection: $selectedTab) {
+                Text("Chart").tag(MainView.MainTab.chart)
+                Text("Dasha").tag(MainView.MainTab.dasha)
+                Text("Shadbala").tag(MainView.MainTab.shadbala)
+                Text("Ashtakavarga").tag(MainView.MainTab.ashtakavarga)
+                Text("Yogas").tag(MainView.MainTab.yogas)
+                Text("Predictions").tag(MainView.MainTab.predictions)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+
+            Divider()
+
+            Group {
+                switch selectedTab {
+                case .chart:
+                    ChartView(profile: profile)
+                case .dasha:
+                    DashaView(profile: profile)
+                case .shadbala:
+                    ShadbalaView(profile: profile)
+                case .ashtakavarga:
+                    AshtakavargaView(profile: profile)
+                case .yogas:
+                    YogaListView(profile: profile)
+                case .predictions:
+                    PredictionsView(profile: profile)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .onChange(of: profile) { _, _ in
+            selectedTab = .chart
+        }
+        .navigationTitle(profile.name)
     }
 }
-

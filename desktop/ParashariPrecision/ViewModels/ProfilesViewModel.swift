@@ -6,6 +6,7 @@ final class ProfilesViewModel: ObservableObject {
     @Published var profiles: [Profile] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var showingNewProfile = false
 
     private let database: DatabaseService
 
