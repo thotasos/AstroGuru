@@ -67,4 +67,75 @@ final class ProfilesViewModelTests: XCTestCase {
         vm.initialize()
         XCTAssertNil(vm.errorMessage, "ViewModel should initialize without error: \(vm.errorMessage ?? "")")
     }
+
+    func testLoadProfilesUpdatesIsLoading() {
+        viewModel.loadProfiles()
+        XCTAssertFalse(viewModel.isLoading, "isLoading should be false after load completes")
+    }
+
+    func testSaveProfileWithAllFields() {
+        let profile = Profile(
+            name: "Full Profile",
+            dobUTC: "1990-06-15T08:30:00+00:00",
+            latitude: 51.5074,
+            longitude: -0.1278,
+            timezone: "Europe/London",
+            utcOffset: 0.0,
+            placeName: "London, UK",
+            ayanamsaId: 2,
+            notes: "Test notes"
+        )
+        viewModel.saveProfile(profile)
+        XCTAssertEqual(viewModel.profiles.count, 1)
+        let saved = viewModel.profiles[0]
+        XCTAssertEqual(saved.name, "Full Profile")
+        XCTAssertEqual(saved.ayanamsaId, 2)
+        XCTAssertEqual(saved.latitude, 51.5074, accuracy: 0.0001)
+        XCTAssertEqual(saved.longitude, -0.1278, accuracy: 0.0001)
+        XCTAssertEqual(saved.utcOffset, 0.0, accuracy: 0.001)
+    }
+
+    func testDeleteNonexistentProfileDoesNotCrash() {
+        let profile = Profile(
+            name: "Ghost",
+            dobUTC: "2000-01-01T00:00:00+00:00",
+            latitude: 0, longitude: 0,
+            timezone: "UTC", utcOffset: 0
+        )
+        viewModel.deleteProfile(profile)
+        XCTAssertEqual(viewModel.profiles.count, 0)
+    }
+
+    func testMultipleProfilesSavedAndRetrieved() {
+        for i in 1...5 {
+            let profile = Profile(
+                name: "User \(i)",
+                dobUTC: "2000-01-0\(i)T12:00:00+00:00",
+                latitude: Double(i),
+                longitude: Double(i),
+                timezone: "UTC",
+                utcOffset: 0
+            )
+            viewModel.saveProfile(profile)
+        }
+        XCTAssertEqual(viewModel.profiles.count, 5)
+    }
+
+    func testErrorMessageClearedOnSuccessfulLoad() {
+        viewModel.errorMessage = "Previous error"
+        viewModel.loadProfiles()
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    func testProfileDOBDateIsNotNilAfterSave() {
+        let profile = Profile(
+            name: "Date Test",
+            dobUTC: "1990-06-15T08:30:00+00:00",
+            latitude: 0, longitude: 0,
+            timezone: "UTC", utcOffset: 0
+        )
+        viewModel.saveProfile(profile)
+        XCTAssertNotNil(viewModel.profiles[0].dobDate,
+                        "dobDate should parse from stored dobUTC")
+    }
 }

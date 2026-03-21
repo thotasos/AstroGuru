@@ -101,4 +101,32 @@ final class DashaViewModelTests: XCTestCase {
         // currentDasha returns the first matching dasha using first{}
         XCTAssertEqual(viewModel.currentDasha?.lord, "Moon")
     }
+
+    func testDashaPeriodsHaveValidLords() async {
+        await viewModel.calculateDashas(for: sampleProfile)
+        let validLords = ["Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury", "Ketu", "Venus"]
+        for dasha in viewModel.dashaPeriods {
+            XCTAssertTrue(validLords.contains(dasha.lord), "Invalid lord: \(dasha.lord)")
+        }
+    }
+
+    func testDashaPeriodsHaveForwardChronology() async {
+        await viewModel.calculateDashas(for: sampleProfile)
+        guard viewModel.dashaPeriods.count > 1 else { return }
+        for i in 0..<(viewModel.dashaPeriods.count - 1) {
+            let current = viewModel.dashaPeriods[i]
+            let next = viewModel.dashaPeriods[i + 1]
+            let currentEnd = current.endYear * 12 + current.endMonth
+            let nextStart = next.startYear * 12 + next.startMonth
+            XCTAssertLessThanOrEqual(currentEnd, nextStart,
+                "\(current.lord) ends \(current.endYear) but \(next.lord) starts \(next.startYear)")
+        }
+    }
+
+    func testAnterdashasNotEmptyForEachMahadasha() async {
+        await viewModel.calculateDashas(for: sampleProfile)
+        for dasha in viewModel.dashaPeriods {
+            XCTAssertFalse(dasha.antardashas.isEmpty, "\(dasha.lord) mahadasha has no antardashas")
+        }
+    }
 }

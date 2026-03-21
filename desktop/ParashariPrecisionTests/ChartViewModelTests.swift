@@ -41,4 +41,57 @@ final class ChartViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.chartData?.planets.count, 9)
         XCTAssertFalse(viewModel.isCalculating)
     }
+
+    func testCalculateChartHasTwelveHouses() async {
+        await viewModel.calculateChart(for: sampleProfile)
+        XCTAssertEqual(viewModel.chartData?.houses.count, 12)
+    }
+
+    func testCalculateChartAscendantInValidRange() async {
+        await viewModel.calculateChart(for: sampleProfile)
+        let ascendant = viewModel.chartData?.ascendant ?? -1
+        XCTAssertGreaterThanOrEqual(ascendant, 0)
+        XCTAssertLessThan(ascendant, 360)
+    }
+
+    func testAllPlanetsHaveValidSignIndex() async {
+        await viewModel.calculateChart(for: sampleProfile)
+        guard let planets = viewModel.chartData?.planets else {
+            XCTFail("No planets"); return
+        }
+        for planet in planets {
+            XCTAssertGreaterThanOrEqual(planet.sign, 0, "\(planet.planet) sign < 0")
+            XCTAssertLessThan(planet.sign, 12, "\(planet.planet) sign >= 12")
+        }
+    }
+
+    func testAllPlanetsHaveValidDegree() async {
+        await viewModel.calculateChart(for: sampleProfile)
+        guard let planets = viewModel.chartData?.planets else {
+            XCTFail("No planets"); return
+        }
+        for planet in planets {
+            XCTAssertGreaterThanOrEqual(planet.degreeInSign, 0, "\(planet.planet) degree < 0")
+            XCTAssertLessThan(planet.degreeInSign, 30, "\(planet.planet) degree >= 30")
+        }
+    }
+
+    func testExpectedPlanetNamesPresent() async {
+        await viewModel.calculateChart(for: sampleProfile)
+        let names = viewModel.chartData?.planets.map { $0.planet } ?? []
+        let expected = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+        for name in expected {
+            XCTAssertTrue(names.contains(name), "Missing planet: \(name)")
+        }
+    }
+
+    func testErrorMessageNilAfterSuccessfulCalculation() async {
+        await viewModel.calculateChart(for: sampleProfile)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    func testIsCalculatingFalseAfterCompletion() async {
+        await viewModel.calculateChart(for: sampleProfile)
+        XCTAssertFalse(viewModel.isCalculating)
+    }
 }

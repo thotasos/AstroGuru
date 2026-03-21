@@ -5,54 +5,38 @@ import SwiftUI
 @MainActor
 final class DashaViewTests: XCTestCase {
     var sampleProfile: Profile!
+    var viewModel: DashaViewModel!
 
     override func setUp() {
         sampleProfile = Profile(
-            id: "test-id",
-            name: "Test User",
-            dobUTC: "1990-01-01T12:00:00Z",
-            latitude: 28.6139,
-            longitude: 77.2090,
-            timezone: "Asia/Kolkata",
-            utcOffset: 5.5,
-            placeName: "New Delhi, India",
-            ayanamsaId: 1
+            id: "test-id", name: "Test User",
+            dobUTC: "1990-01-01T12:00:00+00:00",
+            latitude: 28.6139, longitude: 77.2090,
+            timezone: "Asia/Kolkata", utcOffset: 5.5,
+            placeName: "New Delhi, India", ayanamsaId: 1
         )
+        viewModel = DashaViewModel()
     }
 
-    func testDashaViewRendersWithProfile() {
+    func testDashaViewInstantiates() {
         let view = DashaView(profile: sampleProfile)
-
-        let vc = NSHostingController(rootView: view)
-        let containerView = vc.view
-
-        XCTAssertNotNil(containerView)
+        XCTAssertNotNil(view)
     }
 
-    func testDashaViewShowsPlaceholderWhenNoDashas() {
+    func testDashaViewHostingControllerLoads() {
         let view = DashaView(profile: sampleProfile)
-
         let vc = NSHostingController(rootView: view)
         vc.loadView()
-
         XCTAssertNotNil(vc.view)
     }
 
-    func testDashaViewDisplaysMahadashaList() {
-        let view = DashaView(profile: sampleProfile)
-
-        let vc = NSHostingController(rootView: view)
-        vc.loadView()
-
-        XCTAssertNotNil(vc.view)
+    func testDashaViewModelCalculatesSomePeriods() async {
+        await viewModel.calculateDashas(for: sampleProfile)
+        XCTAssertFalse(viewModel.dashaPeriods.isEmpty)
     }
 
-    func testDashaViewHighlightsCurrentDasha() {
-        let view = DashaView(profile: sampleProfile)
-
-        let vc = NSHostingController(rootView: view)
-        vc.loadView()
-
-        XCTAssertNotNil(vc.view)
+    func testDashaViewModelNotCalculatingAfterComplete() async {
+        await viewModel.calculateDashas(for: sampleProfile)
+        XCTAssertFalse(viewModel.isCalculating)
     }
 }
