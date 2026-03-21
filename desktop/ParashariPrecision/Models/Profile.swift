@@ -1,6 +1,6 @@
 import Foundation
 
-struct Profile: Codable, Identifiable, Equatable {
+struct Profile: Codable, Identifiable, Equatable, Hashable {
     let id: String
     var name: String
     var dobUTC: String          // ISO 8601 UTC datetime string

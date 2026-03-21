@@ -13,36 +13,44 @@ final class ProfilesViewModel: ObservableObject {
         self.database = database ?? (try? DatabaseService())!
     }
 
-    func loadProfiles() async {
+    func initialize() {
+        do {
+            try database.initialize()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func loadProfiles() {
         isLoading = true
         errorMessage = nil
         do {
-            profiles = try await database.fetchAllProfiles()
+            profiles = try database.fetchAllProfiles()
         } catch {
             errorMessage = error.localizedDescription
         }
         isLoading = false
     }
 
-    func saveProfile(_ profile: Profile) async {
+    func saveProfile(_ profile: Profile) {
         do {
-            try await database.saveProfile(profile)
-            await loadProfiles()
+            try database.saveProfile(profile)
+            loadProfiles()
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    func deleteProfile(_ profile: Profile) async {
+    func deleteProfile(_ profile: Profile) {
         do {
-            try await database.deleteProfile(id: profile.id)
-            await loadProfiles()
+            try database.deleteProfile(id: profile.id)
+            loadProfiles()
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    func createSampleProfiles() async {
+    func createSampleProfiles() {
         let samples = [
             Profile(
                 name: "Mahatma Gandhi",
@@ -77,8 +85,8 @@ final class ProfilesViewModel: ObservableObject {
         ]
 
         for profile in samples {
-            try? await database.saveProfile(profile)
+            try? database.saveProfile(profile)
         }
-        await loadProfiles()
+        loadProfiles()
     }
 }

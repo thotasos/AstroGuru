@@ -1,21 +1,26 @@
 import XCTest
 @testable import ParashariPrecision
 
+@MainActor
 final class ProfilesViewModelTests: XCTestCase {
     var viewModel: ProfilesViewModel!
 
-    override func setUp() async throws {
-        let db = try! DatabaseService(inMemory: true)
-        try await db.initialize()
-        viewModel = ProfilesViewModel(database: db)
+    override func setUp() {
+        do {
+            let db = try DatabaseService(inMemory: true)
+            try db.initialize()
+            viewModel = ProfilesViewModel(database: db)
+        } catch {
+            XCTFail("Failed to initialize database: \(error)")
+        }
     }
 
-    func testLoadEmptyProfiles() async {
-        await viewModel.loadProfiles()
+    func testLoadEmptyProfiles() {
+        viewModel.loadProfiles()
         XCTAssertEqual(viewModel.profiles.count, 0)
     }
 
-    func testSaveAndLoadProfile() async {
+    func testSaveAndLoadProfile() {
         let profile = Profile(
             name: "Test",
             dobUTC: "2000-01-01T12:00:00Z",
@@ -24,12 +29,12 @@ final class ProfilesViewModelTests: XCTestCase {
             timezone: "Asia/Kolkata",
             utcOffset: 5.5
         )
-        await viewModel.saveProfile(profile)
+        viewModel.saveProfile(profile)
         XCTAssertEqual(viewModel.profiles.count, 1)
         XCTAssertEqual(viewModel.profiles[0].name, "Test")
     }
 
-    func testDeleteProfile() async {
+    func testDeleteProfile() {
         let profile = Profile(
             name: "Delete Me",
             dobUTC: "2000-01-01T12:00:00Z",
@@ -38,14 +43,14 @@ final class ProfilesViewModelTests: XCTestCase {
             timezone: "UTC",
             utcOffset: 0
         )
-        await viewModel.saveProfile(profile)
+        viewModel.saveProfile(profile)
         XCTAssertEqual(viewModel.profiles.count, 1)
-        await viewModel.deleteProfile(profile)
+        viewModel.deleteProfile(profile)
         XCTAssertEqual(viewModel.profiles.count, 0)
     }
 
-    func testCreateSampleProfiles() async {
-        await viewModel.createSampleProfiles()
+    func testCreateSampleProfiles() {
+        viewModel.createSampleProfiles()
         XCTAssertEqual(viewModel.profiles.count, 3)
         let names = viewModel.profiles.map { $0.name }
         XCTAssertTrue(names.contains("Mahatma Gandhi"))

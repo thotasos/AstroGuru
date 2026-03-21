@@ -4,12 +4,16 @@ import XCTest
 final class DatabaseServiceTests: XCTestCase {
     var db: DatabaseService!
 
-    override func setUp() async throws {
-        db = try! DatabaseService(inMemory: true)
-        try await db.initialize()
+    override func setUp() {
+        do {
+            db = try DatabaseService(inMemory: true)
+            try db.initialize()
+        } catch {
+            XCTFail("Failed to initialize database: \(error)")
+        }
     }
 
-    func testCreateAndFetchProfile() async throws {
+    func testCreateAndFetchProfile() throws {
         let profile = Profile(
             name: "Test User",
             dobUTC: "2000-01-01T12:00:00Z",
@@ -19,26 +23,26 @@ final class DatabaseServiceTests: XCTestCase {
             utcOffset: 5.5,
             placeName: "New Delhi"
         )
-        try await db.saveProfile(profile)
-        let fetched = try await db.fetchProfile(id: profile.id)
+        try db.saveProfile(profile)
+        let fetched = try db.fetchProfile(id: profile.id)
         XCTAssertEqual(fetched?.name, "Test User")
         XCTAssertEqual(fetched?.latitude, 28.6139)
     }
 
-    func testFetchAllProfiles() async throws {
+    func testFetchAllProfiles() throws {
         let p1 = Profile(name: "A", dobUTC: "2000-01-01T00:00:00Z", latitude: 0, longitude: 0, timezone: "UTC", utcOffset: 0)
         let p2 = Profile(name: "B", dobUTC: "2000-01-02T00:00:00Z", latitude: 0, longitude: 0, timezone: "UTC", utcOffset: 0)
-        try await db.saveProfile(p1)
-        try await db.saveProfile(p2)
-        let all = try await db.fetchAllProfiles()
+        try db.saveProfile(p1)
+        try db.saveProfile(p2)
+        let all = try db.fetchAllProfiles()
         XCTAssertEqual(all.count, 2)
     }
 
-    func testDeleteProfile() async throws {
+    func testDeleteProfile() throws {
         let profile = Profile(name: "Delete Me", dobUTC: "2000-01-01T00:00:00Z", latitude: 0, longitude: 0, timezone: "UTC", utcOffset: 0)
-        try await db.saveProfile(profile)
-        try await db.deleteProfile(id: profile.id)
-        let fetched = try await db.fetchProfile(id: profile.id)
+        try db.saveProfile(profile)
+        try db.deleteProfile(id: profile.id)
+        let fetched = try db.fetchProfile(id: profile.id)
         XCTAssertNil(fetched)
     }
 }
