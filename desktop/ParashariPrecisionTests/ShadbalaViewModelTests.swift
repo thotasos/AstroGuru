@@ -123,7 +123,7 @@ final class ShadbalaViewModelTests: XCTestCase {
             strengthInVirupas: 599.99
         )
 
-        let atDebilitatedThreshold = ShadbalaResult(
+        let justBelowDebilitatedThreshold = ShadbalaResult(
             planet: "Venus",
             sthAnaBala: 25,
             digBala: 10,
@@ -132,10 +132,10 @@ final class ShadbalaViewModelTests: XCTestCase {
             naisargikaBala: 60,
             drigBala: 5,
             total: 2.08,
-            strengthInVirupas: 300
+            strengthInVirupas: 299.99
         )
 
         XCTAssertFalse(atExaltedThreshold.isExalted) // 599.99 < 600
-        XCTAssertTrue(atDebilitatedThreshold.isDebilitated) // 300 >= 300 is false, so 300 is NOT debilitated
+        XCTAssertTrue(justBelowDebilitatedThreshold.isDebilitated) // 299.99 < 300
     }
 }

@@ -97,21 +97,6 @@ struct ChartView: View {
     var body: some View { Text("Chart View - \(profile.name)") }
 }
 
-struct ShadbalaView: View {
-    let profile: Profile
-    var body: some View { Text("Shadbala View - \(profile.name)") }
-}
-
-struct AshtakavargaView: View {
-    let profile: Profile
-    var body: some View { Text("Ashtakavarga View - \(profile.name)") }
-}
-
-struct YogaListView: View {
-    let profile: Profile
-    var body: some View { Text("Yoga List View - \(profile.name)") }
-}
-
 struct PredictionsView: View {
     let profile: Profile
     var body: some View { Text("Predictions View - \(profile.name)") }

@@ -1,6 +1,7 @@
 import Foundation
 
-struct ShadbalaResult: Codable {
+struct ShadbalaResult: Codable, Identifiable {
+    var id: String = UUID().uuidString
     let planet: String           // Planet name
     let sthAnaBala: Double       // Positional strength
     let digBala: Double         // Directional strength

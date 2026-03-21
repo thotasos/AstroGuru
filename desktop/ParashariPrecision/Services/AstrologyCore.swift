@@ -341,6 +341,17 @@ final class AstrologyCoreProcessBridge {
         return try JSONDecoder().decode([ShadbalaResult].self, from: output)
     }
 
+    func calculateYogas(birthData: [String: Any]) throws -> [YogaResult] {
+        let input = try JSONSerialization.data(withJSONObject: birthData)
+        let output = try runNodeScript(script: """
+            const engine = require('@parashari/core');
+            const birthData = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+            console.log(JSON.stringify(engine.calculateYogas(birthData)));
+            """, input: input)
+
+        return try JSONDecoder().decode([YogaResult].self, from: output)
+    }
+
     private func runNodeScript(script: String, input: Data) throws -> Data {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: nodePath)
