@@ -58,8 +58,13 @@ final class ProfilesViewModelTests: XCTestCase {
     }
 
     func testViewModelInitDoesNotCrashWithDefaultDatabase() {
-        // If the init crashes, this test will crash (not graceful XCTFail)
+        // Exercises the persistent-DB fallback path. Requires filesystem write access.
+        // If the filesystem is unavailable, falls back to in-memory (try! DatabaseService(inMemory: true)),
+        // which is guaranteed non-throwing — see DatabaseService.init documentation.
         let vm = ProfilesViewModel()
         XCTAssertNotNil(vm)
+        // Verify the ViewModel is in a usable state (not just non-nil)
+        vm.initialize()
+        XCTAssertNil(vm.errorMessage, "ViewModel should initialize without error: \(vm.errorMessage ?? "")")
     }
 }

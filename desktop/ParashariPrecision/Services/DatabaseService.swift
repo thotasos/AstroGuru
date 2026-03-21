@@ -6,6 +6,8 @@ final class DatabaseService: @unchecked Sendable {
     private let dbPath: String
     private let queue = DispatchQueue(label: "com.parashari.database")
 
+    /// When `inMemory` is `true`, this initializer never throws — it only sets `dbPath = ":memory:"`.
+    /// This guarantee is relied upon by `ProfilesViewModel` for its crash-safe fallback init.
     init(inMemory: Bool = false) throws {
         if inMemory {
             self.dbPath = ":memory:"
