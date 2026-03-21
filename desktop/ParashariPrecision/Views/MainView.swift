@@ -90,9 +90,3 @@ struct DetailView: View {
     }
 }
 
-// MARK: - Placeholder Views (to be implemented in later phases)
-
-struct ChartView: View {
-    let profile: Profile
-    var body: some View { Text("Chart View - \(profile.name)") }
-}

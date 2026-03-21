@@ -8,6 +8,9 @@ struct ParashariPrecisionApp: App {
         WindowGroup {
             MainView()
                 .environmentObject(profilesViewModel)
+                .onAppear {
+                    profilesViewModel.initialize()
+                }
         }
     }
 }

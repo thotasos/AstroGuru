@@ -16,6 +16,10 @@ final class ProfilesViewModel: ObservableObject {
     func initialize() {
         do {
             try database.initialize()
+            loadProfiles()
+            if profiles.isEmpty {
+                createSampleProfiles()
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

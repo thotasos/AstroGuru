@@ -19,6 +19,7 @@
 		315E15873F6EC0B536C7CE91 /* PredictionsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EAB7266415C749D52C995C9 /* PredictionsViewModelTests.swift */; };
 		32C5F2304FFDB8D09B12B991 /* ShadbalaViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C40DFBE76747C6B314EE33 /* ShadbalaViewTests.swift */; };
 		355058EB42188FBF50F02B4D /* SouthIndianChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646B0553050BF5CA00B49E78 /* SouthIndianChartView.swift */; };
+		39439B4E4F7CCDC120D8EDF2 /* ChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1A71B395D3CFADB9468781 /* ChartView.swift */; };
 		3A2F4FEAA6123DF3299F0912 /* YogaListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31D4607C874D4B1E3FA4E03F /* YogaListView.swift */; };
 		441900AEC04827411099CAEF /* DatabaseServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D69CF6F3E7CA6EB758C518 /* DatabaseServiceTests.swift */; };
 		4DC518DC916B35269A1997FC /* YogaResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D9C5C3807ADE4B1893CCB95 /* YogaResult.swift */; };
@@ -115,6 +116,7 @@
 		A3CF95E59E94C5BDFFD351F3 /* ChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartViewModel.swift; sourceTree = "<group>"; };
 		A8A4A681309C0A0115F7C27D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ACC3F2A06C38B318D73FE6E8 /* PredictionsViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictionsViewTests.swift; sourceTree = "<group>"; };
+		AE1A71B395D3CFADB9468781 /* ChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartView.swift; sourceTree = "<group>"; };
 		B232915C29AA64BDC64E523A /* PredictionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictionsViewModel.swift; sourceTree = "<group>"; };
 		B968FA7E0167E090503A294F /* PredictionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictionsView.swift; sourceTree = "<group>"; };
 		BD3B74D7395808F0EDEDC384 /* ChartViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartViewModelTests.swift; sourceTree = "<group>"; };
@@ -317,6 +319,7 @@
 		F903D427756D81E57C066696 /* Chart */ = {
 			isa = PBXGroup;
 			children = (
+				AE1A71B395D3CFADB9468781 /* ChartView.swift */,
 				646B0553050BF5CA00B49E78 /* SouthIndianChartView.swift */,
 			);
 			path = Chart;
@@ -443,6 +446,7 @@
 				671BD60A7B788B058BF786D9 /* AshtakavargaViewModel.swift in Sources */,
 				0D51116997DC14FB9E27B380 /* AstrologyCore.swift in Sources */,
 				1082783F13423C762DB588D3 /* ChartData.swift in Sources */,
+				39439B4E4F7CCDC120D8EDF2 /* ChartView.swift in Sources */,
 				7E020FE9C92F7B65C550E9DE /* ChartViewModel.swift in Sources */,
 				2F08FCD2003AFB76F0604C90 /* DashaPeriod.swift in Sources */,
 				1C37E54306FE5D0157847A0C /* DashaView.swift in Sources */,
