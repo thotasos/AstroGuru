@@ -96,8 +96,3 @@ struct ChartView: View {
     let profile: Profile
     var body: some View { Text("Chart View - \(profile.name)") }
 }
-
-struct PredictionsView: View {
-    let profile: Profile
-    var body: some View { Text("Predictions View - \(profile.name)") }
-}
