@@ -18,7 +18,7 @@ struct DashaView: View {
                 ContentUnavailableView(
                     "No Dashas Available",
                     systemImage: "calendar.badge.clock",
-                    description: Text("Select a profile with valid birth data to calculate Vimshottari Dasha")
+                    description: Text("Dasha periods could not be calculated. Please verify the profile's birth data.")
                 )
             } else {
                 DashaListView(viewModel: viewModel)

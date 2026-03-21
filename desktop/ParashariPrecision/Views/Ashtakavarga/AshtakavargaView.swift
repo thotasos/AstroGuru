@@ -24,7 +24,7 @@ struct AshtakavargaView: View {
                 )
             }
         }
-        .task {
+        .task(id: profile.id) {
             await viewModel.calculateAshtakavarga(for: profile)
         }
     }

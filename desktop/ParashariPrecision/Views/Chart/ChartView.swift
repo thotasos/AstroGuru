@@ -47,7 +47,7 @@ struct ChartView: View {
                 ContentUnavailableView(
                     "No Chart Data",
                     systemImage: "chart.bar",
-                    description: Text("Select a profile to view their chart")
+                    description: Text("Birth data could not be calculated. Please verify the profile information.")
                 )
             }
         }

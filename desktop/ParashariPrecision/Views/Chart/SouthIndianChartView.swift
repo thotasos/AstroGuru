@@ -3,45 +3,45 @@ import SwiftUI
 struct SouthIndianChartView: View {
     let chartData: ChartData
 
-    // South Indian chart layout: 4 rows x 3 columns
-    // Row 1: 1(Aries), 2(Taurus), 3(Gemini)
-    // Row 2: 12(Pisces), [center], 4(Cancer)
-    // Row 3: 11(Aquarius), 10(Capricorn), 9(Sagittarius)
-    // Row 4: 8(Scorpio), 7(Libra), 6(Virgo)
+    private let cellSize: CGFloat = 112
+    private let gap: CGFloat = 2
 
-    private let rows = 4
-    private let cols = 3
+    // 4×4 signGrid (0-based)
+    private let signGrid: [[Int]] = [
+        [8,  9,  10, 11],
+        [7,  -1, -1,  0],
+        [6,  -1, -1,  1],
+        [5,   4,  3,  2]
+    ]
+
+    private func isCenterCell(row: Int, col: Int) -> Bool {
+        (row == 1 || row == 2) && (col == 1 || col == 2)
+    }
 
     var body: some View {
-        VStack(spacing: 2) {
-            ForEach(0..<rows, id: \.self) { row in
-                HStack(spacing: 2) {
-                    ForEach(0..<cols, id: \.self) { col in
-                        if row == 1 && col == 1 {
-                            // Center cell - shows ascendant and MC
-                            CenterChartCell(chartData: chartData)
-                        } else {
-                            let sign = signForPosition(row: row, col: col)
-                            let cell = gridCells.first { $0.sign == sign && !$0.isCenter }
-                            ChartCell(gridCell: cell)
+        ZStack(alignment: .topLeading) {
+            VStack(spacing: gap) {
+                ForEach(0..<4, id: \.self) { row in
+                    HStack(spacing: gap) {
+                        ForEach(0..<4, id: \.self) { col in
+                            if isCenterCell(row: row, col: col) {
+                                Color.clear.frame(width: cellSize, height: cellSize)
+                            } else {
+                                let sign = signGrid[row][col]
+                                let cell = gridCells.first { $0.sign == sign }
+                                ChartCell(gridCell: cell)
+                                    .frame(width: cellSize, height: cellSize)
+                            }
                         }
                     }
                 }
             }
+            CenterChartCell(chartData: chartData)
+                .frame(width: cellSize * 2 + gap, height: cellSize * 2 + gap)
+                .offset(x: cellSize + gap, y: cellSize + gap)
         }
-        .frame(width: 360, height: 480)
+        .frame(width: cellSize * 4 + gap * 3, height: cellSize * 4 + gap * 3)
         .background(Color.primary.opacity(0.1))
-    }
-
-    private func signForPosition(row: Int, col: Int) -> Int {
-        // South Indian chart sign positions
-        let signGrid: [[Int]] = [
-            [1, 2, 3],       // Row 0: Aries, Taurus, Gemini
-            [12, -1, 4],     // Row 1: Pisces, center, Cancer
-            [11, 10, 9],     // Row 2: Aquarius, Capricorn, Sagittarius
-            [8, 7, 6]        // Row 3: Scorpio, Libra, Virgo
-        ]
-        return signGrid[row][col]
     }
 
     private var gridCells: [GridCell] {
@@ -68,10 +68,10 @@ struct SouthIndianChartView: View {
 
         // Add 12 sign cells
         let signGrid: [[Int]] = [
-            [1, 2, 3],
-            [12, -1, 4],
-            [11, 10, 9],
-            [8, 7, 6]
+            [8,  9,  10, 11],
+            [7,  -1, -1,  0],
+            [6,  -1, -1,  1],
+            [5,   4,  3,  2]
         ]
 
         for (row, rowSigns) in signGrid.enumerated() {
@@ -104,8 +104,8 @@ struct SouthIndianChartView: View {
 
     private static func signFromLongitude(_ longitude: Double) -> Int {
         let normalized = longitude.truncatingRemainder(dividingBy: 360)
-        let signIndex = Int(normalized / 30)
-        return signIndex
+        let positive = normalized < 0 ? normalized + 360 : normalized
+        return Int(positive / 30)
     }
 }
 

@@ -30,10 +30,14 @@ final class ChartViewModel: ObservableObject {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
-        let date = formatter.date(from: profile.dobUTC) ?? {
-            formatter.formatOptions = [.withInternetDateTime]
-            return formatter.date(from: profile.dobUTC)
-        }()
+        let date: Date?
+        if let d = formatter.date(from: profile.dobUTC) {
+            date = d
+        } else {
+            let fallbackFormatter = ISO8601DateFormatter()
+            fallbackFormatter.formatOptions = [.withInternetDateTime]
+            date = fallbackFormatter.date(from: profile.dobUTC)
+        }
 
         let components = Calendar.current.dateComponents(
             in: TimeZone(identifier: profile.timezone) ?? .current,

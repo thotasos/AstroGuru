@@ -47,7 +47,7 @@ struct SidebarView: View {
                 }
             }
         }
-        .navigationTitle("AstroGuru")
+        .navigationTitle("ParashariPrecision")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {

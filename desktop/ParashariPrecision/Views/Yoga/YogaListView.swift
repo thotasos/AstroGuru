@@ -18,13 +18,13 @@ struct YogaListView: View {
                 ContentUnavailableView(
                     "No Yogas Detected",
                     systemImage: "sparkles",
-                    description: Text("Select a profile with valid birth data to detect planetary yogas")
+                    description: Text("No yoga formations were detected in this chart.")
                 )
             } else {
                 YogaListContentView(viewModel: viewModel)
             }
         }
-        .task {
+        .task(id: profile.id) {
             await viewModel.calculateYogas(for: profile)
         }
     }

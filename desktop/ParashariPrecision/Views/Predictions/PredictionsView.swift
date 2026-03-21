@@ -384,7 +384,7 @@ struct HighlightedTextView: View {
         }
 
         // Highlight categories
-        let categories = ["Rajyoga", "Dhanayoga", "Rajayoga", "Lakshyayoga"]
+        let categories = ["Rajyoga", "Dhanayoga", "Lakshyayoga"]
         for category in categories {
             highlightText(category, in: &result, color: .green, isBold: true)
         }

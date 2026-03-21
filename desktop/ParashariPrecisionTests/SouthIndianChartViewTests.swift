@@ -48,38 +48,47 @@ final class SouthIndianChartViewTests: XCTestCase {
     }
 
     func testGridCellLayoutForSouthIndianChart() {
-        // South Indian chart: 4 rows x 3 columns
-        // Row 1: Aries(1), Taurus(2), Gemini(3)
-        // Row 2: Pisces(12), [center], Cancer(4)
-        // Row 3: Aquarius(11), Capricorn(10), Sagittarius(9)
-        // Row 4: Scorpio(8), Libra(7), Virgo(6)
+        // South Indian chart: 4 rows x 4 columns (0-based signs)
+        // Row 0: Sag(8), Cap(9), Aqu(10), Pis(11)
+        // Row 1: Sco(7), center, center, Ari(0)
+        // Row 2: Lib(6), center, center, Tau(1)
+        // Row 3: Vir(5), Leo(4), Can(3), Gem(2)
 
         let gridCells = SouthIndianChartView.createGridCells(from: sampleChartData)
 
-        // Should have 12 cells (including 1 center cell)
-        XCTAssertEqual(gridCells.count, 12) // 12 cells total
+        // Should have 16 cells (12 sign cells + 4 center cells)
+        XCTAssertEqual(gridCells.count, 16)
 
-        // Check that center cell exists
+        // Check that center cell exists at (1,1)
         let centerCell = gridCells.first { $0.isCenter }
         XCTAssertNotNil(centerCell)
         XCTAssertEqual(centerCell?.row, 1)
         XCTAssertEqual(centerCell?.col, 1)
 
-        // Check specific positions
-        let ariesCell = gridCells.first { $0.sign == 1 }
+        // Check specific positions (0-based sign indices)
+        // Aries (sign 0) is at row 1, col 3
+        let ariesCell = gridCells.first { $0.sign == 0 }
         XCTAssertNotNil(ariesCell)
-        XCTAssertEqual(ariesCell?.row, 0)
-        XCTAssertEqual(ariesCell?.col, 0)
+        XCTAssertEqual(ariesCell?.row, 1)
+        XCTAssertEqual(ariesCell?.col, 3)
 
-        let cancerCell = gridCells.first { $0.sign == 4 }
+        // Cancer (sign 3) is at row 3, col 2
+        let cancerCell = gridCells.first { $0.sign == 3 }
         XCTAssertNotNil(cancerCell)
-        XCTAssertEqual(cancerCell?.row, 1)
+        XCTAssertEqual(cancerCell?.row, 3)
         XCTAssertEqual(cancerCell?.col, 2)
 
-        let virgoCell = gridCells.first { $0.sign == 6 }
+        // Leo (sign 4) is at row 3, col 1
+        let leoCell = gridCells.first { $0.sign == 4 }
+        XCTAssertNotNil(leoCell)
+        XCTAssertEqual(leoCell?.row, 3)
+        XCTAssertEqual(leoCell?.col, 1)
+
+        // Virgo (sign 5) is at row 3, col 0
+        let virgoCell = gridCells.first { $0.sign == 5 }
         XCTAssertNotNil(virgoCell)
         XCTAssertEqual(virgoCell?.row, 3)
-        XCTAssertEqual(virgoCell?.col, 2)
+        XCTAssertEqual(virgoCell?.col, 0)
     }
 
     func testPlanetsMappedToCorrectSigns() {
@@ -112,7 +121,7 @@ final class SouthIndianChartViewTests: XCTestCase {
     func testLagnaSignMarked() {
         let gridCells = SouthIndianChartView.createGridCells(from: sampleChartData)
 
-        // Ascendant is 120.5 which is in Leo (sign index 4)
+        // Ascendant is 120.5° = Leo (0-based sign index 4: 120/30 = 4)
         let leoCell = gridCells.first { $0.sign == 4 }
         XCTAssertNotNil(leoCell?.lagnaSign)
         XCTAssertEqual(leoCell?.lagnaSign, 4)

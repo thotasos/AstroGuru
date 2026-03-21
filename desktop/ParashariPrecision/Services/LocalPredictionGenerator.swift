@@ -307,12 +307,12 @@ final class LocalPredictionGenerator {
         // Exalted signs for each planet
         let exaltedSigns: [String: Int] = [
             "Sun": 0,    // Aries
-            "Moon": 3,   // Cancer
-            "Mars": 5,   // Capricorn (or 10? different traditions vary)
+            "Moon": 1,   // Taurus
+            "Mars": 9,   // Capricorn
             "Mercury": 5, // Virgo
-            "Jupiter": 2, // Cancer (or 11?)
+            "Jupiter": 3, // Cancer
             "Venus": 11,  // Pisces
-            "Saturn": 6,  // Libra (or 7?)
+            "Saturn": 6,  // Libra
             "Rahu": 2,   // Taurus (varies)
             "Ketu": 7    // Scorpio (varies)
         ]
@@ -320,12 +320,12 @@ final class LocalPredictionGenerator {
         // Debilitated signs (opposite to exalted)
         let debilitatedSigns: [String: Int] = [
             "Sun": 6,    // Libra
-            "Moon": 8,   // Scorpio
-            "Mars": 11,  // Pisces
+            "Moon": 7,   // Scorpio
+            "Mars": 3,   // Cancer
             "Mercury": 11, // Pisces
-            "Jupiter": 8,  // Scorpio
+            "Jupiter": 9,  // Capricorn
             "Venus": 5,     // Virgo
-            "Saturn": 3,    // Cancer
+            "Saturn": 0,    // Aries
             "Rahu": 7,      // Scorpio
             "Ketu": 2       // Taurus
         ]
@@ -340,13 +340,13 @@ final class LocalPredictionGenerator {
 
         // Check for own sign (Moolatrikona)
         let ownSigns: [String: [Int]] = [
-            "Sun": [0],      // Aries (some say Leo)
+            "Sun": [4],      // Leo
             "Moon": [3],     // Cancer
-            "Mars": [0, 6],  // Aries, Scorpio
+            "Mars": [0, 7],  // Aries, Scorpio
             "Mercury": [2, 5], // Gemini, Virgo
-            "Jupiter": [2, 8], // Sagittarius, Pisces
-            "Venus": [1, 5], // Taurus, Libra
-            "Saturn": [8, 9], // Capricorn, Aquarius
+            "Jupiter": [8, 11], // Sagittarius, Pisces
+            "Venus": [1, 6], // Taurus, Libra
+            "Saturn": [9, 10], // Capricorn, Aquarius
             "Rahu": [2, 10], // Taurus, Aquarius
             "Ketu": [7, 11]  // Scorpio, Pisces
         ]
