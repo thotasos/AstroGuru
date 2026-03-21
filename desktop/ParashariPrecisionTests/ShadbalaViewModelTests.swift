@@ -33,16 +33,10 @@ final class ShadbalaViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isCalculating)
     }
 
-    func testShadbalaViewModelBuildBirthData() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile)
-
-        XCTAssertEqual(birthData["year"] as? Int, 1990)
-        XCTAssertEqual(birthData["month"] as? Int, 1)
-        XCTAssertEqual(birthData["day"] as? Int, 1)
-        XCTAssertEqual(birthData["lat"] as? Double, 28.6139)
-        XCTAssertEqual(birthData["lon"] as? Double, 77.2090)
-        XCTAssertEqual(birthData["tzone"] as? Double, 5.5)
-        XCTAssertEqual(birthData["ayanamsa"] as? Int, 1)
+    func testCalculateShadbalaProducesResults() async {
+        await viewModel.calculateShadbala(for: sampleProfile)
+        XCTAssertFalse(viewModel.shadbalaResults.isEmpty)
+        XCTAssertFalse(viewModel.isCalculating)
     }
 
     func testShadbalaResultsSortedByTotal() async {

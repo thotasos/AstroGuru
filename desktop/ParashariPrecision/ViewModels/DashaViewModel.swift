@@ -8,15 +8,7 @@ final class DashaViewModel: ObservableObject {
     @Published var isCalculating = false
     @Published var errorMessage: String?
 
-    private var astrologyCore: AstrologyCore?
-
-    init() {
-        do {
-            astrologyCore = try AstrologyCore()
-        } catch {
-            errorMessage = "Failed to initialize astrology engine: \(error.localizedDescription)"
-        }
-    }
+    private let engine = CalculationEngine()
 
     var currentDasha: DashaPeriod? {
         let now = Date()
@@ -36,21 +28,19 @@ final class DashaViewModel: ObservableObject {
         isCalculating = true
         errorMessage = nil
 
-        do {
-            let birthData = buildBirthData(from: profile)
-            guard let core = astrologyCore else {
-                throw AstrologyCoreError.calculationFailed
-            }
-            let result = try core.calculateDashas(birthData: birthData)
-            self.dashaPeriods = result
-            self.isCalculating = false
-        } catch {
-            self.errorMessage = error.localizedDescription
-            self.isCalculating = false
-        }
+        let (year, month, day, hour, minute) = parseDateComponents(from: profile)
+
+        let dashas = engine.calculateDashas(
+            year: year, month: month, day: day,
+            hour: hour, minute: minute,
+            lat: profile.latitude, lon: profile.longitude
+        )
+
+        self.dashaPeriods = dashas
+        self.isCalculating = false
     }
 
-    func buildBirthData(from profile: Profile) -> [String: Any] {
+    private func parseDateComponents(from profile: Profile) -> (Int, Int, Int, Int, Int) {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
@@ -59,18 +49,17 @@ final class DashaViewModel: ObservableObject {
             return formatter.date(from: profile.dobUTC)
         }()
 
-        let components = Calendar.current.dateComponents(in: TimeZone(identifier: profile.timezone) ?? .current, from: date ?? Date())
+        let components = Calendar.current.dateComponents(
+            in: TimeZone(identifier: profile.timezone) ?? .current,
+            from: date ?? Date()
+        )
 
-        return [
-            "year": components.year ?? 1990,
-            "month": components.month ?? 1,
-            "day": components.day ?? 1,
-            "hour": components.hour ?? 12,
-            "min": components.minute ?? 0,
-            "lat": profile.latitude,
-            "lon": profile.longitude,
-            "tzone": profile.utcOffset,
-            "ayanamsa": profile.ayanamsaId
-        ]
+        return (
+            components.year ?? 2000,
+            components.month ?? 1,
+            components.day ?? 1,
+            components.hour ?? 12,
+            components.minute ?? 0
+        )
     }
 }

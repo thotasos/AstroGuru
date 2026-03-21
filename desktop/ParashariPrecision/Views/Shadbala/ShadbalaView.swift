@@ -3,6 +3,7 @@ import SwiftUI
 struct ShadbalaView: View {
     let profile: Profile
     @StateObject private var viewModel = ShadbalaViewModel()
+    @State private var chartData: ChartData?
 
     var body: some View {
         Group {
@@ -25,8 +26,38 @@ struct ShadbalaView: View {
             }
         }
         .task {
-            await viewModel.calculateShadbala(for: profile)
+            // First calculate chart, then use it for Shadbala
+            let engine = CalculationEngine()
+            let (year, month, day, hour, minute) = parseDateComponents(from: profile)
+            let chart = engine.calculateChart(
+                year: year, month: month, day: day,
+                hour: hour, minute: minute,
+                lat: profile.latitude, lon: profile.longitude,
+                tzOffset: profile.utcOffset, ayanamsaId: profile.ayanamsaId
+            )
+            self.chartData = chart
+            await viewModel.calculateShadbala(for: profile, chartData: chart)
         }
+    }
+
+    private func parseDateComponents(from profile: Profile) -> (Int, Int, Int, Int, Int) {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = formatter.date(from: profile.dobUTC) ?? {
+            formatter.formatOptions = [.withInternetDateTime]
+            return formatter.date(from: profile.dobUTC)
+        }()
+        let components = Calendar.current.dateComponents(
+            in: TimeZone(identifier: profile.timezone) ?? .current,
+            from: date ?? Date()
+        )
+        return (
+            components.year ?? 2000,
+            components.month ?? 1,
+            components.day ?? 1,
+            components.hour ?? 12,
+            components.minute ?? 0
+        )
     }
 }
 

@@ -38,17 +38,10 @@ final class DashaViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isCalculating)
     }
 
-    func testDashaViewModelBuildBirthData() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile)
-
-        // Date 1990-01-01T12:00:00Z in IST (UTC+5:30) becomes 1990-01-01T17:30:00
-        XCTAssertEqual(birthData["year"] as? Int, 1990)
-        XCTAssertEqual(birthData["month"] as? Int, 1)
-        XCTAssertEqual(birthData["day"] as? Int, 1)
-        XCTAssertEqual(birthData["lat"] as? Double, 28.6139)
-        XCTAssertEqual(birthData["lon"] as? Double, 77.2090)
-        XCTAssertEqual(birthData["tzone"] as? Double, 5.5)
-        XCTAssertEqual(birthData["ayanamsa"] as? Int, 1)
+    func testCalculateDashasProducesDashas() async {
+        await viewModel.calculateDashas(for: sampleProfile)
+        XCTAssertFalse(viewModel.dashaPeriods.isEmpty)
+        XCTAssertFalse(viewModel.isCalculating)
     }
 
     func testCurrentDashaFindsMatchingPeriod() {

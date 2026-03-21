@@ -35,20 +35,10 @@ final class ChartViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isCalculating)
     }
 
-    func testChartViewModelBuildBirthData() {
-        // Test that buildBirthData produces correct structure
-        let birthData = viewModel.buildBirthData(from: sampleProfile)
-
-        XCTAssertEqual(birthData["year"] as? Int, 1990)
-        XCTAssertEqual(birthData["month"] as? Int, 1)
-        XCTAssertEqual(birthData["lat"] as? Double, 28.6139)
-        XCTAssertEqual(birthData["lon"] as? Double, 77.2090)
-        XCTAssertEqual(birthData["tzone"] as? Double, 5.5)
-        XCTAssertEqual(birthData["ayanamsa"] as? Int, 1)
-
-        // Hour and minute depend on timezone conversion from UTC
-        // UTC 12:00:00 with +5:30 timezone = 17:30 local time
-        XCTAssertEqual(birthData["hour"] as? Int, 17)
-        XCTAssertEqual(birthData["min"] as? Int, 30)
+    func testCalculateChartProducesResult() async {
+        await viewModel.calculateChart(for: sampleProfile)
+        XCTAssertNotNil(viewModel.chartData)
+        XCTAssertEqual(viewModel.chartData?.planets.count, 9)
+        XCTAssertFalse(viewModel.isCalculating)
     }
 }

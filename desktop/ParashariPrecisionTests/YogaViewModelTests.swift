@@ -28,16 +28,10 @@ final class YogaViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.errorMessage)
     }
 
-    func testYogaViewModelBuildBirthData() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile)
-
-        XCTAssertEqual(birthData["year"] as? Int, 1990)
-        XCTAssertEqual(birthData["month"] as? Int, 1)
-        XCTAssertEqual(birthData["day"] as? Int, 1)
-        XCTAssertEqual(birthData["lat"] as? Double, 28.6139)
-        XCTAssertEqual(birthData["lon"] as? Double, 77.2090)
-        XCTAssertEqual(birthData["tzone"] as? Double, 5.5)
-        XCTAssertEqual(birthData["ayanamsa"] as? Int, 1)
+    func testCalculateYogasProducesYogas() async {
+        await viewModel.calculateYogas(for: sampleProfile)
+        XCTAssertFalse(viewModel.yogas.isEmpty)
+        XCTAssertFalse(viewModel.isCalculating)
     }
 
     func testYogaCountByImportanceGroupsByCategory() {

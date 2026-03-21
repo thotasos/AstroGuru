@@ -50,41 +50,12 @@ final class PredictionsViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.errorMessage)
     }
 
-    // MARK: - Build Birth Data Tests
+    // MARK: - Generation Tests
 
-    func testBuildBirthDataContainsYear() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile!)
-        XCTAssertEqual(birthData["year"] as? Int, 1990)
-    }
-
-    func testBuildBirthDataContainsMonth() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile!)
-        XCTAssertEqual(birthData["month"] as? Int, 1)
-    }
-
-    func testBuildBirthDataContainsDay() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile!)
-        XCTAssertEqual(birthData["day"] as? Int, 1)
-    }
-
-    func testBuildBirthDataContainsLatitude() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile!)
-        XCTAssertEqual(birthData["lat"] as? Double, 28.6139)
-    }
-
-    func testBuildBirthDataContainsLongitude() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile!)
-        XCTAssertEqual(birthData["lon"] as? Double, 77.2090)
-    }
-
-    func testBuildBirthDataContainsTimezone() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile!)
-        XCTAssertEqual(birthData["tzone"] as? Double, 5.5)
-    }
-
-    func testBuildBirthDataContainsAyanamsa() {
-        let birthData = viewModel.buildBirthData(from: sampleProfile!)
-        XCTAssertEqual(birthData["ayanamsa"] as? Int, 1)
+    func testGenerateAllPredictionsProducesOutput() async {
+        await viewModel.generateAllPredictions(for: sampleProfile!)
+        XCTAssertFalse(viewModel.prediction.isEmpty)
+        XCTAssertFalse(viewModel.isGenerating)
     }
 
     // MARK: - Generation State Tests
