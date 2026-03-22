@@ -96,43 +96,41 @@ struct DetailView: View {
     @State private var selectedTab: MainView.MainTab = .chart
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("Analysis", selection: $selectedTab) {
-                Text("Chart").tag(MainView.MainTab.chart)
-                Text("Dasha").tag(MainView.MainTab.dasha)
-                Text("Shadbala").tag(MainView.MainTab.shadbala)
-                Text("Ashtakavarga").tag(MainView.MainTab.ashtakavarga)
-                Text("Yogas").tag(MainView.MainTab.yogas)
-                Text("Predictions").tag(MainView.MainTab.predictions)
+        Group {
+            switch selectedTab {
+            case .chart:
+                ChartView(profile: profile)
+            case .dasha:
+                DashaView(profile: profile)
+            case .shadbala:
+                ShadbalaView(profile: profile)
+            case .ashtakavarga:
+                AshtakavargaView(profile: profile)
+            case .yogas:
+                YogaListView(profile: profile)
+            case .predictions:
+                PredictionsView(profile: profile)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-
-            Divider()
-
-            Group {
-                switch selectedTab {
-                case .chart:
-                    ChartView(profile: profile)
-                case .dasha:
-                    DashaView(profile: profile)
-                case .shadbala:
-                    ShadbalaView(profile: profile)
-                case .ashtakavarga:
-                    AshtakavargaView(profile: profile)
-                case .yogas:
-                    YogaListView(profile: profile)
-                case .predictions:
-                    PredictionsView(profile: profile)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: profile) { _, _ in
             selectedTab = .chart
         }
         .navigationTitle(profile.name)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("Tab", selection: $selectedTab) {
+                    Text("Chart").tag(MainView.MainTab.chart)
+                    Text("Dasha").tag(MainView.MainTab.dasha)
+                    Text("Shadbala").tag(MainView.MainTab.shadbala)
+                    Text("Ashtakavarga").tag(MainView.MainTab.ashtakavarga)
+                    Text("Yogas").tag(MainView.MainTab.yogas)
+                    Text("Predictions").tag(MainView.MainTab.predictions)
+                }
+                .pickerStyle(.segmented)
+                .frame(minWidth: 500)
+            }
+        }
     }
+
 }

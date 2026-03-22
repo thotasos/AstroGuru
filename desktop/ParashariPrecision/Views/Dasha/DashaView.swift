@@ -116,7 +116,15 @@ struct DashaRowView: View {
                 selectedDasha = dasha
             }
 
-            if isCurrent {
+            HStack {
+                Text("Sign: \(zodiacSign(dasha.sign))")
+                Spacer()
+                Text("Balance: \(String(format: "%.2f", dasha.balance)) years")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            if expanded && !dasha.antardashas.isEmpty {
                 HStack {
                     Text("Sign: \(zodiacSign(dasha.sign))")
                     Spacer()

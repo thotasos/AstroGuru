@@ -21,63 +21,65 @@ final class CalculationEngine: Sendable {
         // Calculate Julian Day
         let jd = swissEph.julianDay(year: year, month: month, day: day, hour: hour, minute: minute)
 
-        // Calculate ayanamsa based on selection
+        // Calculate ayanamsa based on selection (GAP-001 fix: use the selected ayanamsa)
         let ayanamsaValue = swissEph.ayanamsa(jd, ayanamsaId: ayanamsaId)
 
-        // Calculate ascendant
-        let ascendant = swissEph.ascendant(jd: jd, lat: lat, lon: lon)
+        // Calculate ascendant using the selected ayanamsa
+        let ascendant = swissEph.ascendant(jd: jd, lat: lat, lon: lon, ayanamsa: ayanamsaValue)
 
-        // Calculate MC
-        let mc = swissEph.midheaven(jd: jd, lon: lon)
+        // Calculate MC using the selected ayanamsa
+        let mc = swissEph.midheaven(jd: jd, lon: lon, ayanamsa: ayanamsaValue)
 
         // Calculate planet positions
         var planets: [PlanetPosition] = []
 
         // Sun
         let sunLon = planetTropical(.sun, jd: jd)
-        let sunSidereal = swissEph.siderealLongitude(sunLon, jd: jd)
+        let sunSidereal = swissEph.siderealLongitude(sunLon, jd: jd, ayanamsa: ayanamsaValue)
         planets.append(makePosition("Sun", siderealLon: sunSidereal, jd: jd))
 
         // Moon
         let moonLon = swissEph.moonPositionTropical(jd)
-        let moonSidereal = swissEph.siderealLongitude(moonLon, jd: jd)
+        let moonSidereal = swissEph.siderealLongitude(moonLon, jd: jd, ayanamsa: ayanamsaValue)
         planets.append(makePosition("Moon", siderealLon: moonSidereal, jd: jd))
 
         // Mars
         let marsLon = planetTropical(.mars, jd: jd)
-        let marsSidereal = swissEph.siderealLongitude(marsLon, jd: jd)
+        let marsSidereal = swissEph.siderealLongitude(marsLon, jd: jd, ayanamsa: ayanamsaValue)
         planets.append(makePosition("Mars", siderealLon: marsSidereal, jd: jd))
 
         // Mercury
         let mercuryLon = planetTropical(.mercury, jd: jd)
-        let mercurySidereal = swissEph.siderealLongitude(mercuryLon, jd: jd)
+        let mercurySidereal = swissEph.siderealLongitude(mercuryLon, jd: jd, ayanamsa: ayanamsaValue)
         planets.append(makePosition("Mercury", siderealLon: mercurySidereal, jd: jd))
 
         // Jupiter
         let jupiterLon = planetTropical(.jupiter, jd: jd)
-        let jupiterSidereal = swissEph.siderealLongitude(jupiterLon, jd: jd)
+        let jupiterSidereal = swissEph.siderealLongitude(jupiterLon, jd: jd, ayanamsa: ayanamsaValue)
         planets.append(makePosition("Jupiter", siderealLon: jupiterSidereal, jd: jd))
 
         // Venus
         let venusLon = planetTropical(.venus, jd: jd)
-        let venusSidereal = swissEph.siderealLongitude(venusLon, jd: jd)
+        let venusSidereal = swissEph.siderealLongitude(venusLon, jd: jd, ayanamsa: ayanamsaValue)
         planets.append(makePosition("Venus", siderealLon: venusSidereal, jd: jd))
 
         // Saturn
         let saturnLon = planetTropical(.saturn, jd: jd)
-        let saturnSidereal = swissEph.siderealLongitude(saturnLon, jd: jd)
+        let saturnSidereal = swissEph.siderealLongitude(saturnLon, jd: jd, ayanamsa: ayanamsaValue)
         planets.append(makePosition("Saturn", siderealLon: saturnSidereal, jd: jd))
 
         // Rahu (True Node)
         let rahuLon = swissEph.rahuPosition(jd)
-        planets.append(makePosition("Rahu", siderealLon: rahuLon, jd: jd))
+        let rahuSidereal = swissEph.siderealLongitude(rahuLon, jd: jd, ayanamsa: ayanamsaValue)
+        planets.append(makePosition("Rahu", siderealLon: rahuSidereal, jd: jd))
 
         // Ketu
         let ketuLon = swissEph.ketuPosition(jd)
-        planets.append(makePosition("Ketu", siderealLon: ketuLon, jd: jd))
+        let ketuSidereal = swissEph.siderealLongitude(ketuLon, jd: jd, ayanamsa: ayanamsaValue)
+        planets.append(makePosition("Ketu", siderealLon: ketuSidereal, jd: jd))
 
-        // Build houses
-        let houses = buildHouses(ascendant: ascendant, jd: jd, lat: lat)
+        // Build houses using proper Placidus (GAP-004 fix)
+        let houses = buildHouses(ascendant: ascendant, jd: jd, lat: lat, lon: lon, ayanamsa: ayanamsaValue)
 
         return ChartData(
             ascendant: ascendant,
@@ -117,15 +119,26 @@ final class CalculationEngine: Sendable {
         return false
     }
 
-    private func buildHouses(ascendant: Double, jd: Double, lat: Double) -> [House] {
+    private func buildHouses(ascendant: Double, jd: Double, lat: Double, lon: Double, ayanamsa: Double) -> [House] {
+        // GAP-004 fix: Use proper Placidus house calculation
+        // First get tropical cusps, then convert to sidereal
+        let tropicalCusps = swissEph.houseCusps(
+            tropicalAscendant: swissEph.tropicalAscendant(jd: jd, lat: lat, lon: lon),
+            jd: jd,
+            lat: lat,
+            lon: lon
+        )
+
         var houses: [House] = []
-        for i in 1...12 {
-            let cuspDegree = mod(ascendant + Double(i - 1) * 30.0, 360.0)
-            let signIdx = swissEph.signIndex(cuspDegree)
+        for i in 0..<12 {
+            let cuspDegree = tropicalCusps[i]
+            // Convert to sidereal
+            let siderealCusp = mod(cuspDegree - ayanamsa, 360.0)
+            let signIdx = swissEph.signIndex(siderealCusp)
             houses.append(House(
-                number: i,
+                number: i + 1,
                 sign: Sign(rawValue: signIdx) ?? .aries,
-                degreeOnCusp: swissEph.degreeInSign(cuspDegree)
+                degreeOnCusp: swissEph.degreeInSign(siderealCusp)
             ))
         }
         return houses

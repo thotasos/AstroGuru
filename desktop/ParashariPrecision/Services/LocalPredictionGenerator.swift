@@ -4,6 +4,40 @@ import Foundation
 /// Uses template-based approach with rule engine for generating predictions.
 final class LocalPredictionGenerator {
 
+    // MARK: - Deterministic RNG
+
+    /// Seeded random number generator for consistent prediction selection.
+    /// Seeded from profile.id hash + dasha period hash to ensure the same
+    /// profile always produces identical predictions for the same dasha period.
+    private struct SeededGenerator: RandomNumberGenerator {
+        private var state: UInt64
+
+        init(seed: Int) {
+            // Use a simple but effective seeded LCG
+            self.state = UInt64(abs(seed &* 1103515245 &+ 12345))
+        }
+
+        mutating func next() -> UInt64 {
+            state = state &* 6364136223846793005 &+ 1442695040888963407
+            return state
+        }
+    }
+
+    /// Stable hash combining two values for seeding.
+    private func combineHash(_ a: Int, _ b: Int) -> Int {
+        (a &* 31) &+ b
+    }
+
+    /// Creates a seeded RNG from a profile and optional dasha context.
+    /// This ensures the same profile always produces identical predictions.
+    private func makeSeededRNG(profileId: String, dashaLord: String? = nil) -> SeededGenerator {
+        var seed = stableHash(profileId)
+        if let lord = dashaLord {
+            seed = combineHash(seed, stableHash(lord))
+        }
+        return SeededGenerator(seed: seed)
+    }
+
     // MARK: - Template Data
 
     private let signTraits: [Int: [String]] = [
@@ -109,6 +143,11 @@ final class LocalPredictionGenerator {
     func generatePlanetPredictions(chartData: ChartData, shadbala: [ShadbalaResult]) -> [String: String] {
         var predictions: [String: String] = [:]
 
+        // Use a seeded RNG to ensure deterministic ordering and selection
+        // Seeded from the chart's ascendant + planet positions
+        let ascendant = Int(chartData.ascendant / 30) % 12
+        var rng = SeededGenerator(seed: combineHash(ascendant, chartData.planets.count))
+
         for planet in Planet.allCases {
             let planetName = planet.name
             guard let planetPos = chartData.planets.first(where: { $0.planet == planetName }) else {
@@ -119,10 +158,10 @@ final class LocalPredictionGenerator {
 
             // Sign placement
             let signName = Sign(rawValue: planetPos.sign)?.name ?? "Unknown"
-            let signTraits = self.signTraits[planetPos.sign] ?? []
-            // Deterministic trait selection using planet name hash
-            let hash = stableHash(planetName)
-            let trait = signTraits[hash % signTraits.count] ?? "unique"
+            let signTraitsList = self.signTraits[planetPos.sign] ?? []
+            // Deterministic trait selection using seeded RNG
+            let traitIndex = Int.random(in: 0..<max(1, signTraitsList.count), using: &rng)
+            let trait = signTraitsList[traitIndex]
 
             prediction += "In \(signName), you exhibit \(trait) qualities. "
 
@@ -172,8 +211,14 @@ final class LocalPredictionGenerator {
 
         var impact = "**Planetary Yoga Formations**\n\n"
 
-        // Sort by strength
-        let sortedYogas = yogas.sorted { $0.strength > $1.strength }
+        // Sort by strength (descending), then by name hash for stable deterministic order
+        let sortedYogas = yogas.sorted {
+            if $0.strength != $1.strength {
+                return $0.strength > $1.strength
+            }
+            // Tiebreaker: stableHash of yoga name ensures consistent ordering
+            return stableHash($0.name) < stableHash($1.name)
+        }
 
         for yoga in sortedYogas.prefix(10) {
             let strengthLabel: String
@@ -243,10 +288,16 @@ final class LocalPredictionGenerator {
         }
         prediction += "\n"
 
-        // Key yogas
+        // Key yogas — sorted deterministically by strength then name hash
         if !yogas.isEmpty {
             prediction += "## Key Yogas\n"
-            let topYogas = yogas.sorted { $0.strength > $1.strength }.prefix(3)
+            let sortedYogas = yogas.sorted {
+                if $0.strength != $1.strength {
+                    return $0.strength > $1.strength
+                }
+                return stableHash($0.name) < stableHash($1.name)
+            }
+            let topYogas = sortedYogas.prefix(3)
             for yoga in topYogas {
                 prediction += "- **\(yoga.name)**: \(yoga.description)\n"
             }
@@ -258,10 +309,12 @@ final class LocalPredictionGenerator {
         let ascendantSign = Sign(rawValue: ascendant)?.name ?? "Unknown"
         prediction += "## Ascendant Analysis\n"
         prediction += "Your ascendant is in **\(ascendantSign)**, "
-        // Deterministic trait selection using profile name hash
-        let ascendantHash = stableHash(profile.name)
-        if let traits = signTraits[ascendant] {
-            let selectedTrait = traits[ascendantHash % traits.count]
+
+        // Deterministic trait selection using seeded RNG (profile.id + dasha hash)
+        let dashaLord = dashaData.first?.0.lord
+        var rng = makeSeededRNG(profileId: profile.id, dashaLord: dashaLord)
+        if let traits = signTraits[ascendant], !traits.isEmpty {
+            let selectedTrait = traits.randomElement(using: &rng) ?? "distinct"
             prediction += "giving you \(selectedTrait) qualities.\n\n"
         } else {
             prediction += "giving you distinct qualities.\n\n"

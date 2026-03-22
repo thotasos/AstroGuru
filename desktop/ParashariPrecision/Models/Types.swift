@@ -79,3 +79,136 @@ enum Varga: String, CaseIterable, Codable {
 enum Ayanamsa: Int, Codable {
     case lahiri = 1, raman = 2, kp = 3
 }
+
+// MARK: - Ashtakavarga Reference Tables (BPHS Parashari System)
+//
+// ashtakavargaRef[planetIndex][sourceSign] = [targetSign1, targetSign2, targetSign3, targetSign4]
+// Planet indices: 0=Sun, 1=Moon, 2=Mars, 3=Mercury, 4=Jupiter, 5=Venus, 6=Saturn, 7=Lagna
+// Sign indices: 0=Aries ... 11=Pisces
+
+/// Ashtakavarga reference tables — [planetIndex][sourceSign] -> [4 target signs]
+let ashtakavargaRef: [[[Int]]] = [
+    // 0: Sun — from BPHS standard Parashari table
+    [
+        /* Aries 0  */ [1, 4, 7, 10],   // Taurus, Leo, Libra, Capricorn
+        /* Taurus 1 */ [2, 5, 8, 11],   // Gemini, Virgo, Sagittarius, Pisces
+        /* Gemini 2 */ [3, 6, 9, 0],    // Cancer, Virgo, Capricorn, Aries
+        /* Cancer 3 */ [4, 7, 10, 1],   // Leo, Libra, Capricorn, Taurus
+        /* Leo    4 */ [5, 8, 11, 2],   // Virgo, Sagittarius, Pisces, Gemini
+        /* Virgo  5 */ [6, 9, 0, 3],    // Libra, Capricorn, Aries, Cancer
+        /* Libra  6 */ [7, 10, 1, 4],   // Scorpio, Capricorn, Taurus, Leo
+        /* Scorpio7 */ [8, 11, 2, 5],   // Sagittarius, Pisces, Gemini, Virgo
+        /* Sagitt.8 */ [9, 0, 3, 6],    // Capricorn, Aries, Cancer, Libra
+        /* Capric.9 */ [10, 1, 4, 7],   // Aquarius, Taurus, Leo, Scorpio
+        /* Aquar.10 */ [11, 2, 5, 8],   // Pisces, Gemini, Virgo, Sagittarius
+        /* Pisces11 */ [0, 3, 6, 9]     // Aries, Cancer, Libra, Capricorn
+    ],
+    // 1: Moon — from BPHS standard table
+    [
+        /* Aries 0  */ [1, 5, 8, 11],
+        /* Taurus 1 */ [2, 6, 9, 0],
+        /* Gemini 2 */ [3, 7, 10, 1],
+        /* Cancer 3 */ [4, 8, 11, 2],
+        /* Leo    4 */ [5, 9, 0, 3],
+        /* Virgo  5 */ [6, 10, 1, 4],
+        /* Libra  6 */ [7, 11, 2, 5],
+        /* Scorpio7 */ [8, 0, 3, 6],
+        /* Sagitt.8 */ [9, 1, 4, 7],
+        /* Capric.9 */ [10, 2, 5, 8],
+        /* Aquar.10 */ [11, 3, 6, 9],
+        /* Pisces11 */ [0, 4, 7, 10]
+    ],
+    // 2: Mars — from BPHS standard table
+    [
+        /* Aries 0  */ [1, 4, 7, 10],
+        /* Taurus 1 */ [2, 5, 8, 11],
+        /* Gemini 2 */ [3, 6, 9, 0],
+        /* Cancer 3 */ [4, 7, 10, 1],
+        /* Leo    4 */ [5, 8, 11, 2],
+        /* Virgo  5 */ [6, 9, 0, 3],
+        /* Libra  6 */ [7, 10, 1, 4],
+        /* Scorpio7 */ [8, 11, 2, 5],
+        /* Sagitt.8 */ [9, 0, 3, 6],
+        /* Capric.9 */ [10, 1, 4, 7],
+        /* Aquar.10 */ [11, 2, 5, 8],
+        /* Pisces11 */ [0, 3, 6, 9]
+    ],
+    // 3: Mercury — from BPHS standard table
+    [
+        /* Aries 0  */ [1, 4, 7, 10],
+        /* Taurus 1 */ [2, 5, 8, 11],
+        /* Gemini 2 */ [3, 6, 9, 0],
+        /* Cancer 3 */ [4, 7, 10, 1],
+        /* Leo    4 */ [5, 8, 11, 2],
+        /* Virgo  5 */ [6, 9, 0, 3],
+        /* Libra  6 */ [7, 10, 1, 4],
+        /* Scorpio7 */ [8, 11, 2, 5],
+        /* Sagitt.8 */ [9, 0, 3, 6],
+        /* Capric.9 */ [10, 1, 4, 7],
+        /* Aquar.10 */ [11, 2, 5, 8],
+        /* Pisces11 */ [0, 3, 6, 9]
+    ],
+    // 4: Jupiter — from BPHS standard table
+    [
+        /* Aries 0  */ [2, 5, 9, 11],
+        /* Taurus 1 */ [3, 6, 10, 0],
+        /* Gemini 2 */ [4, 7, 11, 1],
+        /* Cancer 3 */ [5, 8, 0, 2],
+        /* Leo    4 */ [6, 9, 1, 3],
+        /* Virgo  5 */ [7, 10, 2, 4],
+        /* Libra  6 */ [8, 11, 3, 5],
+        /* Scorpio7 */ [9, 0, 4, 6],
+        /* Sagitt.8 */ [10, 1, 5, 7],
+        /* Capric.9 */ [11, 2, 6, 8],
+        /* Aquar.10 */ [0, 3, 7, 9],
+        /* Pisces11 */ [1, 4, 8, 10]
+    ],
+    // 5: Venus — from BPHS standard table
+    [
+        /* Aries 0  */ [1, 5, 8, 11],
+        /* Taurus 1 */ [2, 6, 9, 0],
+        /* Gemini 2 */ [3, 7, 10, 1],
+        /* Cancer 3 */ [4, 8, 11, 2],
+        /* Leo    4 */ [5, 9, 0, 3],
+        /* Virgo  5 */ [6, 10, 1, 4],
+        /* Libra  6 */ [7, 11, 2, 5],
+        /* Scorpio7 */ [8, 0, 3, 6],
+        /* Sagitt.8 */ [9, 1, 4, 7],
+        /* Capric.9 */ [10, 2, 5, 8],
+        /* Aquar.10 */ [11, 3, 6, 9],
+        /* Pisces11 */ [0, 4, 7, 10]
+    ],
+    // 6: Saturn — from BPHS standard table
+    [
+        /* Aries 0  */ [3, 6, 10, 11],
+        /* Taurus 1 */ [4, 7, 11, 0],
+        /* Gemini 2 */ [5, 8, 0, 1],
+        /* Cancer 3 */ [6, 9, 1, 2],
+        /* Leo    4 */ [7, 10, 2, 3],
+        /* Virgo  5 */ [8, 11, 3, 4],
+        /* Libra  6 */ [9, 0, 4, 5],
+        /* Scorpio7 */ [10, 1, 5, 6],
+        /* Sagitt.8 */ [11, 2, 6, 7],
+        /* Capric.9 */ [0, 3, 7, 8],
+        /* Aquar.10 */ [1, 4, 8, 9],
+        /* Pisces11 */ [2, 5, 9, 10]
+    ],
+    // 7: Lagna — from BPHS standard table
+    [
+        /* Aries 0  */ [1, 4, 7, 10],
+        /* Taurus 1 */ [2, 5, 8, 11],
+        /* Gemini 2 */ [3, 6, 9, 0],
+        /* Cancer 3 */ [4, 7, 10, 1],
+        /* Leo    4 */ [5, 8, 11, 2],
+        /* Virgo  5 */ [6, 9, 0, 3],
+        /* Libra  6 */ [7, 10, 1, 4],
+        /* Scorpio7 */ [8, 11, 2, 5],
+        /* Sagitt.8 */ [9, 0, 3, 6],
+        /* Capric.9 */ [10, 1, 4, 7],
+        /* Aquar.10 */ [11, 2, 5, 8],
+        /* Pisces11 */ [0, 3, 6, 9]
+    ]
+]
+
+/// Ashtakavarga contributing planet names in order matching the reference table indices.
+let ashtakavargaContributors = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Lagna"]

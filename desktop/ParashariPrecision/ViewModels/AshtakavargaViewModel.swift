@@ -61,11 +61,37 @@ final class AshtakavargaViewModel: ObservableObject {
             bav[planet] = Array(repeating: 0, count: 12)
         }
 
+        // Build a map of planet name -> sign index from chart
+        var planetSignMap: [String: Int] = [:]
         for position in chartData.planets {
-            guard ashtakavargaPlanets.contains(position.planet) else { continue }
-            let sign = position.sign
-            bav[position.planet]?[sign] += 1
+            planetSignMap[position.planet] = position.sign
         }
+
+        // Also include Lagna (Ascendant) in the reference calculation
+        let lagnaSign = Int(chartData.ascendant / 30) % 12
+
+        // For each of the 8 Ashtakavarga contributors (Sun through Saturn + Lagna),
+        // look up their sign and cast bindus per the BPHS reference tables.
+        for (contributorIndex, contributor) in ashtakavargaContributors.enumerated() {
+            let sign: Int
+            if contributor == "Lagna" {
+                sign = lagnaSign
+            } else {
+                guard let s = planetSignMap[contributor] else { continue }
+                sign = s
+            }
+
+            // Cast 1 bindu into each target sign per the reference table
+            // ashtakavargaRef[planetIndex][sourceSign] = [4 target signs]
+            for targetSign in ashtakavargaRef[contributorIndex][sign] {
+                // BAV: this contributor adds a bindu to the target sign
+                bav[contributor]?[targetSign] += 1
+            }
+        }
+
+        // Rahu and Ketu are not Ashtakavarga contributors (shadow planets),
+        // but they appear in the planet list. Their BAV entries remain all-zero
+        // since they don't cast bindus. We still include them in the result.
 
         var sav = Array(repeating: 0, count: 12)
         for planet in ashtakavargaPlanets {
@@ -80,14 +106,32 @@ final class AshtakavargaViewModel: ObservableObject {
         return AshtakavargaResult(bav: bav, sav: sav, planetBav: planetBav)
     }
 
+    /// Own signs (Moolatrikona) for each planet — used in Shodhana.
+    /// Mars owns Aries (0) & Scorpio (7); Mercury owns Gemini (2) & Virgo (5);
+    /// Jupiter owns Sagittarius (8) & Pisces (11); Venus owns Taurus (1) & Libra (6);
+    /// Saturn owns Capricorn (9) & Aquarius (10).
+    private let ownSigns: [String: Set<Int>] = [
+        "Sun":     [4],   // Leo
+        "Moon":    [3],   // Cancer
+        "Mars":    [0, 7], // Aries, Scorpio
+        "Mercury": [2, 5], // Gemini, Virgo
+        "Jupiter": [8, 11], // Sagittarius, Pisces
+        "Venus":   [1, 6],  // Taurus, Libra
+        "Saturn":  [9, 10], // Capricorn, Aquarius
+        "Rahu":    [],    // No moolatrikona signs
+        "Ketu":    []     // No moolatrikona signs
+    ]
+
     private func applyShodhana(bav: [String: [Int]]) -> [String: [Int]] {
         var planetBav = bav
         for (planet, bindus) in bav {
-            guard let planetIndex = ashtakavargaPlanets.firstIndex(of: planet) else { continue }
             var shodhana = bindus
-            let ownSign = planetIndex % 12
-            if shodhana[ownSign] > 0 {
-                shodhana[ownSign] -= 1
+            if let signs = ownSigns[planet] {
+                for ownSign in signs {
+                    if shodhana[ownSign] > 0 {
+                        shodhana[ownSign] -= 1
+                    }
+                }
             }
             planetBav[planet] = shodhana
         }

@@ -437,16 +437,25 @@ private func planetSymbol(_ planet: String) -> String {
 struct TrendBar: View {
     let value: Double  // 0.0–1.0
 
+    private var score: Int { Int(round(value * 100)) }
+    private var barColor: Color { value >= 0.7 ? .green : value >= 0.5 ? .yellow : .red }
+
     var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Capsule().fill(Color.gray.opacity(0.2))
-                Capsule()
-                    .fill(value >= 0.7 ? Color.green : value >= 0.5 ? Color.yellow : Color.red)
-                    .frame(width: max(2, geo.size.width * value))
+        VStack(spacing: 2) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.gray.opacity(0.2))
+                    Capsule()
+                        .fill(barColor)
+                        .frame(width: max(2, geo.size.width * value))
+                }
             }
+            .frame(height: 6)
+
+            Text("\(score)")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(barColor)
         }
-        .frame(height: 6)
     }
 }
 

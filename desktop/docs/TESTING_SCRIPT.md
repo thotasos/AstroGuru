@@ -42,14 +42,14 @@ Use this exact profile for every test run. All expected values below are pre-com
 
 ---
 
-## Part 1 — Profile Creation and Chart Verification
+## Part 1 — Profile Creation, Selection, and Chart Verification
 
-### Step 1.1 — Create Profile
+### Step 1.1 — Create New Profile
 
 1. Launch `ParashariPrecision.app`
 2. Click **+** in the sidebar toolbar
 3. Fill in the New Profile sheet:
-   - Name: `Asha Mehta`
+   - Name: `Test Profile` (or a unique name for this test run)
    - Date of Birth: `September 15, 1982`
    - Time: `08:30 AM`
    - Place Name: `Chicago, Illinois, USA`
@@ -61,9 +61,75 @@ Use this exact profile for every test run. All expected values below are pre-com
 4. Click **Save**
 
 **VERIFY:**
-- [ ] Profile appears in sidebar with name "Asha Mehta" and place "Chicago, Illinois, USA"
+- [ ] Profile appears in sidebar with the new profile name and place "Chicago, Illinois, USA"
+- [ ] Profile is **automatically selected** immediately after creation (sidebar row highlighted)
 - [ ] Clicking profile selects it and shows Chart tab
 - [ ] Chart tab shows a loading spinner, then a South Indian chart
+
+### Step 1.2 — Verify Chart is Correct for New Profile
+
+**Expected planet positions** (computed from app's own SwissEphemeris.swift algorithms):
+
+| Planet | Sidereal Longitude | Sign | Degree in Sign |
+|--------|--------------------|------|----------------|
+| Sun | 148.544° | Leo | 28°32' |
+| Moon | 125.498° | Leo | 5°29' |
+| Mercury | 273.704° | Capricorn | 3°42' |
+| Venus | 118.354° | Cancer | 28°21' |
+| Mars | 261.024° | Sagittarius | 21°01' |
+| Jupiter | 201.575° | Libra | 21°34' |
+| Saturn | 171.161° | Virgo | 21°09' |
+| Rahu | 236.610° | Scorpio | 26°36' |
+| Ketu | 56.610° | Taurus | 26°36' |
+
+**Expected Lagna (Ascendant):** Capricorn 8°45' (278.756°)
+**Expected MC (Midheaven):** Sagittarius 23°44' (263.739°)
+**Lahiri Ayanamsa used:** 23.8474° (23°50'50")
+
+**VERIFY (Chart tab — Planet List):**
+- [ ] Sun shown in Leo
+- [ ] Moon shown in Leo
+- [ ] Mercury shown in Capricorn
+- [ ] Venus shown in Cancer
+- [ ] Mars shown in Sagittarius
+- [ ] Jupiter shown in Libra
+- [ ] Saturn shown in Virgo
+- [ ] Rahu shown in Scorpio
+- [ ] Ketu shown in Taurus
+- [ ] Ascendant shown in Capricorn
+
+**VERIFY (South Indian Chart diagram):**
+- [ ] "L" (Lagna marker) appears in the Capricorn cell (row 3, col 0 in the 4×4 grid)
+- [ ] Sun and Moon symbols both appear in the Leo cell
+- [ ] All 12 sign cells are visible in the 4×4 grid
+- [ ] No sign cell is empty/missing (Leo must appear at row 3, col 1)
+
+**VERIFY (Loading Indicator):**
+- [ ] When profile is selected, a loading spinner appears while chart data is computed
+- [ ] After chart loads, no "waiting" or stale indicator remains
+
+### Step 1.3 — Switch Between Sample Profiles
+
+1. In the sidebar, locate all other sample profiles (e.g., "Asha Mehta", "Ravi Sharma", or any pre-seeded profiles)
+2. Click on each sample profile one by one
+
+**VERIFY for each profile switch:**
+- [ ] Chart tab updates to show the selected profile's planet positions
+- [ ] Chart changes to reflect the different birth data (different signs for planets)
+- [ ] Loading spinner appears briefly during recalculation
+- [ ] No stale data from previous profile remains visible
+
+### Step 1.4 — Return to New Profile and Verify All Tabs
+
+1. Switch back to the newly created profile
+2. Verify all tabs are accessible and load without crash
+
+**VERIFY:**
+- [ ] Dasha tab loads and shows correct Mahadasha sequence
+- [ ] Shadbala tab loads and shows strength values
+- [ ] Ashtakavarga tab loads and shows bindu grid
+- [ ] Yogas tab loads and shows detected yogas
+- [ ] Predictions tab loads and shows overview
 
 ---
 
@@ -588,8 +654,8 @@ Click the **Yogas** tab.
 
 ## Part 9 — Per-Ayanamsa Test Runs
 
-Repeat Parts 1–8 for each ayanamsa. Create the same "Asha Mehta" profile each time,
-selecting a different ayanamsa, observe and record results.
+Repeat Parts 1–7 and Part 12 for each ayanamsa. Create the same "Asha Mehta" profile each time,
+selecting a different ayanamsa, observe and record results. Skip Part 8 (Profile Deletion) during per-ayanamsa runs.
 
 > **CRITICAL NOTE:** As of this version, the CalculationEngine ignores the `ayanamsaId` parameter
 > and **always uses Lahiri** (hard-coded in `calculateChart`). All ayanamsa runs will produce
@@ -789,6 +855,412 @@ app_ayanamsa = 23.85 + (50.2 / (3600 * 36525)) * days_since_j2000  # ≈ 23.847�
 
 ---
 
+## Part 12 — Comprehensive Tab-by-Tab Verification (New Profile)
+
+> **Profile under test:** The newly created profile from Part 1. All steps in this section use this profile exclusively.
+> **Reference date:** 2026-03-21
+
+### Step 12.1 — Dasha Tab Verification
+
+1. Click the **Dasha** tab while the new profile is selected.
+
+**VERIFY:**
+- [ ] Dasha tab loads without crash
+- [ ] Ketu Mahadasha shown as partial at birth
+- [ ] Venus follows Ketu for 20 years (~1986–2006)
+- [ ] Sun follows Venus for 6 years (~2006–2012)
+- [ ] Moon follows Sun for 10 years (~2012–2022)
+- [ ] Mars is highlighted as **Current** (we are in 2026, Mars Mahadasha 2022–2029)
+- [ ] Mars Mahadasha antardasha for today (Mar 2026) shows Mars–Jupiter or current sub-period
+- [ ] Three nesting levels visible: Mahadasha → Antardasha → Pratyantardasha
+- [ ] All rows expandable/collapsible
+- [ ] **Keyboard shortcut** `⌘+D` or `⌃+D` jumps to Dasha tab (if implemented)
+- [ ] **Tooltip** on Dasha tab icon shows "Dasha" (if implemented)
+- [ ] Loading spinner appears if chart data is not yet cached
+
+**Take screenshot** of Dasha tab.
+
+---
+
+### Step 12.2 — Shadbala Tab Verification
+
+1. Click the **Shadbala** tab while the new profile is selected.
+
+**VERIFY:**
+- [ ] Shadbala tab loads without crash
+- [ ] Table renders with 7 planet rows (Sun through Saturn; Rahu/Ketu excluded)
+- [ ] Naisargika Bala column values are present and plausible (Sun=60, Moon≈51, Venus≈43, etc.)
+- [ ] Total column shows sortable values
+- [ ] Exalted planets show green up-arrow (⬆) indicator
+- [ ] Debilitated planets show red down-arrow (⬇) indicator
+- [ ] No force-unwrap crash when sorting
+- [ ] **Keyboard shortcut** `⌘+S` or `⌃+S` jumps to Shadbala tab (if implemented)
+- [ ] **Tooltip** on Shadbala tab icon shows "Shadbala" (if implemented)
+- [ ] Loading spinner appears if chart data is not yet cached
+
+**Reference Naisargika Bala values (fixed by tradition):**
+
+| Planet | Naisargika Bala (Virupas) |
+|--------|--------------------------|
+| Sun | 60.0 |
+| Moon | 51.43 |
+| Venus | 42.86 |
+| Jupiter | 34.29 |
+| Mercury | 25.71 |
+| Mars | 17.14 |
+| Saturn | 8.57 |
+
+**Take screenshot** of Shadbala tab.
+
+---
+
+### Step 12.3 — Ashtakavarga Tab Verification
+
+1. Click the **Ashtakavarga** tab while the new profile is selected.
+
+**VERIFY:**
+- [ ] Ashtakavarga tab loads without crash
+- [ ] 8 planet rows shown (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu)
+- [ ] 12 sign columns shown
+- [ ] Bindu values appear in grid cells (0 or 1 for current stub implementation)
+- [ ] SAV Total row shows correct sums per sign
+- [ ] **Keyboard shortcut** `⌘+A` or `⌃+A` jumps to Ashtakavarga tab (if implemented)
+- [ ] **Tooltip** on Ashtakavarga tab icon shows "Ashtakavarga" (if implemented)
+- [ ] Loading spinner appears if chart data is not yet cached
+
+**Expected raw counts for this chart (stub implementation):**
+- Leo: Sun, Moon → 2 bindus
+- Cancer: Venus → 1 bindu
+- Capricorn: Mercury → 1 bindu
+- Sagittarius: Mars → 1 bindu
+- Libra: Jupiter → 1 bindu
+- Virgo: Saturn → 1 bindu
+- Scorpio: Rahu → 1 bindu
+- Taurus: Ketu → 1 bindu
+- All other signs: 0 bindus
+
+**Take screenshot** of Ashtakavarga tab.
+
+---
+
+### Step 12.4 — Yogas Tab Verification
+
+1. Click the **Yogas** tab while the new profile is selected.
+
+**VERIFY:**
+- [ ] Yogas tab loads without crash
+- [ ] Filter picker (category dropdown) works — switching categories filters the list
+- [ ] Sort options (Strength, Name, Category) reorder the list
+- [ ] Each yoga card shows: name, category, planets, houses, strength %, description
+- [ ] "Rare" badge appears only on yogas with strength ≥ 0.9 OR category contains "rare"
+- [ ] "Powerful" badge appears on yogas with 0.75 ≤ strength < 0.9
+- [ ] If no yogas detected: message reads "No yoga formations were detected in this chart"
+- [ ] **Keyboard shortcut** `⌘+Y` or `⌃+Y` jumps to Yogas tab (if implemented)
+- [ ] **Tooltip** on Yogas tab icon shows "Yogas" (if implemented)
+- [ ] Loading spinner appears if chart data is not yet cached
+
+**Take screenshot** of Yogas tab.
+
+---
+
+### Step 12.5 — Predictions Tab Overview Verification
+
+1. Click the **Predictions** tab while the new profile is selected.
+
+**VERIFY:**
+- [ ] Predictions tab loads without crash
+- [ ] Overview sub-tab is shown by default
+- [ ] Overview text mentions Mars Mahadasha (currently active in 2026)
+- [ ] Dasha sub-tab, Planets sub-tab, Yogas sub-tab, Day sub-tab, Month sub-tab are all visible/accessible
+- [ ] **Keyboard shortcut** `⌘+P` or `⌃+P` jumps to Predictions tab (if implemented)
+- [ ] **Tooltip** on Predictions tab icon shows "Predictions" (if implemented)
+- [ ] Loading spinner appears if predictions are being generated
+- [ ] If predictions are not ready, a wait symbol (spinner) is shown
+
+**Text highlighting verification:**
+- [ ] Planet names (Sun, Moon, Mars, etc.) highlighted in **orange bold**
+- [ ] Sign names (Leo, Cancer, Capricorn, etc.) highlighted in **blue bold**
+- [ ] Yoga category names highlighted in **green bold**
+- [ ] Only matched words highlighted — no text between matches colored
+
+**Take screenshot** of Predictions Overview.
+
+---
+
+### Step 12.6 — Predictions: Dasha Sub-Tab
+
+1. Inside the Predictions tab, click the **Dasha** sub-tab.
+
+**VERIFY:**
+- [ ] Dasha sub-tab content loads
+- [ ] Mars is shown as the current Mahadasha period
+- [ ] Timeline bar chart shows Mars period highlighted
+- [ ] Proportional horizontal bars visible for Mahadasha sequence
+- [ ] Planet color legend visible below bars
+- [ ] NO placeholder text "Visual timeline representation would appear here"
+- [ ] Loading spinner appears if computation is in progress
+
+**Take screenshot** of Dasha sub-tab.
+
+---
+
+### Step 12.7 — Predictions: Planets Sub-Tab
+
+1. Inside the Predictions tab, click the **Planets** sub-tab.
+
+**VERIFY:**
+- [ ] Planets sub-tab content loads
+- [ ] Per-planet prediction cards visible for all 9 planets (Sun through Saturn)
+- [ ] Each card shows planet name, current status, and prediction text
+- [ ] No empty/blank cards for any planet
+- [ ] Loading spinner appears if computation is in progress
+
+**Take screenshot** of Planets sub-tab.
+
+---
+
+### Step 12.8 — Predictions: Yogas Sub-Tab
+
+1. Inside the Predictions tab, click the **Yogas** sub-tab.
+
+**VERIFY:**
+- [ ] Yogas Impact sub-tab content loads
+- [ ] Yoga predictions are shown (may be empty if no significant yogas detected)
+- [ ] Loading spinner appears if computation is in progress
+
+**Take screenshot** of Yogas sub-tab.
+
+---
+
+### Step 12.9 — Day Prediction: Summary and Hourly Breakdown
+
+1. Inside the Predictions tab, click the **Day** sub-tab.
+
+**VERIFY (Summary at Top):**
+- [ ] **Date picker** is shown at the top of the tab (defaults to today)
+- [ ] Header row shows "Day Lord: ☿ Mercury" (2026-03-21 is a Wednesday; Mercury rules Wednesday)
+- [ ] Summary text is shown at the top (e.g., "Mercury-ruled day brings a [quality] influence under the Mars–Saturn dasha period...")
+- [ ] Two callout cards appear below summary: **Best Hour** (green) and **Challenging Hour** (red)
+
+**VERIFY (Best/Worst Hour per Category):**
+- [ ] Each category (Career, Finance, Health, Relationships, Spirituality) has a **best hour** identified and highlighted
+- [ ] Each category (Career, Finance, Health, Relationships, Spirituality) has a **challenging/worst hour** identified and highlighted
+- [ ] Best hour card shows the hour and category score
+- [ ] Worst hour card shows the hour and category score
+
+**VERIFY (24-Hour Table):**
+- [ ] **24 rows** are shown in the hourly table — one per civil hour (00:00–23:00)
+- [ ] Each row contains: hour range | hora lord symbol | Career bar | Finance bar | Health bar | Relationships bar | Spirituality bar | Overall %
+- [ ] Rows with overall score ≥ 70% have a **green tint**; rows < 50% have a **red tint**
+- [ ] Planetary hora symbols follow the Chaldean sequence (spot-check: 00:00 ☿, 05:00 ☀️, 12:00 ☀️, 19:00 ☀️)
+
+**VERIFY (PDF Export):**
+- [ ] **Export as PDF** button or menu item is present
+- [ ] Clicking exports the day prediction as a PDF file
+- [ ] PDF contains the full day table with all hours and categories
+- [ ] PDF is named appropriately (e.g., "Day Prediction - 2026-03-21.pdf")
+
+**VERIFY (Keyboard Shortcuts and Tooltips):**
+- [ ] **Keyboard shortcut** `⌘+E` or similar triggers PDF export (if implemented)
+- [ ] **Tooltip** on Export/PDF button shows "Export as PDF" (if implemented)
+- [ ] **Menu item** File → Export Day Prediction (or similar) is present (if menus implemented)
+- [ ] **Tooltip** on Day tab shows "Day predictions with hourly breakdown" (if implemented)
+
+**VERIFY (Loading Indicator):**
+- [ ] When profile is selected and day tab is opened before data is ready, a loading spinner is shown
+- [ ] When date is changed and prediction is recalculating, a loading spinner is shown
+
+**Take screenshot** of Day prediction tab with summary and hourly table.
+
+---
+
+### Step 12.10 — Day Prediction: Future Dates (13+ Months Apart)
+
+1. In the Day tab, change the date picker to **3 future dates** that are at least 13 months apart from each other.
+
+**Test future dates (example — adjust to current reference):**
+- Date 1: **April 15, 2027** (13 months from Sep 1982 reference — future)
+- Date 2: **July 20, 2028** (13+ months from Date 1)
+- Date 3: **October 5, 2029** (13+ months from Date 2)
+
+**For each future date, VERIFY:**
+- [ ] Date picker updates to the selected future date
+- [ ] Header updates to show the correct Day Lord for that date
+- [ ] Summary text updates for the new date and dasha period
+- [ ] Best/Challenging hour callout cards update for the new date
+- [ ] 24-hour table updates with correct hora lord sequence
+- [ ] Category best/worst hours are recalculated and displayed
+- [ ] Loading spinner appears during recalculation
+- [ ] Dasha label shows the correct Mahadasha–Antardasha for that future date
+  - April 2027: Mars Mahadasha, Mercury Antardasha
+  - July 2028: Mars Mahadasha, Moon Antardasha
+  - October 2029: Mars Mahadasha, Sun Antardasha
+- [ ] **Take screenshot** of each future date day prediction
+
+---
+
+### Step 12.11 — Day Prediction: Past Dates (2+ Years Apart)
+
+1. In the Day tab, change the date picker to **3 past dates** that are at least 2 years apart from each other.
+
+**Test past dates (example — adjust to current reference):**
+- Date 1: **March 21, 2024** (2 years before reference)
+- Date 2: **June 15, 2022** (2+ years from Date 1)
+- Date 3: **September 10, 2020** (2+ years from Date 2)
+
+**For each past date, VERIFY:**
+- [ ] Date picker updates to the selected past date
+- [ ] Header updates to show the correct Day Lord for that date
+- [ ] Summary text updates for the new date and dasha period
+- [ ] Best/Challenging hour callout cards update for the new date
+- [ ] 24-hour table updates with correct hora lord sequence
+- [ ] Category best/worst hours are recalculated and displayed
+- [ ] Loading spinner appears during recalculation
+- [ ] Dasha label shows the correct Mahadasha–Antardasha for that past date
+  - March 2024: Mars Mahadasha, Jupiter Antardasha
+  - June 2022: Moon Mahadasha, Venus Antardasha
+  - September 2020: Moon Mahadasha, Venus Antardasha
+- [ ] **Take screenshot** of each past date day prediction
+
+---
+
+### Step 12.12 — Month Prediction: Summary and Daily Breakdown
+
+1. Inside the Predictions tab, click the **Month** sub-tab.
+
+**VERIFY (Summary at Top):**
+- [ ] **Month/year header** with left `‹` and right `›` chevron navigation buttons
+- [ ] Header shows the current month/year (e.g., "March 2026")
+- [ ] Dasha label shows active period (e.g., "Dasha: Mars–Saturn")
+- [ ] **Summary text** is shown below header describing the month's overall quality
+- [ ] Summary includes **best days** identified for each category (e.g., "Best days for Career: Mar 5, Mar 12")
+- [ ] Summary includes **not so good days** for each category (e.g., "Challenging days for Health: Mar 8, Mar 21")
+
+**VERIFY (Per-Category Good/Not So Good Days):**
+- [ ] Career: best day(s) and challenging day(s) identified in summary or UI
+- [ ] Finance: best day(s) and challenging day(s) identified in summary or UI
+- [ ] Health: best day(s) and challenging day(s) identified in summary or UI
+- [ ] Relationships: best day(s) and challenging day(s) identified in summary or UI
+- [ ] Spirituality: best day(s) and challenging day(s) identified in summary or UI
+
+**VERIFY (Daily Table):**
+- [ ] Column headers: **Day | Lord | Career | Finance | Health | Rels. | Spirit. | Overall**
+- [ ] One row per calendar day (31 rows for March)
+- [ ] Each row shows: `DD` + weekday abbrev | planet symbol | 5 coloured bars | `XX%`
+- [ ] Rows with overall ≥ 70% have a **green tint**; rows < 50% have a **red tint**; others are plain
+
+**VERIFY (PDF Export):**
+- [ ] **Export as PDF** button or menu item is present
+- [ ] Clicking exports the month prediction as a PDF file
+- [ ] PDF contains the full month table with all days and categories
+- [ ] PDF is named appropriately (e.g., "Month Prediction - March 2026.pdf")
+- [ ] PDF includes the summary section at the top
+
+**VERIFY (Keyboard Shortcuts and Tooltips):**
+- [ ] **Keyboard shortcut** for PDF export works (if implemented)
+- [ ] **Tooltip** on Export/PDF button shows "Export as PDF" (if implemented)
+- [ ] **Menu item** File → Export Month Prediction (or similar) is present (if menus implemented)
+- [ ] **Tooltip** on Month tab shows "Month predictions with daily breakdown" (if implemented)
+
+**VERIFY (Loading Indicator):**
+- [ ] When month tab is opened before data is ready, a loading spinner is shown
+- [ ] When month is changed and prediction is recalculating, a loading spinner is shown
+
+**Take screenshot** of Month prediction tab with summary and daily table.
+
+---
+
+### Step 12.13 — Month Prediction: Future Months (2 Years Apart)
+
+1. In the Month tab, navigate to **3 future months** that are approximately 2 years apart.
+
+**Test future months (example):**
+- Month 1: **April 2027** (13+ months from March 2026)
+- Month 2: **July 2028** (15 months from April 2027)
+- Month 3: **September 2029** (14 months from July 2028)
+
+**For each future month, VERIFY:**
+- [ ] Navigation `›` button changes to correct month
+- [ ] Header shows correct month/year (e.g., "April 2027")
+- [ ] Summary text updates for the new month and dasha period
+- [ ] Best days / challenging days for each category update
+- [ ] 30–31 rows shown (correct day count for the month)
+- [ ] Loading spinner appears during recalculation
+- [ ] Dasha label shows correct Mahadasha–Antardasha:
+  - April 2027: Mars Mahadasha, Mercury Antardasha
+  - July 2028: Mars Mahadasha, Moon Antardasha
+  - September 2029: Mars Mahadasha, Sun Antardasha
+- [ ] **Take screenshot** of each future month prediction
+
+---
+
+### Step 12.14 — Month Prediction: Past Months (3+ Years Apart)
+
+1. In the Month tab, navigate to **3 past months** that are at least 3 years apart.
+
+**Test past months (example):**
+- Month 1: **January 2024** (26 months before March 2026)
+- Month 2: **February 2022** (23 months from January 2024)
+- Month 3: **March 2020** (23 months from February 2022)
+
+**For each past month, VERIFY:**
+- [ ] Navigation `‹` button changes to correct month
+- [ ] Header shows correct month/year (e.g., "January 2024")
+- [ ] Summary text updates for the new month and dasha period
+- [ ] Best days / challenging days for each category update
+- [ ] Correct number of rows shown for the month (31, 30, 28, etc.)
+- [ ] Loading spinner appears during recalculation
+- [ ] Dasha label shows correct Mahadasha–Antardasha:
+  - January 2024: Mars Mahadasha, Jupiter Antardasha
+  - February 2022: Moon Mahadasha, Venus Antardasha
+  - March 2020: Moon Mahadasha, Venus Antardasha
+- [ ] **Take screenshot** of each past month prediction
+
+---
+
+### Step 12.15 — Menu Items, Keyboard Shortcuts, and Tooltips Summary
+
+For each tab and sub-tab, verify the following accessibility features are present:
+
+| Tab | Keyboard Shortcut | Tooltip Text | Menu Item |
+|-----|------------------|--------------|-----------|
+| Chart | `⌘+1` (if numbered) | "Chart" or "Varga Chart" | View → Chart (if menus) |
+| Dasha | `⌘+D` or `⌃+D` | "Dasha" | View → Dasha (if menus) |
+| Shadbala | `⌘+B` or `⌃+B` | "Shadbala" | View → Shadbala (if menus) |
+| Ashtakavarga | `⌘+K` or `⌃+K` | "Ashtakavarga" | View → Ashtakavarga (if menus) |
+| Yogas | `⌘+Y` or `⌃+Y` | "Yogas" | View → Yogas (if menus) |
+| Predictions | `⌘+P` or `⌃+P` | "Predictions" | View → Predictions (if menus) |
+| Day Export | `⌘+E` or `⌃+E` | "Export as PDF" | File → Export Day Prediction (if menus) |
+| Month Export | `⌘+⇧+E` or `⌃+⇧+E` | "Export as PDF" | File → Export Month Prediction (if menus) |
+| Print | `⌘+P` | "Print" | File → Print (if menus) |
+
+**VERIFY:**
+- [ ] Each tab has a keyboard shortcut that navigates directly to it
+- [ ] Each toolbar button has a tooltip describing its function
+- [ ] Each export/print action has a keyboard shortcut
+- [ ] Each export/print action has a tooltip
+- [ ] Menu bar contains items for each tab and export action (if menus are implemented)
+
+---
+
+### Step 12.16 — Loading/Waiting Indicators Final Check
+
+**VERIFY the following scenarios all show a loading spinner or wait symbol:**
+
+| Scenario | Trigger | Expected Indicator |
+|----------|---------|-------------------|
+| Profile just selected | Click a different profile in sidebar | Spinner in main content area until chart loads |
+| Chart not yet cached | Select new profile for first time | Spinner replaces empty content |
+| Dasha computing | Click Dasha tab on new profile | Spinner until Dasha sequence computed |
+| Predictions generating | Click Predictions tab | Spinner until overview text generated |
+| Day prediction recalculating | Change date in Day tab | Spinner until hourly scores recalculated |
+| Month prediction recalculating | Navigate to different month | Spinner until daily scores recalculated |
+| PDF exporting | Click Export PDF button | Spinner or progress indicator during export |
+
+**VERIFY no scenario leaves a blank/empty area without a spinner or "Loading..." text when data is being computed.**
+
+---
+
 ## Part 11 — Testing Checklist Summary
 
 Use this before each release:
@@ -796,7 +1268,7 @@ Use this before each release:
 ### Functional
 - [ ] Profile creation with valid North American 1980s birth data saves correctly
 - [ ] Stored `dobUTC` round-trips correctly through `Profile.dobDate`
-- [ ] All 6 tabs load without crash for "Asha Mehta"
+- [ ] All 7 tabs load without crash for the newly created profile
 - [ ] Chart shows correct planet signs per expected table
 - [ ] South Indian chart has all 12 sign cells (4×4 grid, no missing Leo)
 - [ ] Lagna marker appears in Capricorn
@@ -809,6 +1281,24 @@ Use this before each release:
 - [ ] Text highlighting colors only matched words (not text between matches)
 - [ ] Profile deletion removes profile from sidebar
 - [ ] Switching profiles updates all tabs
+
+### Part 12 Comprehensive (New Profile)
+- [ ] Newly created profile is auto-selected after creation
+- [ ] All 7 tabs (Chart, Dasha, Shadbala, Ashtakavarga, Yogas, Predictions + sub-tabs) accessible
+- [ ] Day prediction shows summary at top with best/worst hour per category
+- [ ] Day prediction: 3 future dates (13+ months apart) verified
+- [ ] Day prediction: 3 past dates (2+ years apart) verified
+- [ ] Month prediction shows summary at top with best/not-so-good days per category
+- [ ] Month prediction: 3 future months (2+ years apart) verified
+- [ ] Month prediction: 3 past months (3+ years apart) verified
+- [ ] Day prediction PDF export works
+- [ ] Month prediction PDF export works
+- [ ] Keyboard shortcuts present on all tabs (toolbar)
+- [ ] Tooltip texts present on all toolbar buttons
+- [ ] Menu items present for all tabs and export actions
+- [ ] Loading spinner appears when profile selected before data ready
+- [ ] Loading spinner appears when date/month changed and recalculating
+- [ ] Switching between sample profiles updates chart correctly
 
 ### Per-Ayanamsa
 - [ ] All 7 ayanamsa options selectable in picker
