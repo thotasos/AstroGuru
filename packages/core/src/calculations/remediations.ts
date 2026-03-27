@@ -118,6 +118,83 @@ export function getPlanetStress(
   throw new Error('Not yet implemented');
 }
 
-export function getRemediesForPlanet(_planet: Planet, _stress: PlanetStress): Remedy[] {
-  throw new Error('Not yet implemented');
+// ------------------------------------
+// Helpers
+// ------------------------------------
+
+function getPlanetName(planet: Planet): string {
+  const names: Record<Planet, string> = {
+    [Planet.Sun]: 'Sun', [Planet.Moon]: 'Moon', [Planet.Mars]: 'Mars',
+    [Planet.Mercury]: 'Mercury', [Planet.Jupiter]: 'Jupiter', [Planet.Venus]: 'Venus',
+    [Planet.Saturn]: 'Saturn', [Planet.Rahu]: 'Rahu', [Planet.Ketu]: 'Ketu',
+  };
+  return names[planet];
+}
+
+function getPriority(planet: Planet, level: StressLevel, type: RemedyType): number {
+  const baseByLevel: Record<StressLevel, number> = { severe: 1, moderate: 2, mild: 4 };
+  const typeOffset: Record<RemedyType, number> = { gemstone: 0, moola_mantra: 1, color: 2 };
+  return baseByLevel[level] * 10 + typeOffset[type];
+}
+
+// ------------------------------------
+// Core Functions
+// ------------------------------------
+
+export function getRemediesForPlanet(planet: Planet, stress: PlanetStress): Remedy[] {
+  const remedies: Remedy[] = [];
+  const level = stress.stressLevel;
+
+  // Gemstone
+  const gem = GEMSTONE_TABLE[planet];
+  if (gem) {
+    remedies.push({
+      id: `${planet}-gemstone`,
+      type: 'gemstone',
+      planet,
+      name: `${gem.name} (${gem.sanskrit})`,
+      description: gem.precaution
+        ? `Traditional gemstone for ${getPlanetName(planet)}. ${gem.precaution}.`
+        : `Traditional gemstone for ${getPlanetName(planet)}.`,
+      benefit: `Strengthens ${getPlanetName(planet)}'s influence`,
+      stressLevel: level,
+      priority: getPriority(planet, level, 'gemstone'),
+    });
+  }
+
+  // Moola Mantra
+  const mantra = MOOLA_MANTRA_TABLE[planet];
+  if (mantra) {
+    remedies.push({
+      id: `${planet}-moola-mantra`,
+      type: 'moola_mantra',
+      planet,
+      name: `${getPlanetName(planet)} Moola Mantra`,
+      description: `Chant "${mantra.mantra}" — ${mantra.recitations} recitations recommended.`,
+      benefit: `Powers ${getPlanetName(planet)}'s positive influence`,
+      stressLevel: level,
+      priority: getPriority(planet, level, 'moola_mantra'),
+    });
+  }
+
+  // Color
+  const color = COLOR_TABLE[planet];
+  if (color) {
+    const colorText = color.alternative
+      ? `${color.primary} (${color.hex}) or ${color.alternative} (${color.altHex})`
+      : `${color.primary} (${color.hex})`;
+    remedies.push({
+      id: `${planet}-color`,
+      type: 'color',
+      planet,
+      name: `${getPlanetName(planet)} Color: ${color.primary}`,
+      description: `Wear ${colorText} to strengthen ${getPlanetName(planet)}.`,
+      benefit: `Enhances ${getPlanetName(planet)}'s energy in your environment`,
+      stressLevel: level,
+      priority: getPriority(planet, level, 'color'),
+    });
+  }
+
+  // Sort by priority ascending (lower = more urgent)
+  return remedies.sort((a, b) => a.priority - b.priority);
 }
