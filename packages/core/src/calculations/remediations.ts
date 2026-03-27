@@ -1,6 +1,6 @@
 // packages/core/src/calculations/remediations.ts
 
-import { Planet, Sign, ChartData, DashaPeriod, House } from '../types/index.js';
+import { Planet, ChartData, DashaPeriod } from '../types/index.js';
 import { TransitPosition } from './transit.js';
 
 // ------------------------------------
