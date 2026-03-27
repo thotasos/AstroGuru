@@ -11,10 +11,17 @@ struct NewProfileView: View {
     @State private var formState: FormState
     @State private var showingValidationError = false
     @State private var validationErrorMessage = ""
+    @State private var showingRecalculationAlert = false
     @State private var locationSearchText = ""
     @State private var searchResults: [MKMapItem] = []
     @State private var isSearching = false
     @State private var timezoneSearchText = ""
+    /// Original UTC date string from the profile - preserved to detect if user changed the date
+    @State private var originalDobUTC: String?
+    /// Original Date from DatePicker at load time - used to detect if user actually changed the date
+    @State private var originalDatePickerDate: Date?
+    /// Original birth timezone date components - preserved to avoid timezone conversion issues
+    @State private var originalBirthDateComponents: DateComponents?
 
     struct FormState {
         var name: String = ""
@@ -23,6 +30,8 @@ struct NewProfileView: View {
         var longitude: Double = 0.0
         var timezone: String = "UTC"
         var utcOffset: Double = 0.0
+        var useBirthTimezoneForPredictions: Bool = true  // true = use birth timezone, false = use custom prediction timezone
+        var predictionTimezone: String = "UTC"  // Custom timezone for predictions (when useBirthTimezoneForPredictions is false)
         var placeName: String = ""
         var ayanamsaId: Int = 1
         var notes: String = ""
@@ -155,6 +164,31 @@ struct NewProfileView: View {
                     }
                 }
 
+                Section("Predictions Timezone") {
+                    Toggle("Use Birth Timezone", isOn: $formState.useBirthTimezoneForPredictions)
+
+                    if !formState.useBirthTimezoneForPredictions {
+                        Picker("Prediction Timezone", selection: $formState.predictionTimezone) {
+                            ForEach(sortedTimezones, id: \.self) { tz in
+                                Text(tz).tag(tz)
+                            }
+                        }
+
+                        HStack {
+                            Text("Current Time Here")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Set to Current Timezone") {
+                                formState.predictionTimezone = TimeZone.current.identifier
+                            }
+                        }
+                    } else {
+                        Text("Day/month predictions will use birth timezone (\(formState.timezone))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 Section("Notes") {
                     TextEditor(text: $formState.notes)
                         .frame(minHeight: 80)
@@ -170,7 +204,11 @@ struct NewProfileView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        saveProfile()
+                        if editingProfile != nil {
+                            showingRecalculationAlert = true
+                        } else {
+                            saveProfile()
+                        }
                     }
                     .disabled(!formState.isValid)
                 }
@@ -180,12 +218,17 @@ struct NewProfileView: View {
             } message: {
                 Text(validationErrorMessage)
             }
+            .alert("Recalculation Required", isPresented: $showingRecalculationAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Save Anyway") {
+                    saveProfile()
+                }
+            } message: {
+                Text("Profile changes will trigger a full recalculation of all astrological data including Dasha periods and predictions. This may take a moment.")
+            }
             .onAppear {
                 if let profile = editingProfile {
                     formState.name = profile.name
-                    if let dobDate = profile.dobDate {
-                        formState.dob = dobDate
-                    }
                     formState.latitude = profile.latitude
                     formState.longitude = profile.longitude
                     formState.timezone = profile.timezone
@@ -193,6 +236,27 @@ struct NewProfileView: View {
                     formState.placeName = profile.placeName ?? ""
                     formState.ayanamsaId = profile.ayanamsaId
                     formState.notes = profile.notes ?? ""
+
+                    // Load prediction timezone settings
+                    if let predTz = profile.predictionTimezone {
+                        formState.useBirthTimezoneForPredictions = false
+                        formState.predictionTimezone = predTz
+                    } else {
+                        formState.useBirthTimezoneForPredictions = true
+                        formState.predictionTimezone = profile.timezone
+                    }
+
+                    // Store original UTC string for preservation
+                    originalDobUTC = profile.dobUTC
+
+                    // Use dobDate and shift it so DatePicker displays correct birth timezone time
+                    if let dobDate = profile.dobDate {
+                        formState.dob = dateForBirthTimezonePicker(date: dobDate, birthTimezone: profile.timezone)
+                        originalDatePickerDate = dobDate  // Store original UTC Date for comparison
+                    } else {
+                        formState.dob = Date()
+                        originalDatePickerDate = Date()
+                    }
                 }
             }
             .onChange(of: locationSearchText) { _, newValue in
@@ -249,6 +313,24 @@ struct NewProfileView: View {
         return seconds / 3600.0
     }
 
+    /// Converts a UTC Date so that DatePicker displays the correct birth timezone time.
+    /// This is needed because DatePicker always displays in system timezone.
+    /// We shift the Date so that when displayed in system TZ, it shows birth TZ time.
+    /// E.g., UTC 5:30 AM with IST (UTC+5:30) → DatePicker shows 11:00 AM
+    private func dateForBirthTimezonePicker(date: Date?, birthTimezone: String) -> Date {
+        guard let date = date else { return Date() }
+        let birthTz = TimeZone(identifier: birthTimezone) ?? .current
+        let systemTz = TimeZone.current
+
+        // Get offset difference
+        let birthOffset = Double(birthTz.secondsFromGMT(for: date))
+        let systemOffset = Double(systemTz.secondsFromGMT(for: date))
+        let diff = birthOffset - systemOffset
+
+        // Shift date so DatePicker (in system TZ) shows birth TZ time
+        return date.addingTimeInterval(diff)
+    }
+
     private func saveProfile() {
         guard formState.isValid else {
             validationErrorMessage = "Please fill in all required fields correctly."
@@ -256,29 +338,58 @@ struct NewProfileView: View {
             return
         }
 
-        // The DatePicker gives us a Date in the system timezone.
-        // Reinterpret the displayed time as local time in the birth timezone.
-        let systemCalendar = Calendar.current
-        let localComponents = systemCalendar.dateComponents([.year, .month, .day, .hour, .minute], from: formState.dob)
-
-        var birthCalendar = Calendar(identifier: .gregorian)
-        birthCalendar.timeZone = TimeZone(identifier: formState.timezone) ?? TimeZone(secondsFromGMT: 0)!
-        let dobInBirthTimezone = birthCalendar.date(from: localComponents) ?? formState.dob
-
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
 
+        var finalDobUTC: String
+
+        // Check if user actually changed the date by comparing with the original
+        // Note: originalDatePickerDate is the original UTC Date, while formState.dob is the shifted Date
+        // We need to compare by checking if the user changed the displayed values
+        let userChangedDate: Bool
+        if let original = originalDatePickerDate {
+            // Get the display components (year, month, day, hour, minute) from both dates
+            // Using birth calendar to extract display values
+            var birthCalendar = Calendar(identifier: .gregorian)
+            birthCalendar.timeZone = TimeZone(identifier: formState.timezone) ?? .current
+
+            let originalDisplay = birthCalendar.dateComponents([.year, .month, .day, .hour, .minute], from: original)
+            let currentDisplay = birthCalendar.dateComponents([.year, .month, .day, .hour, .minute], from: formState.dob)
+
+            userChangedDate = originalDisplay != currentDisplay
+        } else {
+            userChangedDate = true
+        }
+
+        if let existingProfile = editingProfile, !userChangedDate {
+            // User did NOT change the date - preserve original UTC string exactly
+            finalDobUTC = existingProfile.dobUTC
+        } else {
+            // User DID change the date OR this is a new profile
+            // Extract date components from DatePicker and interpret as birth timezone
+            var birthCalendar = Calendar(identifier: .gregorian)
+            birthCalendar.timeZone = TimeZone(identifier: formState.timezone) ?? TimeZone(secondsFromGMT: 0)!
+            let birthComponents = birthCalendar.dateComponents([.year, .month, .day, .hour, .minute], from: formState.dob)
+            let dobInBirthTz = birthCalendar.date(from: birthComponents) ?? formState.dob
+            finalDobUTC = formatter.string(from: dobInBirthTz)
+        }
+
         let profile: Profile
+
+        // Determine prediction timezone: nil means use birth timezone
+        let finalPredictionTimezone: String? = formState.useBirthTimezoneForPredictions ? nil : formState.predictionTimezone
+
         if let existing = editingProfile {
             profile = Profile(
                 id: existing.id,
                 name: formState.name.trimmingCharacters(in: .whitespaces),
-                dobUTC: formatter.string(from: dobInBirthTimezone),
+                dobUTC: finalDobUTC,
                 latitude: formState.latitude,
                 longitude: formState.longitude,
                 timezone: formState.timezone,
                 utcOffset: formState.utcOffset,
+                predictionTimezone: finalPredictionTimezone,
                 placeName: formState.placeName.isEmpty ? nil : formState.placeName,
                 ayanamsaId: formState.ayanamsaId,
                 notes: formState.notes.isEmpty ? nil : formState.notes,
@@ -288,11 +399,12 @@ struct NewProfileView: View {
         } else {
             profile = Profile(
                 name: formState.name.trimmingCharacters(in: .whitespaces),
-                dobUTC: formatter.string(from: dobInBirthTimezone),
+                dobUTC: finalDobUTC,
                 latitude: formState.latitude,
                 longitude: formState.longitude,
                 timezone: formState.timezone,
                 utcOffset: formState.utcOffset,
+                predictionTimezone: finalPredictionTimezone,
                 placeName: formState.placeName.isEmpty ? nil : formState.placeName,
                 ayanamsaId: formState.ayanamsaId,
                 notes: formState.notes.isEmpty ? nil : formState.notes

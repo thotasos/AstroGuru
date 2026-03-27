@@ -158,21 +158,23 @@ final class CalculationEngine: Sendable {
         let moonSidereal = swissEph.siderealLongitude(moonLon, jd: jd)
         let (nakIndex, _) = swissEph.nakshatra(longitude: moonSidereal)
 
-        // Vimshottari Dasha sequence
-        let dashaSequence = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury", "Ketu", "Venus", "Moon"]
-        let dashaLengths = [7, 20, 6, 10, 7, 18, 16, 19, 17, 7, 20, 6]
+        // Vimshottari Dasha sequence - 9 planets cycling through 27 nakshatras
+        // Nakshatra lords: Ashwini(0)=Ketu, Bharani(1)=Venus, Krittika(2)=Sun, Rohini(3)=Moon,
+        // Mrigashira(4)=Mars, Ardra(5)=Rahu, Punarvasu(6)=Jupiter, Pushya(7)=Saturn, Ashlesha(8)=Mercury,
+        // Magha(9)=Ketu, ...(pattern repeats every 9)
+        let dashaSequence = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"]
+        let dashaLengths = [7, 20, 6, 10, 7, 18, 16, 19, 17]
 
-        // Find starting nakshatra's dasha lord
-        let nakLordIndex = nakIndex % 12
+        // FIX: Use nakIndex % 9 (not % 12) since Vimshottari cycles through 9 planets across 27 nakshatras
+        let nakLordIndex = nakIndex % 9
         let dashaLord = dashaSequence[nakLordIndex]
-        let dashaStartYear = year - dashaLengths[nakLordIndex]
 
-        // Build Mahadasha tree
+        // Build Mahadasha tree (120 years total = sum of all dashaLengths)
         var dashas: [DashaPeriod] = []
         var currentYear = year
 
-        for i in 0..<12 {
-            let lordIndex = (nakLordIndex + i) % 12
+        for i in 0..<9 {
+            let lordIndex = (nakLordIndex + i) % 9
             let lord = dashaSequence[lordIndex]
             let length = dashaLengths[lordIndex]
             let startYear = i == 0 ? year : currentYear
@@ -204,8 +206,8 @@ final class CalculationEngine: Sendable {
         let mahadashaLength = endYear - startYear
         var antardashas: [DashaPeriod] = []
 
-        for i in 0..<12 {
-            let antarlordIndex = (lordIndex + i) % 12
+        for i in 0..<9 {
+            let antarlordIndex = (lordIndex + i) % 9
             let antarlord = dashaSequence[antarlordIndex]
             let antarlength = (dashaLengths[antarlordIndex] * mahadashaLength) / 120
 

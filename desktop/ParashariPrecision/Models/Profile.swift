@@ -6,8 +6,9 @@ struct Profile: Codable, Identifiable, Equatable, Hashable {
     var dobUTC: String          // ISO 8601 UTC datetime string
     var latitude: Double
     var longitude: Double
-    var timezone: String         // IANA timezone string
+    var timezone: String         // IANA timezone string (birth timezone)
     var utcOffset: Double       // hours offset from UTC
+    var predictionTimezone: String?  // Optional: timezone for day/month predictions (defaults to birth timezone if nil)
     var placeName: String?
     var ayanamsaId: Int
     var notes: String?
@@ -22,6 +23,7 @@ struct Profile: Codable, Identifiable, Equatable, Hashable {
         longitude: Double,
         timezone: String,
         utcOffset: Double,
+        predictionTimezone: String? = nil,
         placeName: String? = nil,
         ayanamsaId: Int = 1,
         notes: String? = nil,
@@ -35,6 +37,7 @@ struct Profile: Codable, Identifiable, Equatable, Hashable {
         self.longitude = longitude
         self.timezone = timezone
         self.utcOffset = utcOffset
+        self.predictionTimezone = predictionTimezone
         self.placeName = placeName
         self.ayanamsaId = ayanamsaId
         self.notes = notes
@@ -42,7 +45,16 @@ struct Profile: Codable, Identifiable, Equatable, Hashable {
         self.updatedAt = updatedAt
     }
 
+    /// Returns the timezone to use for predictions
+    /// Falls back to birth timezone if predictionTimezone is not set
+    var effectivePredictionTimezone: String {
+        predictionTimezone ?? timezone
+    }
+
     var dobDate: Date? {
-        ISO8601DateFormatter().date(from: dobUTC)
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)  // Explicitly use UTC
+        return formatter.date(from: dobUTC)
     }
 }

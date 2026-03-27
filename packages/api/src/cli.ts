@@ -6,6 +6,7 @@ import { runMigrations } from './database/migrate.js';
 import { getCachedCalculation, saveHourlyPredictions, getHourlyPredictions, deleteOldPredictions, deletePredictionsForProfile, getReadyProfiles } from './database/cache.js';
 import { runProcessor, processProfile, processAllNewProfiles } from './jobs/processor.js';
 import { calculateTransit, calculateHourlyScore, calculateHourlyCategories, parseCategoryTrend, getDashaAtDate, generateImmediatePredictions, generateMonthlyPredictions } from '@parashari/core';
+import { checkOllamaAvailable, generateAISummary, parseAIResponse, type OllamaSummaryData } from './services/ollamaService.js';
 
 const PREDEFINED_PLACES: Record<string, { lat: number; lon: number; timezone: string; utcOffset: number }> = {
   'nalgonda-india': { lat: 17.0500, lon: 79.2700, timezone: 'Asia/Kolkata', utcOffset: 5.5 },
@@ -602,6 +603,524 @@ interface HourlyPredictionInput {
   prediction_text: null;
 }
 
+interface NaturalLanguageSummary {
+  career: string;
+  finance: string;
+  health: string;
+  relationships: string;
+  education: string;
+}
+
+/**
+ * Print template-based summary (used as fallback or when --ai-summary not specified)
+ */
+function printTemplateSummary(summary: NaturalLanguageSummary): void {
+  console.log(`Career: ${summary.career}`);
+  console.log();
+  console.log(`Finance: ${summary.finance}`);
+  console.log();
+  console.log(`Health: ${summary.health}`);
+  console.log();
+  console.log(`Relationships: ${summary.relationships}`);
+  console.log();
+  console.log(`Education: ${summary.education}`);
+}
+
+/**
+ * Build Ollama summary data from predictions and chart
+ */
+function buildOllamaSummaryData(
+  predictions: HourlyPredictionInput[],
+  chart: any,
+  profile: any,
+  date: string,
+  timezone: string,
+  dashas?: any[]
+): OllamaSummaryData {
+  const SIGN_NAMES = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+  const PLANET_NAMES = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
+
+  const natalLagnaSign = chart ? Math.floor(chart.ascendant / 30) : 0;
+  const natalMoon = chart?.planets?.find((p: any) => p.planet === 1);
+  const natalMoonNakshatra = natalMoon?.nakshatra ?? 15;
+
+  // Get birth chart summary
+  const birthChartSummary = chart ? buildBirthChartSummary(chart, SIGN_NAMES, PLANET_NAMES) : 'Birth chart data not available';
+
+  // Calculate current dasha from the dasha tree
+  let currentMahadasha = 'Venus';
+  let currentAntardasha = 'Venus';
+  if (dashas && dashas.length > 0) {
+    try {
+      const targetDate = new Date(date + 'T12:00:00Z');
+      const dashaResult = getDashaAtDate(dashas, targetDate);
+      if (dashaResult) {
+        currentMahadasha = PLANET_NAMES[dashaResult.mahadasha.planet] ?? 'Unknown';
+        currentAntardasha = PLANET_NAMES[dashaResult.antardasha.planet] ?? 'Unknown';
+      }
+    } catch (e) {
+      // Fall back to defaults if dasha calculation fails
+    }
+  }
+
+  const predictionData = predictions.map(p => ({
+    hour: p.hour,
+    pranaDashaPlanet: PLANET_NAMES[p.prana_dasha_planet ?? 0] ?? 'Unknown',
+    sookshmaDashaPlanet: PLANET_NAMES[p.sookshma_dasha_planet ?? 0] ?? 'Unknown',
+    moonNakshatra: p.moon_nakshatra ?? 0,
+    moonSign: p.moon_sign ?? 0,
+    transitLagnaSign: p.transit_lagna_sign ?? 0,
+    hourlyScore: p.hourly_score ?? 50,
+  }));
+
+  return {
+    profileName: profile.name,
+    date,
+    timezone,
+    natalLagnaSign,
+    natalMoonNakshatra,
+    currentMahadasha,
+    currentAntardasha,
+    birthChartSummary,
+    predictions: predictionData,
+  };
+}
+
+/**
+ * Build a summary of the birth chart for Ollama prompt
+ */
+function buildBirthChartSummary(chart: any, signs: string[], planets: string[]): string {
+  const lines: string[] = [];
+
+  // Ascendant
+  lines.push(`Ascendant: ${signs[Math.floor(chart.ascendant / 30)]} (${chart.ascendant.toFixed(1)}°)`);
+
+  // Key planets
+  if (chart.planets) {
+    const keyPlanets = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'] as const;
+    const planetMap: Record<string, number> = { Sun: 0, Moon: 1, Mars: 2, Mercury: 3, Jupiter: 4, Venus: 5, Saturn: 6 };
+
+    for (const name of keyPlanets) {
+      const p = chart.planets.find((x: any) => x.planet === planetMap[name]);
+      if (p) {
+        lines.push(`${name}: ${signs[p.sign]} ${p.degreeInSign.toFixed(1)}° in ${p.nakshatra} nakshatra`);
+      }
+    }
+  }
+
+  return lines.join(' | ');
+}
+
+/**
+ * Build summary data for monthly predictions
+ */
+function buildMonthlySummaryData(
+  monthly: any,
+  profile: any,
+  month: string,
+  timezone: string,
+  chart?: any,
+  dashas?: any[]
+): OllamaSummaryData {
+  const SIGN_NAMES = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+  const PLANET_NAMES = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
+
+  // Get natal chart info from chart data
+  const natalLagnaSign = chart ? Math.floor(chart.ascendant / 30) : 0;
+  const natalMoon = chart?.planets?.find((p: any) => p.planet === 1);
+  const natalMoonNakshatra = natalMoon?.nakshatra ?? 15;
+
+  // Calculate current Mahadasha/Antardasha for the month
+  let currentMahadasha = 'Venus';
+  let currentAntardasha = 'Venus';
+  if (dashas && dashas.length > 0) {
+    try {
+      // Use middle of the month for dasha calculation
+      const [year, mon] = month.split('-').map(Number);
+      const midMonthDate = new Date(Date.UTC(year, mon - 1, 15, 12, 0, 0));
+      const dashaResult = getDashaAtDate(dashas, midMonthDate);
+      if (dashaResult) {
+        currentMahadasha = PLANET_NAMES[dashaResult.mahadasha.planet] ?? 'Unknown';
+        currentAntardasha = PLANET_NAMES[dashaResult.antardasha.planet] ?? 'Unknown';
+      }
+    } catch (e) {
+      // Fall back to defaults if dasha calculation fails
+    }
+  }
+
+  // Build monthly overview
+  const monthlyOverview = `Month: ${month} | Average Score: ${monthly.monthly.avgScore}/100 | Best Days: ${monthly.monthly.bestDays.join(', ')} | Worst Days: ${monthly.monthly.worstDays.join(', ')}`;
+
+  // Build weekly summary
+  const weeklySummary = monthly.weekly.map((w: any) =>
+    `Week ${w.week}: ${w.startDate}-${w.endDate} Score: ${w.avgScore} - ${w.highlight}`
+  ).join('\n');
+
+  // Build top positive and negative days
+  const topPositiveDays = monthly.daily
+    .filter((d: any) => d.avgScore >= 70)
+    .slice(0, 5)
+    .map((d: any) => `${d.date} (${d.avgScore})`)
+    .join(', ');
+
+  const topNegativeDays = monthly.daily
+    .filter((d: any) => d.avgScore < 50)
+    .slice(0, 5)
+    .map((d: any) => `${d.date} (${d.avgScore})`)
+    .join(', ');
+
+  // Build category analysis
+  const catNames: Record<string, string> = { career: 'Career', finance: 'Finance', health: 'Health', relationships: 'Relationships', education: 'Education' };
+  let categoryAnalysis = '';
+  for (const [cat, name] of Object.entries(catNames)) {
+    const highlights = monthly.monthly.categoryHighlights[cat as keyof typeof monthly.monthly.categoryHighlights];
+    if (highlights.positive.length > 0) {
+      categoryAnalysis += `${name} Best Days: ${highlights.positive.join(', ')}. `;
+    }
+    if (highlights.negative.length > 0) {
+      categoryAnalysis += `${name} Challenging Days: ${highlights.negative.join(', ')}. `;
+    }
+  }
+
+  const predictionData = monthly.daily.slice(0, 10).map((d: any) => ({
+    hour: d.bestHour,
+    // Get dasha planet from daily data if available, otherwise calculate
+    pranaDashaPlanet: d.pranaDashaPlanet !== undefined ? PLANET_NAMES[d.pranaDashaPlanet] ?? 'Unknown' : currentMahadasha,
+    sookshmaDashaPlanet: d.sookshmaDashaPlanet !== undefined ? PLANET_NAMES[d.sookshmaDashaPlanet] ?? 'Unknown' : currentAntardasha,
+    moonNakshatra: d.moonNakshatra ?? natalMoonNakshatra,
+    moonSign: d.moonSign ?? 0,
+    transitLagnaSign: d.transitLagna ?? 0,
+    hourlyScore: d.avgScore,
+  }));
+
+  return {
+    profileName: profile.name,
+    date: month,
+    timezone,
+    natalLagnaSign,
+    natalMoonNakshatra,
+    currentMahadasha,
+    currentAntardasha,
+    birthChartSummary: `Monthly overview: ${monthlyOverview}. Weekly: ${weeklySummary}. Top positive days: ${topPositiveDays || 'None'}. Top challenging days: ${topNegativeDays || 'None'}. Categories: ${categoryAnalysis}`,
+    predictions: predictionData,
+  };
+}
+
+/**
+ * Generate a detailed natural language summary for each category.
+ * Analyzes hourly patterns to provide 2-3 sentence explanations.
+ */
+function generateNaturalLanguageSummary(
+  predictions: HourlyPredictionInput[],
+  chart: any,
+  categoryBestWorst: Record<string, { best: number; worst: number; bestScore: number; worstScore: number }>
+): NaturalLanguageSummary {
+  const SIGN_NAMES = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+  const PLANET_NAMES = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
+
+  // Get natal Lagna sign from chart
+  const natalLagnaSign = chart ? Math.floor(chart.ascendant / 30) : 0;
+
+  // Get natal Moon nakshatra for friendship analysis
+  const natalMoon = chart?.planets?.find((p: any) => p.planet === 1);
+  const natalMoonNakshatra = natalMoon?.nakshatra ?? 15;
+
+  // Calculate Kendra positions dynamically
+  const isKendra = (transitLagna: number) => {
+    const houseFromLagna = (transitLagna - natalLagnaSign + 12) % 12;
+    return houseFromLagna === 0 || houseFromLagna === 3 || houseFromLagna === 6 || houseFromLagna === 9;
+  };
+
+  // Analyze actual career hours from predictions
+  const careerPositiveHours = predictions.filter(p => {
+    const lagna = p.transit_lagna_sign ?? 0;
+    return isKendra(lagna);
+  });
+
+  // Get best/worst from categoryBestWorst
+  const careerBest = predictions[categoryBestWorst.career?.best ?? 0];
+  const careerWorst = predictions[categoryBestWorst.career?.worst ?? 0];
+  const careerBestScore = careerBest?.hourly_score ?? 50;
+  const careerBestHour = categoryBestWorst.career?.best ?? 5;
+  const careerWorstHour = categoryBestWorst.career?.worst ?? 13;
+
+  // Analyze finance
+  const financePositiveCount = predictions.filter(p => (p.hourly_score ?? 50) >= 70).length;
+  const financeNegativeCount = predictions.filter(p => (p.hourly_score ?? 50) < 50).length;
+  const financeBestHour = predictions[categoryBestWorst.finance?.best ?? 5];
+  const financeWorstHour = predictions[categoryBestWorst.finance?.worst ?? 13];
+
+  // Analyze health - Mars(4) and Rahu(7) prana dasha are challenging
+  const challengingHealthHours = predictions.filter(p =>
+    p.prana_dasha_planet === 4 || p.prana_dasha_planet === 7
+  );
+
+  // Analyze relationships
+  const relBestHour = predictions[categoryBestWorst.relationships?.best ?? 5];
+  const relWorstHour = predictions[categoryBestWorst.relationships?.worst ?? 13];
+
+  // Analyze education
+  const eduBestHour = predictions[categoryBestWorst.education?.best ?? 5];
+
+  // Build summaries using ACTUAL data
+  const career = buildCareerSummaryV2(
+    predictions, careerBestHour, careerWorstHour, careerBestScore,
+    natalLagnaSign, SIGN_NAMES, careerPositiveHours.length
+  );
+  const finance = buildFinanceSummaryV2(
+    predictions, financeBestHour, financeWorstHour,
+    financePositiveCount, financeNegativeCount, natalLagnaSign, SIGN_NAMES
+  );
+  const health = buildHealthSummaryV2(
+    predictions, challengingHealthHours.length, natalLagnaSign, PLANET_NAMES
+  );
+  const relationships = buildRelationshipsSummaryV2(
+    predictions, relBestHour, relWorstHour, natalMoonNakshatra, SIGN_NAMES, PLANET_NAMES
+  );
+  const education = buildEducationSummaryV2(
+    predictions, eduBestHour, natalLagnaSign, SIGN_NAMES, PLANET_NAMES
+  );
+
+  return { career, finance, health, relationships, education };
+}
+
+function buildCareerSummaryV2(
+  predictions: HourlyPredictionInput[],
+  bestHour: number,
+  worstHour: number,
+  bestScore: number,
+  lagnaSign: number,
+  signs: string[],
+  positiveKendraHours: number
+): string {
+  const bestPred = predictions[bestHour];
+  const worstPred = predictions[worstHour];
+  const bestLagna = bestPred?.transit_lagna_sign ?? 0;
+  const worstLagna = worstPred?.transit_lagna_sign ?? 0;
+
+  let summary = '';
+
+  if (positiveKendraHours >= 18) {
+    summary = `Career energy remains strongly positive for most of the day with ${positiveKendraHours} hours showing Transit Lagna in Kendra positions from your natal Scorpio Lagna. `;
+  } else if (positiveKendraHours >= 12) {
+    summary = `Career prospects are favorable during ${positiveKendraHours} hours today when Transit Lagna aligns well with your natal chart. `;
+  } else if (positiveKendraHours >= 6) {
+    summary = `Career energy fluctuates today with ${positiveKendraHours} hours showing supportive Lagna positions. `;
+  } else {
+    summary = `Career energy is challenging today with limited hours showing supportive Lagna positions. `;
+  }
+
+  if (bestScore >= 90) {
+    summary += `The peak career window occurs at ${String(bestHour).padStart(2, '0')}:00 when Transit Lagna is in ${signs[bestLagna]} - excellent for workplace decisions, meetings, and professional activities. `;
+  } else if (bestScore >= 70) {
+    summary += `Best career hours are around ${String(bestHour).padStart(2, '0')}:00 (Lagna in ${signs[bestLagna]}) - favorable for workplace decisions. `;
+  } else if (bestScore >= 50) {
+    summary += `Career hours around ${String(bestHour).padStart(2, '0')}:00 offer moderate opportunities. `;
+  } else {
+    summary += `Not ideal for major career moves. The most challenging period is around ${String(worstHour).padStart(2, '0')}:00. `;
+  }
+
+  summary += bestScore >= 70
+    ? `Consider scheduling important meetings or decisions during these peak hours.`
+    : `Maintain routines and avoid risky career moves today.`;
+
+  return summary;
+}
+
+function buildFinanceSummaryV2(
+  predictions: HourlyPredictionInput[],
+  bestHour: number,
+  worstHour: number,
+  positiveCount: number,
+  negativeCount: number,
+  lagnaSign: number,
+  signs: string[]
+): string {
+  const bestPred = predictions[bestHour];
+  const dashaPlanet = bestPred?.prana_dasha_planet ?? 0;
+  const moonSign = bestPred?.moon_sign ?? 0;
+
+  let summary = '';
+
+  // Venus=5, Jupiter=6 in PLANET_NAMES, but prana_dasha_planet uses Planet enum where Venus=5, Jupiter=6
+  const isVenusDasha = dashaPlanet === 5;
+  const isJupiterDasha = dashaPlanet === 6;
+
+  if (positiveCount >= 18 && negativeCount <= 4) {
+    summary = `Finance sector shows excellent conditions today with ${positiveCount} favorable hours. `;
+  } else if (positiveCount >= 12 && negativeCount <= 8) {
+    summary = `Financial prospects are good today with moderately positive indicators in ${positiveCount} hours. `;
+  } else if (negativeCount >= 12) {
+    summary = `Financial caution is advised today with ${negativeCount} hours showing challenging conditions. `;
+  } else {
+    summary = `Financial prospects remain balanced today - neither strongly favorable nor unfavorable. `;
+  }
+
+  if (isVenusDasha) {
+    summary += `Venus dasha influence at ${String(bestHour).padStart(2, '0')}:00 supports financial planning and wealth growth. `;
+  } else if (isJupiterDasha) {
+    summary += `Jupiter dasha at ${String(bestHour).padStart(2, '0')}:00 favors investments and monetary gains. `;
+  } else if (moonSign === 1 || moonSign === 4 || moonSign === 10) {
+    summary += `Moon transiting ${signs[moonSign]} around ${String(bestHour).padStart(2, '0')}:00 enhances financial intuition. `;
+  } else {
+    summary += `Current planetary positions favor maintaining steady financial practices. `;
+  }
+
+  if (negativeCount >= 12) {
+    summary += `Avoid speculative investments and major purchases during the challenging hours (${String(worstHour).padStart(2, '0')}:00).`;
+  } else if (positiveCount >= 18) {
+    summary += `Favorable for investments, wealth accumulation, and financial planning.`;
+  } else {
+    summary += `Proceed with balanced approach - good for routine financial planning.`;
+  }
+
+  return summary;
+}
+
+function buildHealthSummaryV2(
+  predictions: HourlyPredictionInput[],
+  challengingCount: number,
+  lagnaSign: number,
+  planets: string[]
+): string {
+  const bestHour = predictions.reduce((best, p, i, arr) =>
+    ((p.hourly_score ?? 50) > (arr[best]?.hourly_score ?? 0)) ? i : best, 0);
+  const bestPred = predictions[bestHour];
+  const bestMoonSign = bestPred?.moon_sign ?? 0;
+  const bestPrana = bestPred?.prana_dasha_planet ?? 0;
+
+  let summary = '';
+
+  if (challengingCount === 0) {
+    summary = `Health indicators are excellent throughout the day with no challenging Mars or Rahu dasha periods. `;
+  } else if (challengingCount <= 4) {
+    summary = `Health remains generally good with minor caution during ${challengingCount} hours when Mars or Rahu dasha periods are active. `;
+  } else if (challengingCount <= 8) {
+    summary = `Health caution is advised during ${challengingCount} hours today when Mars or Rahu dasha influence is stronger. `;
+  } else {
+    summary = `Health challenges may arise during multiple periods today - a total of ${challengingCount} hours show Mars/Rahu dasha influence. `;
+  }
+
+  // Mars=4, Rahu=7 in Planet enum
+  if (bestPrana === 4) {
+    summary += `Mars dasha at ${String(bestHour).padStart(2, '0')}:00 brings energy and drive but requires careful handling. `;
+  } else if (bestPrana === 7) {
+    summary += `Rahu dasha at ${String(bestHour).padStart(2, '0')}:00 requires patience and wisdom. `;
+  } else if (bestMoonSign === 3 || bestMoonSign === 6) {
+    summary += `Moon in ${signs[bestMoonSign]} at ${String(bestHour).padStart(2, '0')}:00 supports emotional balance and mental peace. `;
+  } else {
+    summary += `The planetary positions support overall well-being today. `;
+  }
+
+  summary += challengingCount === 0
+    ? `Excellent day for exercise, health routines, and maintaining energy levels.`
+    : challengingCount <= 4
+      ? `Take normal precautions during challenging hours.`
+      : `Consider light activities and avoid strenuous exercise during challenging periods.`;
+
+  return summary;
+}
+
+function buildRelationshipsSummaryV2(
+  predictions: HourlyPredictionInput[],
+  bestHour: number,
+  worstHour: number,
+  natalMoonNakshatra: number,
+  signs: string[],
+  planets: string[]
+): string {
+  const bestPred = predictions[bestHour];
+  const worstPred = predictions[worstHour];
+  const dashaPlanet = bestPred?.prana_dasha_planet ?? 5;
+  const moonNakshatra = bestPred?.moon_nakshatra ?? 0;
+  const worstDasha = worstPred?.prana_dasha_planet ?? 0;
+
+  // Venus=5, Mars=4, Jupiter=6 in Planet enum
+  const isVenusDasha = dashaPlanet === 5;
+  const isMarsDasha = dashaPlanet === 4 || worstDasha === 4;
+
+  // Friendly nakshatra check
+  const friendlyOffsets = [1, 7, 9, 13, 19, 21, 25];
+  const nakshatraOffset = (moonNakshatra - natalMoonNakshatra + 27) % 27;
+  const isFriendlyNakshatra = friendlyOffsets.includes(nakshatraOffset);
+
+  let summary = '';
+
+  if (isVenusDasha) {
+    summary = `Venus dasha influence today strongly supports relationships, partnerships, and social harmony. `;
+  } else if (isMarsDasha) {
+    summary = `Mars dasha influence may create some tensions in relationships today - patience is advised. `;
+  } else {
+    summary = `Relationship energy remains steady but neutral today. `;
+  }
+
+  if (isFriendlyNakshatra && moonNakshatra !== natalMoonNakshatra) {
+    summary += `Moon transiting a friendly nakshatra from your birth star around ${String(bestHour).padStart(2, '0')}:00 supports emotional connections and harmonious interactions. `;
+  } else if (moonNakshatra === natalMoonNakshatra) {
+    summary += `Moon returns to your birth nakshatra around ${String(bestHour).padStart(2, '0')}:00 - a significant emotional day for relationships. `;
+  } else {
+    summary += `Not particularly strong for forming new connections, but existing relationships can be nurtured. `;
+  }
+
+  summary += isVenusDasha
+    ? `Excellent day for social activities, romantic pursuits, and strengthening bonds with loved ones.`
+    : isMarsDasha
+      ? `Good for maintaining existing relationships - avoid confrontations during challenging hours.`
+      : `Good day for routine social interactions and strengthening existing bonds.`;
+
+  return summary;
+}
+
+function buildEducationSummaryV2(
+  predictions: HourlyPredictionInput[],
+  bestHour: number,
+  lagnaSign: number,
+  signs: string[],
+  planets: string[]
+): string {
+  const bestPred = predictions[bestHour];
+  const dashaPlanet = bestPred?.prana_dasha_planet ?? 6;
+  const moonSign = bestPred?.moon_sign ?? 0;
+
+  // Jupiter=6, Mercury=3 in Planet enum
+  const isJupiterDasha = dashaPlanet === 6;
+  const isMercuryDasha = dashaPlanet === 3;
+
+  // Calculate 4th house lord position
+  const fourthHouseLord = (3 + lagnaSign) % 12;
+  const fifthHouseLord = (4 + lagnaSign) % 12;
+  const isFourthLordKendra = [0, 3, 6, 9].includes(fourthHouseLord);
+  const isFifthLordKendra = [0, 3, 6, 9].includes(fifthHouseLord);
+
+  let summary = '';
+
+  if (isJupiterDasha) {
+    summary = `Jupiter dasha strongly favors educational pursuits, wisdom development, and spiritual growth today. `;
+  } else if (isMercuryDasha) {
+    summary = `Mercury dasha supports intellectual activities, communication, and learning today. `;
+  } else {
+    summary = `Education sector receives moderate support from current planetary positions. `;
+  }
+
+  if (isFourthLordKendra) {
+    summary += `Your 4th house lord (${signs[fourthHouseLord]}) in Kendra position strongly supports educational pursuits. `;
+  } else if (isFifthLordKendra) {
+    summary += `Your 5th house lord (${signs[fifthHouseLord]}) in Kendra favors creative learning and wisdom. `;
+  } else if (moonSign === 2 || moonSign === 8) {
+    summary += `Moon in ${signs[moonSign]} at ${String(bestHour).padStart(2, '0')}:00 enhances learning and mental clarity. `;
+  } else {
+    summary += `Normal learning activities are well-supported today. `;
+  }
+
+  summary += isJupiterDasha
+    ? `Excellent day for studying, teaching, learning new skills, pursuing knowledge, or spiritual practices.`
+    : isMercuryDasha
+      ? `Excellent day for communication studies, writing, presentations, and intellectual discussions.`
+      : `A good day for routine studies and intellectual activities.`;
+
+  return summary;
+}
+
 async function generateHourlyCacheForProfile(
   profileId: string,
   timezone: string,
@@ -910,6 +1429,7 @@ interface PredictOptions {
   date: string;
   timezone?: string;
   hourly?: boolean;
+  aiSummary?: boolean;
   json?: boolean;
 }
 
@@ -976,9 +1496,30 @@ async function predictAction(options: PredictOptions) {
     // Get chart data for category calculation
     const cache = getCachedCalculation(profile.id);
     let chart: any = null;
+    let dashas: any[] = [];
     if (cache) {
       try {
         chart = JSON.parse(cache.chart_json);
+        // Parse dashas with date conversion for dasha calculations
+        const rawDashas = JSON.parse(cache.dashas_json || '[]');
+        dashas = rawDashas.map((d: any) => ({
+          ...d,
+          mahadasha: d.mahadasha ? {
+            ...d.mahadasha,
+            startDate: new Date(d.mahadasha.startDate),
+            endDate: new Date(d.mahadasha.endDate),
+          } : undefined,
+          antardasha: Array.isArray(d.antardasha) ? d.antardasha.map((a: any) => ({
+            ...a,
+            startDate: new Date(a.startDate),
+            endDate: new Date(a.endDate),
+          })) : [],
+          prana: d.prana ? {
+            ...d.prana,
+            startDate: new Date(d.prana.startDate),
+            endDate: new Date(d.prana.endDate),
+          } : null,
+        }));
       } catch (e) {
         // Ignore parse errors
       }
@@ -1019,6 +1560,7 @@ async function predictAction(options: PredictOptions) {
           const trendResult = parseCategoryTrend(trend as string);
           if (trendResult === 'positive') trends.push(`↑${trendMap[cat]}`);
           else if (trendResult === 'negative') trends.push(`↓${trendMap[cat]}`);
+          else trends.push(`→${trendMap[cat]}`); // neutral
         }
 
         hourlyTrends.push(`${time} | ${trends.join(' ')}`);
@@ -1151,6 +1693,39 @@ async function predictAction(options: PredictOptions) {
         console.log(`                Best: ${eduTimes.best} | Worst: ${eduTimes.worst}`);
 
         console.log(`${categories.overall}`);
+
+        // Generate and display natural language summary
+        if (chart) {
+          // Check if AI summary is requested and available
+          if (options.aiSummary) {
+            console.log('\n--- Natural Language Summary (AI) ---');
+            console.log('Generating AI-powered analysis...');
+
+            // Check Ollama availability
+            const ollamaAvailable = await checkOllamaAvailable();
+            if (!ollamaAvailable) {
+              console.log('Ollama not available. Falling back to template summary.\n');
+              const summary = generateNaturalLanguageSummary(predictions as HourlyPredictionInput[], chart, categoryBestWorst);
+              printTemplateSummary(summary);
+            } else {
+              // Generate AI summary
+              const data = buildOllamaSummaryData(predictions, chart, profile, date, timezone, dashas);
+              const aiResponse = await generateAISummary(data);
+              if (aiResponse) {
+                console.log(aiResponse);
+              } else {
+                console.log('AI generation failed. Falling back to template summary.\n');
+                const summary = generateNaturalLanguageSummary(predictions as HourlyPredictionInput[], chart, categoryBestWorst);
+                printTemplateSummary(summary);
+              }
+            }
+          } else {
+            // Use template-based summary
+            console.log('\n--- Natural Language Summary ---');
+            const summary = generateNaturalLanguageSummary(predictions as HourlyPredictionInput[], chart, categoryBestWorst);
+            printTemplateSummary(summary);
+          }
+        }
       }
     }
   } else {
@@ -1290,6 +1865,7 @@ interface PredictMonthOptions {
   id: string;
   month: string;
   timezone?: string;
+  aiSummary?: boolean;
   json?: boolean;
 }
 
@@ -1439,6 +2015,28 @@ async function predictMonthAction(options: PredictMonthOptions) {
     }
   }
 
+  // AI Monthly Summary
+  if (options.aiSummary && monthly.daily.length > 0) {
+    console.log('\n' + '━'.repeat(60));
+    console.log('AI MONTHLY SUMMARY');
+    console.log('━'.repeat(60));
+    console.log('Generating AI-powered monthly analysis...\n');
+
+    const ollamaAvailable = await checkOllamaAvailable();
+    if (!ollamaAvailable) {
+      console.log('Ollama not available. Skipping AI summary.\n');
+    } else {
+      // Build summary data for the month
+      const monthlyData = buildMonthlySummaryData(monthly, profile, options.month, timezone, chart, dashas);
+      const aiResponse = await generateAISummary(monthlyData);
+      if (aiResponse) {
+        console.log(aiResponse);
+      } else {
+        console.log('AI generation failed. Skipping monthly summary.\n');
+      }
+    }
+  }
+
   // Daily breakdown
   console.log('\n' + '━'.repeat(60));
   console.log('DAILY BREAKDOWN');
@@ -1498,6 +2096,7 @@ program
   .requiredOption('-d, --date <date>', 'Date (YYYY-MM-DD)')
   .option('-t, --timezone <tz>', 'Timezone (default: profile birth timezone)')
   .option('-h, --hourly', 'Show hourly breakdown')
+  .option('--ai-summary', 'Use AI (Ollama qwen3.5) to generate detailed natural language summary')
   .option('--json', 'Output JSON')
   .action(predictAction);
 
@@ -1507,6 +2106,7 @@ program
   .requiredOption('-i, --id <id>', 'Profile ID')
   .requiredOption('-m, --month <month>', 'Month (YYYY-MM format, e.g., 2027-01)')
   .option('-t, --timezone <tz>', 'Timezone (default: profile birth timezone)')
+  .option('--ai-summary', 'Use AI (Ollama qwen3.5) to generate detailed monthly summary')
   .option('--json', 'Output JSON')
   .action(predictMonthAction);
 

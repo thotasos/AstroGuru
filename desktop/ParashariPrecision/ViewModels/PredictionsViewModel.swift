@@ -111,7 +111,7 @@ final class PredictionsViewModel: ObservableObject {
                 lat: profile.latitude, lon: profile.longitude
             )
         }
-        let (dashaLord, antarLord) = activeDashaLords(on: selectedDay)
+        let (dashaLord, antarLord) = activeDashaLords(on: selectedDay, using: profile.predictionTimezone)
         dayPrediction = predictionGenerator.generateDayPrediction(
             date: selectedDay,
             dashaLord: dashaLord,
@@ -128,11 +128,16 @@ final class PredictionsViewModel: ObservableObject {
                 lat: profile.latitude, lon: profile.longitude
             )
         }
-        let yr  = selectedMonthYear.year  ?? Calendar.current.component(.year,  from: Date())
-        let mon = selectedMonthYear.month ?? Calendar.current.component(.month, from: Date())
+
+        let tz = TimeZone(identifier: profile.effectivePredictionTimezone) ?? .current
+        var calendar = Calendar.current
+        calendar.timeZone = tz
+
+        let yr  = selectedMonthYear.year  ?? calendar.component(.year,  from: Date())
+        let mon = selectedMonthYear.month ?? calendar.component(.month, from: Date())
         var midComps = DateComponents(); midComps.year = yr; midComps.month = mon; midComps.day = 15
-        let midDate = Calendar.current.date(from: midComps) ?? Date()
-        let (dashaLord, antarLord) = activeDashaLords(on: midDate)
+        let midDate = calendar.date(from: midComps) ?? Date()
+        let (dashaLord, antarLord) = activeDashaLords(on: midDate, using: profile.predictionTimezone)
         monthPrediction = predictionGenerator.generateMonthPrediction(
             year: yr, month: mon,
             dashaLord: dashaLord, antardashaLord: antarLord
@@ -140,8 +145,11 @@ final class PredictionsViewModel: ObservableObject {
     }
 
     /// Find active mahadasha and antardasha lords for a given date
-    private func activeDashaLords(on date: Date) -> (String, String) {
-        let calendar = Calendar.current
+    /// Uses the predictionTimezone from profile if available, otherwise system timezone
+    private func activeDashaLords(on date: Date, using predictionTimezone: String?) -> (String, String) {
+        let tz = TimeZone(identifier: predictionTimezone ?? "") ?? .current
+        var calendar = Calendar.current
+        calendar.timeZone = tz
         let y = calendar.component(.year, from: date)
         let m = calendar.component(.month, from: date)
         for dasha in dashas {
