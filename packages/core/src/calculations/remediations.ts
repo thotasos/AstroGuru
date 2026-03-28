@@ -12,7 +12,11 @@ import { getDashaAtDate } from './dashas.js';
 
 export type StressLevel = 'mild' | 'moderate' | 'severe';
 export type StressTrigger = 'dasha' | 'transit' | 'dignity' | 'shadbala' | 'house';
-export type RemedyType = 'gemstone' | 'moola_mantra' | 'color';
+
+export type RemedyType =
+  | 'gemstone' | 'moola_mantra' | 'color'
+  | 'hora_kaala' | 'puja' | 'charity'
+  | 'dietary' | 'navagraha_peeth';
 
 export interface PlanetStress {
   planet: Planet;
@@ -21,15 +25,57 @@ export interface PlanetStress {
   triggers: StressTrigger[];
 }
 
-export interface Remedy {
-  id: string;
-  type: RemedyType;
-  planet: Planet;
-  name: string;
-  description: string;
-  benefit: string;
-  stressLevel: StressLevel;
-  priority: number;
+// Discriminated union — 'type' is the discriminant
+export type Remedy =
+  | GemstoneRemedy | MoolaMantraRemedy | ColorRemedy
+  | HoraKaalaRemedy | PujaRemedy | CharityRemedy
+  | DietaryRemedy | NavagrahaPeethRemedy;
+
+interface GemstoneRemedy {
+  id: string; type: 'gemstone'; planet: Planet;
+  name: string; description: string; benefit: string;
+  stressLevel: StressLevel; priority: number;
+}
+interface MoolaMantraRemedy {
+  id: string; type: 'moola_mantra'; planet: Planet;
+  name: string; description: string; benefit: string;
+  stressLevel: StressLevel; priority: number;
+}
+interface ColorRemedy {
+  id: string; type: 'color'; planet: Planet;
+  name: string; description: string; benefit: string;
+  stressLevel: StressLevel; priority: number;
+}
+export interface HoraKaalaRemedy {
+  id: string; type: 'hora_kaala'; planet: Planet;
+  name: string; day: string; horaWindow: string; kaalaWindow: string;
+  description: string; benefit: string;
+  stressLevel: StressLevel; priority: number;
+}
+export interface PujaRemedy {
+  id: string; type: 'puja'; planet: Planet;
+  name: string; duration: string; procedure: string;
+  items: string[]; dayRestriction: string; warning: string;
+  benefit: string; stressLevel: StressLevel; priority: number;
+}
+export interface CharityRemedy {
+  id: string; type: 'charity'; planet: Planet;
+  name: string; items: string[];
+  description: string; dashaBonus?: string;
+  benefit: string; stressLevel: StressLevel; priority: number;
+}
+export interface DietaryRemedy {
+  id: string; type: 'dietary'; planet: Planet;
+  name: string; fastingRule: string; eat: string[]; avoid: string[];
+  lifestyle: string[]; benefit: string;
+  stressLevel: StressLevel; priority: number;
+}
+export interface NavagrahaPeethRemedy {
+  id: string; type: 'navagraha_peeth'; planet: Planet;
+  name: string; direction: string; material: string;
+  placement: string; frequency: string;
+  description: string; benefit: string;
+  stressLevel: StressLevel; priority: number;
 }
 
 export interface RemediationReport {
@@ -283,8 +329,11 @@ function getPlanetName(planet: Planet): string {
 }
 
 function getPriority(planet: Planet, level: StressLevel, type: RemedyType): number {
-  const baseByLevel: Record<StressLevel, number> = { severe: 1, moderate: 2, mild: 4 };
-  const typeOffset: Record<RemedyType, number> = { gemstone: 0, moola_mantra: 1, color: 2 };
+  const baseByLevel: Record<StressLevel, number> = { severe: 10, moderate: 20, mild: 40 };
+  const typeOffset: Record<RemedyType, number> = {
+    gemstone: 0, moola_mantra: 1, color: 2,
+    hora_kaala: 3, puja: 4, charity: 5, dietary: 6, navagraha_peeth: 7,
+  };
   return baseByLevel[level] * 10 + typeOffset[type];
 }
 
