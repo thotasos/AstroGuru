@@ -156,9 +156,10 @@ function listAction() {
 
 interface ReportOptions {
   id: string;
+  remedies?: boolean;
 }
 
-function reportAction(options: ReportOptions) {
+async function reportAction(options: ReportOptions) {
   runMigrations(true);
 
   const profile = getProfile(options.id);
@@ -569,6 +570,21 @@ function reportAction(options: ReportOptions) {
   }
 
   console.log('\n' + '='.repeat(70) + '\n');
+
+  // Display remedies if requested
+  if (options.remedies && hasChart && hasDashas && cache.chart_json && cache.dashas_json) {
+    const { calculateRemediations } = await import('@parashari/core');
+    const transit = calculateTransit(
+      new Date(),
+      profile.lat,
+      profile.lon,
+      profile.ayanamsa_id,
+    );
+    const dashas = JSON.parse(cache.dashas_json);
+    const chart = JSON.parse(cache.chart_json);
+    const report = calculateRemediations(chart, dashas, transit, { includeLifetime: true, maxResults: 5 });
+    displayRemediationReport(report);
+  }
 }
 
 const CACHE_DAYS = 30;
@@ -624,6 +640,37 @@ function printTemplateSummary(summary: NaturalLanguageSummary): void {
   console.log(`Relationships: ${summary.relationships}`);
   console.log();
   console.log(`Education: ${summary.education}`);
+}
+
+/**
+ * Display a remediation report in the CLI output format
+ */
+function displayRemediationReport(report: {
+  immediate: { periodDescription: string; stressedPlanets: any[]; remedies: any[] };
+  lifetime: { stressedPlanets: any[]; remedies: any[] };
+}): void {
+  console.log('\n=== REMEDIATIONS ===\n');
+
+  // Immediate (dasha-triggered) stresses
+  if (report.immediate.stressedPlanets.length > 0) {
+    console.log(`IMMEDIATE (${report.immediate.periodDescription}):`);
+    for (const remedy of report.immediate.remedies) {
+      const typeLabel = remedy.type.toUpperCase().replace('_', ' ');
+      console.log(`  [${typeLabel}] ${remedy.name} — ${remedy.description}`);
+    }
+    console.log();
+  }
+
+  // Lifetime chart stresses
+  if (report.lifetime.stressedPlanets.length > 0) {
+    console.log('LIFETIME CHART STRESSES:');
+    for (const remedy of report.lifetime.remedies) {
+      const typeLabel = remedy.type.toUpperCase().replace('_', ' ');
+      console.log(`  [${typeLabel}] ${remedy.name} — ${remedy.description}`);
+    }
+  } else {
+    console.log('No significant planetary stresses detected.');
+  }
 }
 
 /**
@@ -872,7 +919,7 @@ function generateNaturalLanguageSummary(
     financePositiveCount, financeNegativeCount, natalLagnaSign, SIGN_NAMES
   );
   const health = buildHealthSummaryV2(
-    predictions, challengingHealthHours.length, natalLagnaSign, PLANET_NAMES
+    predictions, challengingHealthHours.length, natalLagnaSign, SIGN_NAMES
   );
   const relationships = buildRelationshipsSummaryV2(
     predictions, relBestHour, relWorstHour, natalMoonNakshatra, SIGN_NAMES, PLANET_NAMES
@@ -1201,7 +1248,7 @@ async function generateHourlyCacheForProfile(
       // Calculate score
       const score = calculateHourlyScore(
         transit,
-        dashaAtTime?.prana.planet ?? null,
+        dashaAtTime?.prana?.planet ?? null,
         chart,
       );
 
@@ -1211,12 +1258,12 @@ async function generateHourlyCacheForProfile(
         date: dateStr,
         hour,
         timezone,
-        sookshma_dasha_planet: dashaAtTime?.sookshma.planet ?? null,
-        sookshma_dasha_start: toISOString(dashaAtTime?.sookshma.startDate) ?? null,
-        sookshma_dasha_end: toISOString(dashaAtTime?.sookshma.endDate) ?? null,
-        prana_dasha_planet: dashaAtTime?.prana.planet ?? null,
-        prana_dasha_start: toISOString(dashaAtTime?.prana.startDate) ?? null,
-        prana_dasha_end: toISOString(dashaAtTime?.prana.endDate) ?? null,
+        sookshma_dasha_planet: dashaAtTime?.sookshma?.planet ?? null,
+        sookshma_dasha_start: toISOString(dashaAtTime?.sookshma?.startDate) ?? null,
+        sookshma_dasha_end: toISOString(dashaAtTime?.sookshma?.endDate) ?? null,
+        prana_dasha_planet: dashaAtTime?.prana?.planet ?? null,
+        prana_dasha_start: toISOString(dashaAtTime?.prana?.startDate) ?? null,
+        prana_dasha_end: toISOString(dashaAtTime?.prana?.endDate) ?? null,
         moon_nakshatra: transit.moonNakshatra,
         moon_sign: transit.moonSign,
         moon_degree: transit.moonDegree,
@@ -1313,7 +1360,7 @@ async function generateHourlyPredictionForDate(
     // Calculate score
     const score = calculateHourlyScore(
       transit,
-      dashaAtTime?.prana.planet ?? null,
+      dashaAtTime?.prana?.planet ?? null,
       chart,
     );
 
@@ -1323,12 +1370,12 @@ async function generateHourlyPredictionForDate(
       date: dateStr,
       hour,
       timezone,
-      sookshma_dasha_planet: dashaAtTime?.sookshma.planet ?? null,
-      sookshma_dasha_start: toISOString(dashaAtTime?.sookshma.startDate),
-      sookshma_dasha_end: toISOString(dashaAtTime?.sookshma.endDate),
-      prana_dasha_planet: dashaAtTime?.prana.planet ?? null,
-      prana_dasha_start: toISOString(dashaAtTime?.prana.startDate),
-      prana_dasha_end: toISOString(dashaAtTime?.prana.endDate),
+      sookshma_dasha_planet: dashaAtTime?.sookshma?.planet ?? null,
+      sookshma_dasha_start: toISOString(dashaAtTime?.sookshma?.startDate),
+      sookshma_dasha_end: toISOString(dashaAtTime?.sookshma?.endDate),
+      prana_dasha_planet: dashaAtTime?.prana?.planet ?? null,
+      prana_dasha_start: toISOString(dashaAtTime?.prana?.startDate),
+      prana_dasha_end: toISOString(dashaAtTime?.prana?.endDate),
       moon_nakshatra: transit.moonNakshatra,
       moon_sign: transit.moonSign,
       moon_degree: transit.moonDegree,
@@ -1414,6 +1461,7 @@ program
   .command('report')
   .description('Generate a detailed report for a profile')
   .requiredOption('-i, --id <id>', 'Profile ID')
+  .option('--remedies', 'Show remediation recommendations based on current dasha and chart stresses')
   .action(reportAction);
 
 program
@@ -1431,6 +1479,7 @@ interface PredictOptions {
   hourly?: boolean;
   aiSummary?: boolean;
   json?: boolean;
+  remedies?: boolean;
 }
 
 async function predictAction(options: PredictOptions) {
@@ -1859,6 +1908,53 @@ async function predictAction(options: PredictOptions) {
   }
 
   console.log('\n' + '='.repeat(70) + '\n');
+
+  // Display remedies if requested
+  if (options.remedies) {
+    const cache = getCachedCalculation(profile.id);
+    if (!cache) {
+      console.log('\nNo cached calculations found. Run "process" first to generate chart data.');
+    } else {
+      let chart: any = null;
+      let dashas: any[] = [];
+      try {
+        chart = JSON.parse(cache.chart_json);
+        const rawDashas = JSON.parse(cache.dashas_json || '[]');
+        dashas = rawDashas.map((d: any) => ({
+          ...d,
+          mahadasha: d.mahadasha ? {
+            ...d.mahadasha,
+            startDate: new Date(d.mahadasha.startDate),
+            endDate: new Date(d.mahadasha.endDate),
+          } : undefined,
+          antardasha: Array.isArray(d.antardasha) ? d.antardasha.map((a: any) => ({
+            ...a,
+            startDate: new Date(a.startDate),
+            endDate: new Date(a.endDate),
+          })) : [],
+          prana: d.prana ? {
+            ...d.prana,
+            startDate: new Date(d.prana.startDate),
+            endDate: new Date(d.prana.endDate),
+          } : null,
+        }));
+      } catch (e) {
+        // Ignore parse errors
+      }
+
+      if (chart && dashas.length > 0) {
+        const { calculateRemediations } = await import('@parashari/core');
+        const transit = calculateTransit(
+          new Date(),
+          profile.lat,
+          profile.lon,
+          profile.ayanamsa_id,
+        );
+        const report = calculateRemediations(chart, dashas, transit, { includeLifetime: true, maxResults: 5 });
+        displayRemediationReport(report);
+      }
+    }
+  }
 }
 
 interface PredictMonthOptions {
@@ -2098,6 +2194,7 @@ program
   .option('-h, --hourly', 'Show hourly breakdown')
   .option('--ai-summary', 'Use AI (Ollama qwen3.5) to generate detailed natural language summary')
   .option('--json', 'Output JSON')
+  .option('--remedies', 'Show remediation recommendations based on current dasha and chart stresses')
   .action(predictAction);
 
 program
