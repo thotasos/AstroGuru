@@ -84,6 +84,18 @@ export {
 } from './calculations/transit.js';
 
 export {
+  calculateRemediations,
+  getPlanetStress,
+  getRemediesForPlanet,
+  type PlanetStress,
+  type Remedy,
+  type RemediationReport,
+  type StressLevel,
+  type StressTrigger,
+  type RemedyType,
+} from './calculations/remediations.js';
+
+export {
   calculateShadbala,
   getSignLord,
   EXALT_DEBIL,
