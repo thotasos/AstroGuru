@@ -723,13 +723,16 @@ function displayRemediationReport(
       console.log(`  No remedies needed.`);
       return;
     }
+    const SUPPORTING_ORDER = ['hora_kaala', 'puja', 'charity', 'dietary', 'navagraha_peeth'];
     const primary = remedies.filter((r: any) => PRIMARY_TYPES.has(r.type));
     const supporting = remedies.filter((r: any) => !PRIMARY_TYPES.has(r.type));
     console.log(`\n  ── Primary Remedies ──`);
     primary.forEach((r: any, i: number) => printRemedy(r, i));
     if (showSupporting && supporting.length > 0) {
       console.log(`\n  ── Timing, Puja, Charity, Dietary & Peeth ──`);
-      supporting.forEach((r: any, i: number) => printRemedy(r, i));
+      supporting
+        .sort((a: any, b: any) => SUPPORTING_ORDER.indexOf(a.type) - SUPPORTING_ORDER.indexOf(b.type))
+        .forEach((r: any, i: number) => printRemedy(r, i));
     }
   }
 
