@@ -645,32 +645,106 @@ function printTemplateSummary(summary: NaturalLanguageSummary): void {
 /**
  * Display a remediation report in the CLI output format
  */
-function displayRemediationReport(report: {
-  immediate: { periodDescription: string; stressedPlanets: any[]; remedies: any[] };
-  lifetime: { stressedPlanets: any[]; remedies: any[] };
-}): void {
-  console.log('\n=== REMEDIATIONS ===\n');
+function displayRemediationReport(
+  report: {
+    immediate: { periodDescription: string; stressedPlanets: any[]; remedies: any[] };
+    lifetime: { stressedPlanets: any[]; remedies: any[] };
+  },
+  showSupporting = true,
+): void {
+  const PLANET_NAMES = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
+  const PRIMARY_TYPES = new Set(['gemstone', 'moola_mantra', 'color']);
 
-  // Immediate (dasha-triggered) stresses
-  if (report.immediate.stressedPlanets.length > 0) {
-    console.log(`IMMEDIATE (${report.immediate.periodDescription}):`);
-    for (const remedy of report.immediate.remedies) {
-      const typeLabel = remedy.type.toUpperCase().replace('_', ' ');
-      console.log(`  [${typeLabel}] ${remedy.name} — ${remedy.description}`);
+  function printRemedy(remedy: any, index: number): void {
+    const prio = `[${index + 1}]`.padEnd(4);
+    const planet = PLANET_NAMES[remedy.planet] ?? String(remedy.planet);
+    switch (remedy.type) {
+      case 'gemstone':
+        console.log(`  ${prio} GEMSTONE  │ ${planet} │ ${remedy.name}`);
+        console.log(`             │ ${remedy.description}`);
+        break;
+      case 'moola_mantra':
+        console.log(`  ${prio} MANTRA   │ ${planet} │ ${remedy.name}`);
+        console.log(`             │ ${remedy.description}`);
+        break;
+      case 'color':
+        console.log(`  ${prio} COLOR    │ ${planet} │ ${remedy.description}`);
+        break;
+      case 'hora_kaala':
+        console.log(`  ${prio} HORA/KAALA│ ${planet} │ ${remedy.name} — ${remedy.day} ${remedy.kaalaWindow}`);
+        console.log(`             │ ${remedy.description}`);
+        break;
+      case 'puja': {
+        console.log(`  ${prio} PUJA     │ ${planet} │ ${remedy.name} (${remedy.duration})`);
+        console.log(`             │ Day: ${remedy.dayRestriction} │ Items: ${(remedy.items as string[]).join(', ')}`);
+        console.log(`             │ ${remedy.procedure}`);
+        if (remedy.warning) console.log(`             │ ⚠ ${remedy.warning}`);
+        break;
+      }
+      case 'charity':
+        console.log(`  ${prio} CHARITY  │ ${planet} │ ${remedy.name}`);
+        console.log(`             │ Donate: ${(remedy.items as string[]).join(' | ')}`);
+        console.log(`             │ ${remedy.description}`);
+        if (remedy.dashaBonus) console.log(`             │ ✦ Dasha bonus: ${remedy.dashaBonus}`);
+        break;
+      case 'dietary':
+        console.log(`  ${prio} DIETARY │ ${planet} │ ${remedy.name}`);
+        console.log(`             │ Fast: ${remedy.fastingRule}`);
+        console.log(`             │ Eat: ${(remedy.eat as string[]).join(', ')}`);
+        console.log(`             │ Avoid: ${(remedy.avoid as string[]).join(', ')}`);
+        console.log(`             │ Lifestyle: ${(remedy.lifestyle as string[]).join(' | ')}`);
+        break;
+      case 'navagraha_peeth':
+        console.log(`  ${prio} PEETH    │ ${planet} │ ${remedy.name}`);
+        console.log(`             │ Direction: ${remedy.direction}`);
+        console.log(`             │ ${remedy.material}`);
+        console.log(`             │ ${remedy.placement}`);
+        console.log(`             │ ${remedy.frequency}`);
+        break;
     }
-    console.log();
   }
 
-  // Lifetime chart stresses
-  if (report.lifetime.stressedPlanets.length > 0) {
-    console.log('LIFETIME CHART STRESSES:');
-    for (const remedy of report.lifetime.remedies) {
-      const typeLabel = remedy.type.toUpperCase().replace('_', ' ');
-      console.log(`  [${typeLabel}] ${remedy.name} — ${remedy.description}`);
+  function printSection(
+    title: string,
+    description: string,
+    stressedPlanets: any[],
+    remedies: any[],
+  ): void {
+    console.log(`\n${title}`);
+    console.log(`─`.repeat(65));
+    console.log(`  ${description}`);
+    if (stressedPlanets.length > 0) {
+      const planetList = stressedPlanets.map((p: any) =>
+        `${PLANET_NAMES[p.planet] ?? String(p.planet)} (${p.stressLevel}) — ${p.reasons.join(', ')}`
+      ).join('; ');
+      console.log(`  Stressed: ${planetList}`);
     }
-  } else {
-    console.log('No significant planetary stresses detected.');
+    if (remedies.length === 0) {
+      console.log(`  No remedies needed.`);
+      return;
+    }
+    const primary = remedies.filter((r: any) => PRIMARY_TYPES.has(r.type));
+    const supporting = remedies.filter((r: any) => !PRIMARY_TYPES.has(r.type));
+    console.log(`\n  ── Primary Remedies ──`);
+    primary.forEach((r: any, i: number) => printRemedy(r, i));
+    if (showSupporting && supporting.length > 0) {
+      console.log(`\n  ── Timing, Puja, Charity, Dietary & Peeth ──`);
+      supporting.forEach((r: any, i: number) => printRemedy(r, i));
+    }
   }
+
+  printSection(
+    'IMMEDIATE REMEDIATIONS',
+    report.immediate.periodDescription,
+    report.immediate.stressedPlanets,
+    report.immediate.remedies,
+  );
+  printSection(
+    'LIFETIME REMEDIATIONS',
+    'Birth chart stress — remedies for long-term well-being',
+    report.lifetime.stressedPlanets,
+    report.lifetime.remedies,
+  );
 }
 
 /**
