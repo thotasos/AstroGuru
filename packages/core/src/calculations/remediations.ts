@@ -1,7 +1,10 @@
 // packages/core/src/calculations/remediations.ts
 
-import { Planet, Sign, ChartData, DashaPeriod } from '../types/index.js';
+import { Planet, Sign, House, ChartData, DashaPeriod } from '../types/index.js';
 import { TransitPosition } from './transit.js';
+import { FUNCTIONAL_NATURES, isFunctionalBenefic, isPlanetInDebilitated, isPlanetInOwnOrExalted, isInKendra } from './transit.js';
+import { calculateShadbala, EXALT_DEBIL } from './shadbala.js';
+import { getDashaAtDate } from './dashas.js';
 
 // ------------------------------------
 // Types
@@ -96,6 +99,46 @@ const COLOR_TABLE: Record<Planet, ColorEntry> = {
 };
 
 // ------------------------------------
+// Helpers for getPlanetStress
+// ------------------------------------
+
+const DUSTHANA_HOUSES = new Set([House.Sixth, House.Eighth, House.Twelfth]);
+const KENDRA_HOUSES = new Set([House.First, House.Fourth, House.Seventh, House.Tenth]);
+
+function getPlanetHouse(planet: Planet, chart: ChartData): House | null {
+  const pos = chart.planets.find(p => p.planet === planet);
+  if (!pos) return null;
+  const lagnaSign = Math.floor(chart.ascendant / 30) as Sign;
+  const houseNumber = ((pos.sign - lagnaSign + 12) % 12) + 1;
+  return houseNumber as House;
+}
+
+function getPlanetDignity(planet: Planet, chart: ChartData): 'exalted' | 'debilitated' | 'own' | 'normal' {
+  const pos = chart.planets.find(p => p.planet === planet);
+  if (!pos) return 'normal';
+  if (isPlanetInOwnOrExalted(planet, pos.sign)) return 'own';
+  if (isPlanetInDebilitated(planet, pos.sign)) return 'debilitated';
+  return 'normal';
+}
+
+function getDashaStress(planet: Planet, dashas: DashaPeriod[], chart: ChartData, currentDate: Date): 'severe' | 'moderate' | 'mild' | null {
+  const dashaAtTime = getDashaAtDate(dashas, currentDate);
+  if (!dashaAtTime) return null;
+  const levels = [dashaAtTime.mahadasha, dashaAtTime.antardasha, dashaAtTime.prana];
+  for (const level of levels) {
+    if (level && level.planet === planet) {
+      const pos = chart.planets.find(p => p.planet === planet);
+      if (pos) {
+        if (isPlanetInDebilitated(planet, pos.sign)) return 'severe';
+        if (isPlanetInOwnOrExalted(planet, pos.sign)) return 'mild';
+      }
+      return 'moderate';
+    }
+  }
+  return null;
+}
+
+// ------------------------------------
 // Placeholder exports
 // ------------------------------------
 
@@ -109,13 +152,66 @@ export function calculateRemediations(
 }
 
 export function getPlanetStress(
-  _planet: Planet,
-  _chart: ChartData,
-  _dashas: DashaPeriod[],
+  planet: Planet,
+  chart: ChartData,
+  dashas: DashaPeriod[],
   _transit: TransitPosition,
-  _currentDate: Date
+  currentDate: Date
 ): PlanetStress | null {
-  throw new Error('Not yet implemented');
+  const pos = chart.planets.find(p => p.planet === planet);
+  if (!pos) return null;
+
+  const reasons: string[] = [];
+  const triggers: StressTrigger[] = [];
+  let maxLevel: StressLevel = 'mild';
+
+  // Check dignity
+  const dignity = getPlanetDignity(planet, chart);
+  if (dignity === 'debilitated') {
+    const signName = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'][pos.sign];
+    reasons.push(`Debilitated in ${signName}`);
+    triggers.push('dignity');
+    maxLevel = 'severe';
+  }
+
+  // House placement
+  const house = getPlanetHouse(planet, chart);
+  if (house && DUSTHANA_HOUSES.has(house)) {
+    const ordinal = house === 6 ? '6th' : house === 8 ? '8th' : '12th';
+    reasons.push(`In dusthana (${ordinal} house)`);
+    triggers.push('house');
+    if (maxLevel !== 'severe') maxLevel = 'mild';
+  }
+
+  // Rahu/Ketu in kendra
+  if ((planet === Planet.Rahu || planet === Planet.Ketu) && house && KENDRA_HOUSES.has(house)) {
+    const ordinal = ['', '1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th'][house];
+    reasons.push(`${getPlanetName(planet)} in kendra (${ordinal} house)`);
+    triggers.push('house');
+    if (maxLevel === 'mild') maxLevel = 'moderate';
+  }
+
+  // Shadbala
+  const shadbalaResults = calculateShadbala(chart);
+  const shadbala = shadbalaResults.find(s => s.planet === planet);
+  if (shadbala && shadbala.total < 100) {
+    reasons.push(`Weak shadbala (${shadbala.total.toFixed(1)} Rupas)`);
+    triggers.push('shadbala');
+    if (maxLevel !== 'severe') maxLevel = 'moderate';
+  }
+
+  // Dasha stress
+  const dashaStress = getDashaStress(planet, dashas, chart, currentDate);
+  if (dashaStress) {
+    reasons.push(`Running ${getPlanetName(planet)} mahadasha period`);
+    triggers.push('dasha');
+    if (dashaStress === 'severe') maxLevel = 'severe';
+    else if (dashaStress === 'moderate' && maxLevel !== 'severe') maxLevel = 'moderate';
+  }
+
+  if (reasons.length === 0) return null;
+
+  return { planet, stressLevel: maxLevel, reasons, triggers };
 }
 
 // ------------------------------------
