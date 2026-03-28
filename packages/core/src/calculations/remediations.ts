@@ -2,7 +2,7 @@
 
 import { Planet, Sign, House, ChartData, DashaPeriod } from '../types/index.js';
 import { TransitPosition } from './transit.js';
-import { FUNCTIONAL_NATURES, isFunctionalBenefic, isPlanetInDebilitated, isPlanetInOwnOrExalted, isInKendra } from './transit.js';
+import { FUNCTIONAL_NATURES, isFunctionalBenefic, isPlanetInDebilitated, isPlanetInOwnOrExalted, isInKendra, PLANET_EXALTED_SIGNS } from './transit.js';
 import { calculateShadbala, EXALT_DEBIL } from './shadbala.js';
 import { getDashaAtDate } from './dashas.js';
 
@@ -310,8 +310,9 @@ function getPlanetHouse(planet: Planet, chart: ChartData): House | null {
 function getPlanetDignity(planet: Planet, chart: ChartData): 'exalted' | 'debilitated' | 'own' | 'normal' {
   const pos = chart.planets.find(p => p.planet === planet);
   if (!pos) return 'normal';
-  if (isPlanetInOwnOrExalted(planet, pos.sign)) return 'own';
   if (isPlanetInDebilitated(planet, pos.sign)) return 'debilitated';
+  if (PLANET_EXALTED_SIGNS[planet] === pos.sign) return 'exalted'; // check before own — Mercury's own sign is also its exalted sign
+  if (isPlanetInOwnOrExalted(planet, pos.sign)) return 'own';
   return 'normal';
 }
 
@@ -560,7 +561,9 @@ export function getRemediesForPlanet(
         if (l?.planet === planet) {
           if (l === dashaAtTime.mahadasha) dashaLevel = 'maha';
           else if (l === dashaAtTime.antardasha) dashaLevel = 'antara';
-          else dashaLevel = 'prana';
+          else if (l === dashaAtTime.prana) dashaLevel = 'prana';
+          else if (l === dashaAtTime.pratyantardasha) dashaLevel = 'pratyantara';
+          else if (l === dashaAtTime.sookshma) dashaLevel = 'sookshma';
           break;
         }
       }

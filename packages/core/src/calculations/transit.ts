@@ -142,8 +142,8 @@ function isFriendlyNakshatra(birthNakshatra: number, targetNakshatra: number): b
  */
 export function isPlanetInOwnOrExalted(planet: Planet, sign: Sign): boolean {
   const ownSigns = PLANET_OWN_SIGNS[planet] || [];
+  if (PLANET_EXALTED_SIGNS[planet] === sign) return true; // check first — Mercury's own sign is also its exalted sign
   if (ownSigns.includes(sign)) return true;
-  if (PLANET_EXALTED_SIGNS[planet] === sign) return true;
   return false;
 }
 
