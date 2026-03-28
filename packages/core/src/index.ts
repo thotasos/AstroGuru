@@ -93,6 +93,11 @@ export {
   type StressLevel,
   type StressTrigger,
   type RemedyType,
+  type HoraKaalaRemedy,
+  type PujaRemedy,
+  type CharityRemedy,
+  type DietaryRemedy,
+  type NavagrahaPeethRemedy,
 } from './calculations/remediations.js';
 
 export {
