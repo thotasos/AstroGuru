@@ -145,6 +145,154 @@ const COLOR_TABLE: Record<Planet, ColorEntry> = {
 };
 
 // ------------------------------------
+// Hora / Kaala Table
+// ------------------------------------
+
+interface HoraKaalaEntry {
+  day: string;
+  horaWindow: string;
+  kaalaWindow: string;
+  description: string;
+}
+
+const HORA_KAALA_TABLE: Record<Planet, HoraKaalaEntry> = {
+  [Planet.Sun]:    { day: 'Sunday',    horaWindow: '06:00–07:00', kaalaWindow: '06:00–07:24', description: 'Perform Surya arati or feed the poor during this window.' },
+  [Planet.Moon]:   { day: 'Monday',    horaWindow: '07:00–08:00', kaalaWindow: '07:00–08:24', description: 'Chandra ararghya or charity during Moon hora for emotional peace.' },
+  [Planet.Mars]:   { day: 'Tuesday',   horaWindow: '06:00–07:00', kaalaWindow: '06:00–07:24', description: 'Red coral remedy or Hanuman arati during Mars hora.' },
+  [Planet.Mercury]:{ day: 'Wednesday', horaWindow: '07:00–08:00', kaalaWindow: '07:00–08:24', description: 'Mercury-friendly activities like studying or commerce during Mercury hora.' },
+  [Planet.Jupiter]:{ day: 'Thursday',  horaWindow: '08:00–09:00', kaalaWindow: '08:00–09:24', description: 'Brihaspati puja or charity during Jupiter hora for wisdom.' },
+  [Planet.Venus]:  { day: 'Friday',    horaWindow: '06:00–07:00', kaalaWindow: '06:00–07:24', description: 'Lakshmi puja or white garment donation during Venus hora.' },
+  [Planet.Saturn]: { day: 'Saturday',  horaWindow: '07:00–08:00', kaalaWindow: '07:00–08:24', description: 'Shani remedy or oil abhishekam during Saturn hora.' },
+  [Planet.Rahu]:   { day: 'Saturday',  horaWindow: '15:00–16:00', kaalaWindow: '15:00–16:00', description: 'Rahu Kaal — powerful for Rahu remedies despite being inauspicious. Offer coconut.' },
+  [Planet.Ketu]:   { day: 'Saturday',  horaWindow: '14:00–15:00', kaalaWindow: '14:00–15:00', description: 'Vyatipat — most inauspicious but potent for Ketu remedies. Meditate facing South.' },
+};
+
+// ------------------------------------
+// Puja / Ritual Table
+// ------------------------------------
+
+interface PujaEntry {
+  name: string;
+  duration: string;
+  procedure: string;
+  items: string[];
+  dayRestriction: string;
+  warning: string;
+}
+
+const PUJA_TABLE: Record<Planet, PujaEntry> = {
+  [Planet.Sun]:    { name: 'Surya Arghya',     duration: '15 min', procedure: 'Offer water to rising sun in copper vessel, Gayatri mantra 108×', items: ['Copper vessel', 'Red flowers', 'Gangajal', 'Sacred thread'], dayRestriction: 'Sunday',    warning: 'Not during solar eclipse; avoid if Leo lagna' },
+  [Planet.Moon]:   { name: 'Chandra Arghya',   duration: '20 min', procedure: 'Silver vessel with milk, offer at moonrise, Somras chant 108×', items: ['Silver vessel', 'Milk', 'Rice', 'White flowers'], dayRestriction: 'Monday',    warning: 'Avoid on Amavasya if Moon is already weak' },
+  [Planet.Mars]:   { name: 'Hanuman Chalisa',  duration: '30 min', procedure: 'Recite Hanuman Chalisa 8×, offer red flowers and sindoor', items: ['Red flowers', 'Sindoor', 'Lal Sindoor', 'Hanuman Chalisa book'], dayRestriction: 'Tuesday',   warning: 'Tuesday only; never on Saturdays' },
+  [Planet.Mercury]:{ name: 'Vishnu Sahasranam',duration: '45 min', procedure: '108 recitations of Vishnu Sahasranamam, offer green coconut', items: ['Green coconut', 'Vishnu Sahasranamam book', 'Tulsi leaves', 'Yellow flowers'], dayRestriction: 'Wednesday', warning: 'Wednesday only' },
+  [Planet.Jupiter]:{ name: 'Brihaspati Puja',  duration: '30 min', procedure: 'Yellow flowers, ghee lamp, Jupiter beeja mantra 108×', items: ['Yellow flowers', 'Ghee lamp', 'Turmeric', 'Yellow sweets'], dayRestriction: 'Thursday',  warning: 'Thursday only; caution during Jupiter retrograde' },
+  [Planet.Venus]:  { name: 'Lakshmi Puja',     duration: '30 min', procedure: 'White flowers, white cloth donation, Shukra mantra 108×', items: ['White flowers', 'White cloth', 'Coconut', 'Lakshmi lotus'], dayRestriction: 'Friday',     warning: 'Friday only; avoid non-vegetarian' },
+  [Planet.Saturn]: { name: 'Shani Puja',       duration: '45 min', procedure: 'Oil abhishekam on Shani idol, black sesame, Hanuman Chalisa 108×', items: ['Sesame oil', 'Black sesame', 'Iron nail', 'Hanuman Chalisa'], dayRestriction: 'Saturday',  warning: 'Saturday only; test remedy first — risky if misplaced' },
+  [Planet.Rahu]:   { name: 'Rahu Kala Puja',  duration: '20 min', procedure: 'Sweep floor with bare hands, offer coconut, Rahu beeja 108×', items: ['Coconut', 'Black blanket', 'Iron object', 'Rahu beeja yantra'], dayRestriction: 'Rahu Kaal', warning: 'During Rahu Kaal only (15:00–16:00 on Saturdays)' },
+  [Planet.Ketu]:   { name: 'Ketu Ganesha Puja',duration: '25 min', procedure: 'Offer modak to Ganesha, Ganesha mantra 108×, Ketu beeja 108×', items: ['Modak', 'Durva grass', 'White flowers', 'Ketu beeja yantra'], dayRestriction: 'Saturday evenings', warning: 'Saturday evenings only' },
+};
+
+// ------------------------------------
+// Charity Tables
+// ------------------------------------
+
+interface CharityBaseEntry {
+  baseItem: string;
+  vessel: string;
+}
+
+const CHARITY_BASE_TABLE: Record<Planet, CharityBaseEntry> = {
+  [Planet.Sun]:    { baseItem: 'Jaggery + water',         vessel: 'Copper' },
+  [Planet.Moon]:   { baseItem: 'Rice + milk',               vessel: 'Silver' },
+  [Planet.Mars]:   { baseItem: 'Red lentils (masoor)',      vessel: 'Copper' },
+  [Planet.Mercury]:{ baseItem: 'Green gram (moong dal)',     vessel: 'Brass' },
+  [Planet.Jupiter]:{ baseItem: 'Yellow sweets + ghee',       vessel: 'Gold' },
+  [Planet.Venus]:  { baseItem: 'White clothes + dairy',      vessel: 'Silver' },
+  [Planet.Saturn]: { baseItem: 'Black sesame + iron objects', vessel: 'Iron' },
+  [Planet.Rahu]:   { baseItem: 'Coconut + black blanket',   vessel: 'Brass' },
+  [Planet.Ketu]:   { baseItem: 'Sweets + sesame oil',       vessel: 'Copper' },
+};
+
+function getCharityItemsForPlanet(planet: Planet, house: number | null, dashaLevel: 'maha' | 'antara' | 'prana' | null): string[] {
+  const base = CHARITY_BASE_TABLE[planet];
+  const items: string[] = [`${base.baseItem} in ${base.vessel} vessel`];
+
+  if (house && DUSTHANA_HOUSES.has(house)) {
+    items.push('Iron nails (protection)');
+    items.push('Black cloth');
+    items.push('Blankets for the poor');
+  } else if (house && KENDRA_HOUSES.has(house)) {
+    items.push('Gold coin donation');
+    items.push('Sacred thread');
+    items.push('Cow/goat donation (if affluent)');
+  }
+
+  if (dashaLevel === 'maha') {
+    items.push(`Special: Full ${base.baseItem} + all house modifier items`);
+  } else if (dashaLevel === 'antara') {
+    items.push(`Enhanced: ${base.baseItem} + house modifier items`);
+  }
+
+  return items;
+}
+
+// ------------------------------------
+// Dietary / Lifestyle Table
+// ------------------------------------
+
+interface DietaryEntry {
+  fastingRule: string;
+  eat: string[];
+  avoid: string[];
+  lifestyle: string[];
+}
+
+const DIETARY_TABLE: Record<Planet, DietaryEntry> = {
+  [Planet.Sun]:    { fastingRule: 'Fast on Sundays — fruit only until noon',                          eat: ['Gold/orange foods', 'Jaggery', 'Sweet fruits', 'Ghee'],              avoid: ['Spicy food', 'Sour foods', 'Tamarind', 'Red chilies'],           lifestyle: ['Face East at sunrise', 'Wear bright colors (red, gold)', 'Do not skip breakfast'] },
+  [Planet.Moon]:   { fastingRule: 'Full moon (Purnima) fast — milk and fruit only',                   eat: ['White foods', 'Rice', 'Milk', 'Coconut', 'Paneer'],                     avoid: ['Dry foods', 'Stale food', 'Leftover food', 'Excessive salt'],        lifestyle: ['Drink 8 glasses of water daily', 'Sleep before 22:00', 'Keep a water vessel overnight'] },
+  [Planet.Mars]:   { fastingRule: 'Fast on Tuesdays — only fruit and milk',                           eat: ['Sweet foods', 'Ghee', 'Cucumber', 'Paneer', 'Sweet lassi'],              avoid: ['Spicy food', 'Red meat', 'Fermented foods', 'Garlic', 'Onion'],    lifestyle: ['Wake before sunrise', 'Control anger and arguments', 'Practice patience'] },
+  [Planet.Mercury]:{ fastingRule: 'Fast on Wednesdays — single meal only',                             eat: ['Green foods', 'Moong dal', 'Leafy vegetables', 'Green smoothie'],          avoid: ['Stale food', 'Excessive oily food', 'Fast food', 'Processed sugars'], lifestyle: ['Speak truth always', 'Maintain personal hygiene', 'Read/write daily'] },
+  [Planet.Jupiter]:{ fastingRule: 'Fast on Thursdays — single meal, yellow foods only',               eat: ['Yellow foods', 'Ghee', 'Chana dal', 'Bananas', 'Turmeric rice'],        avoid: ['Stale food', 'Non-vegetarian', 'Alcohol', 'Recycled stale food'],  lifestyle: ['Charity on Thursdays', 'Study sacred texts', 'Morning prayer'] },
+  [Planet.Venus]:  { fastingRule: 'Fast on Fridays — single meal, dairy only',                      eat: ['White foods', 'Dairy', 'Mango', 'Honey', 'Rice pudding'],                avoid: ['Meat', 'Eggs', 'Alcohol', 'Excessive salt', 'Tamsi (lotus root)'], lifestyle: ['Wear white clothing', 'Apply sandalwood paste on forehead', 'Listen to devotional music'] },
+  [Planet.Saturn]: { fastingRule: 'Partial fast on Saturdays — nothing after 14:00',                eat: ['Simple fruits', 'Roasted barley', 'Black chana', 'Buttermilk'],           avoid: ['Salt', 'Black gram (urad)', 'Nightshades (tomato, brinjal)', 'Alcohol'], lifestyle: ['Serve others without expecting return', 'Sleep on floor occasionally', 'Walk barefoot on grass'] },
+  [Planet.Rahu]:   { fastingRule: 'Fast during Rahu Kaal on Saturdays — only coconut water',          eat: ['Simple vegetarian', 'Coconut water', 'Fruits', 'Barley water'],            avoid: ['Overly sweet foods', 'Artificial ingredients', 'Food from outgroup'],  lifestyle: ['Spiritual study with guru only', 'No occult without guidance', 'Meditate daily'] },
+  [Planet.Ketu]:   { fastingRule: 'Light fast on Saturday evenings after sunset',                    eat: ['Light fruits', 'Milk', 'Buttermilk', 'Light vegetables'],                  avoid: ['Heavy meals', 'Garlic', 'Onion', 'Non-vegetarian'],                  lifestyle: ['Meditation facing South', 'Solitary spiritual practice', 'No crowded social events'] },
+};
+
+// ------------------------------------
+// Navagraha Peeth Tables
+// ------------------------------------
+
+const PEETH_DIRECTION_TABLE: Record<number, string> = {
+  1:  'East — Ekon (front of home), facing sunrise',
+  2:  'Southeast — Agneya corner (kitchen or heat source)',
+  3:  'South — Exact South wall',
+  4:  'North — Exact North wall or puja room',
+  5:  'Northeast — Ishaanya corner (most auspicious)',
+  6:  'South-Southeast — Nairitya corner',
+  7:  'West — Prachya corner',
+  8:  'Northwest — Vayavya corner',
+  9:  'North — shares with 4th (sacred corner)',
+  10: 'Northeast/East — near main entrance door',
+  11: 'East-Northeast — near utility area',
+  12: 'South-Southwest — Paśhima corner (least preferred)',
+};
+
+const PEETH_MATERIAL_TABLE: Record<string, string> = {
+  exalted:    'Gold idol — maximum strength, needs least pacification',
+  own:        'Brass idol — standard, well-disposed relationship',
+  normal:     'Copper idol — neutral, general strengthening',
+  debilitated: 'Silver idol — softens and pacifies strongly',
+};
+
+function getPeethFrequency(maha: boolean, antara: boolean, prana: boolean): string {
+  if (maha)   return 'Daily arati + offering (Mahadasha active)';
+  if (antara) return '3× per week — Monday, Thursday, Saturday (Antardasha active)';
+  if (prana)  return 'Weekly on Saturday (Prana dasha active)';
+  return 'Monthly on full moon (no active dasha)';
+}
+
+// ------------------------------------
 // Helpers for getPlanetStress
 // ------------------------------------
 
