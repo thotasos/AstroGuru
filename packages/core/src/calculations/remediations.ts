@@ -366,11 +366,11 @@ export function calculateRemediations(
 
   // Build ranked remedy lists
   const immediateRemedies = immediateStress
-    .flatMap(s => getRemediesForPlanet(s.planet, s))
+    .flatMap(s => getRemediesForPlanet(s.planet, s, chart, dashas))
     .slice(0, maxResults);
 
   const lifetimeRemedies = lifetimeStress
-    .flatMap(s => getRemediesForPlanet(s.planet, s))
+    .flatMap(s => getRemediesForPlanet(s.planet, s, chart, dashas))
     .slice(0, maxResults);
 
   return {
@@ -489,7 +489,12 @@ function getPriority(planet: Planet, level: StressLevel, type: RemedyType): numb
 // Core Functions
 // ------------------------------------
 
-export function getRemediesForPlanet(planet: Planet, stress: PlanetStress): Remedy[] {
+export function getRemediesForPlanet(
+  planet: Planet,
+  stress: PlanetStress,
+  chart?: ChartData,
+  dashas?: DashaPeriod[],
+): Remedy[] {
   const remedies: Remedy[] = [];
   const level = stress.stressLevel;
 
@@ -541,6 +546,121 @@ export function getRemediesForPlanet(planet: Planet, stress: PlanetStress): Reme
       stressLevel: level,
       priority: getPriority(planet, level, 'color'),
     });
+  }
+
+  // Supporting remedies — need chart/dasha context for house/dasha awareness
+  if (chart && dashas) {
+    const house = getPlanetHouse(planet, chart);
+    const dignity = getPlanetDignity(planet, chart);
+    const dashaAtTime = getDashaAtDate(dashas, new Date());
+    let dashaLevel: 'maha' | 'antara' | 'prana' | null = null;
+    if (dashaAtTime) {
+      const levels = [dashaAtTime.mahadasha, dashaAtTime.antardasha, dashaAtTime.prana];
+      for (const l of levels) {
+        if (l?.planet === planet) {
+          if (l === dashaAtTime.mahadasha) dashaLevel = 'maha';
+          else if (l === dashaAtTime.antardasha) dashaLevel = 'antara';
+          else dashaLevel = 'prana';
+          break;
+        }
+      }
+    }
+
+    // Hora/Kaala
+    const hk = HORA_KAALA_TABLE[planet];
+    if (hk) {
+      remedies.push({
+        id: `${planet}-hora-kaala`,
+        type: 'hora_kaala',
+        planet,
+        name: `${getPlanetName(planet)} Hora + Kaala Window`,
+        day: hk.day,
+        horaWindow: hk.horaWindow,
+        kaalaWindow: hk.kaalaWindow,
+        description: hk.description,
+        benefit: `Auspicious window to perform ${getPlanetName(planet)} remedies`,
+        stressLevel: level,
+        priority: getPriority(planet, level, 'hora_kaala'),
+      } as HoraKaalaRemedy);
+    }
+
+    // Puja
+    const p = PUJA_TABLE[planet];
+    if (p) {
+      remedies.push({
+        id: `${planet}-puja`,
+        type: 'puja',
+        planet,
+        name: p.name,
+        duration: p.duration,
+        procedure: p.procedure,
+        items: p.items,
+        dayRestriction: p.dayRestriction,
+        warning: p.warning,
+        benefit: `Powers ${getPlanetName(planet)}'s positive influence through ritual`,
+        stressLevel: level,
+        priority: getPriority(planet, level, 'puja'),
+      } as PujaRemedy);
+    }
+
+    // Charity
+    const charityItems = getCharityItemsForPlanet(planet, house, dashaLevel);
+    const charityDesc = house
+      ? `${getPlanetName(planet)} in ${house}${DUSTHANA_HOUSES.has(house) ? ' (dusthana — add protection)' : KENDRA_HOUSES.has(house) ? ' (kendra — add prestige)' : ' (other house)'}`
+      : `${getPlanetName(planet)} charity`;
+    remedies.push({
+      id: `${planet}-charity`,
+      type: 'charity',
+      planet,
+      name: `${getPlanetName(planet)} Charity`,
+      items: charityItems,
+      description: `Donate in a ${CHARITY_BASE_TABLE[planet].vessel.toLowerCase()} vessel${dashaLevel ? ` — intensified during ${dashaLevel === 'maha' ? 'Mahadasha' : dashaLevel === 'antara' ? 'Antardasha' : 'Prana dasha'}` : ''}.`,
+      dashaBonus: dashaLevel === 'maha' ? charityItems[charityItems.length - 1] : undefined,
+      benefit: `Pleases ${getPlanetName(planet)} through selfless giving`,
+      stressLevel: level,
+      priority: getPriority(planet, level, 'charity'),
+    } as CharityRemedy);
+
+    // Dietary
+    const diet = DIETARY_TABLE[planet];
+    if (diet) {
+      remedies.push({
+        id: `${planet}-dietary`,
+        type: 'dietary',
+        planet,
+        name: `${getPlanetName(planet)} Dietary & Lifestyle`,
+        fastingRule: diet.fastingRule,
+        eat: diet.eat,
+        avoid: diet.avoid,
+        lifestyle: diet.lifestyle,
+        benefit: `Aligns body and mind with ${getPlanetName(planet)}'s energy`,
+        stressLevel: level,
+        priority: getPriority(planet, level, 'dietary'),
+      } as DietaryRemedy);
+    }
+
+    // Navagraha Peeth
+    const peethDir = house ? PEETH_DIRECTION_TABLE[house] ?? 'East' : 'East';
+    const peethMat = PEETH_MATERIAL_TABLE[dignity] ?? PEETH_MATERIAL_TABLE.normal!;
+    const peethFreq = getPeethFrequency(
+      dashaLevel === 'maha',
+      dashaLevel === 'antara',
+      dashaLevel === 'prana',
+    );
+    remedies.push({
+      id: `${planet}-navagraha-peeth`,
+      type: 'navagraha_peeth',
+      planet,
+      name: `${getPlanetName(planet)} Navagraha Peeth${house ? ` (${house}${DUSTHANA_HOUSES.has(house) ? ' dusthana' : KENDRA_HOUSES.has(house) ? ' kendra' : ''})` : ''}`,
+      direction: peethDir,
+      material: peethMat,
+      placement: `Place ${getPlanetName(planet)} idol/seat in the ${peethDir.split('—')[0]!.trim()} corner of your home altar.`,
+      frequency: peethFreq,
+      description: `Seat placement of ${getPlanetName(planet)} deity for home vastu alignment. ${peethMat.split('—')[0]!.trim()} idol preferred (${dignity} dignity). ${peethFreq.toLowerCase()}.`,
+      benefit: `Aligns living space with ${getPlanetName(planet)}'s energy through vastu`,
+      stressLevel: level,
+      priority: getPriority(planet, level, 'navagraha_peeth'),
+    } as NavagrahaPeethRemedy);
   }
 
   // Sort by priority ascending (lower = more urgent)
