@@ -143,12 +143,67 @@ function getDashaStress(planet: Planet, dashas: DashaPeriod[], chart: ChartData,
 // ------------------------------------
 
 export function calculateRemediations(
-  _chart: ChartData,
-  _dashas: DashaPeriod[],
-  _transit: TransitPosition,
-  _options?: { includeLifetime?: boolean; maxResults?: number }
+  chart: ChartData,
+  dashas: DashaPeriod[],
+  transit: TransitPosition,
+  options: { includeLifetime?: boolean; maxResults?: number } = {}
 ): RemediationReport {
-  throw new Error('Not yet implemented');
+  const { includeLifetime = true, maxResults = 10 } = options;
+  const currentDate = new Date();
+
+  const periodDescription = getPeriodDescription(dashas, currentDate);
+
+  // Check all 9 planets for stress
+  const allStress: PlanetStress[] = [];
+  for (const planet of [
+    Planet.Sun, Planet.Moon, Planet.Mars, Planet.Mercury,
+    Planet.Jupiter, Planet.Venus, Planet.Saturn,
+    Planet.Rahu, Planet.Ketu,
+  ] as Planet[]) {
+    const stress = getPlanetStress(planet, chart, dashas, transit, currentDate);
+    if (stress) allStress.push(stress);
+  }
+
+  // Separate immediate (has dasha trigger) vs lifetime (chart-only stress)
+  const immediateStress = allStress.filter(s => s.triggers.includes('dasha'));
+  const lifetimeStress = includeLifetime
+    ? allStress.filter(s => !s.triggers.includes('dasha'))
+    : [];
+
+  // Build ranked remedy lists
+  const immediateRemedies = immediateStress
+    .flatMap(s => getRemediesForPlanet(s.planet, s))
+    .slice(0, maxResults);
+
+  const lifetimeRemedies = lifetimeStress
+    .flatMap(s => getRemediesForPlanet(s.planet, s))
+    .slice(0, maxResults);
+
+  return {
+    immediate: {
+      periodDescription,
+      stressedPlanets: immediateStress,
+      remedies: immediateRemedies,
+    },
+    lifetime: {
+      stressedPlanets: lifetimeStress,
+      remedies: lifetimeRemedies,
+    },
+  };
+}
+
+function getPeriodDescription(dashas: DashaPeriod[], date: Date): string {
+  const dashaAtTime = getDashaAtDate(dashas, date);
+  if (!dashaAtTime) return 'Current period';
+
+  const parts: string[] = [];
+  if (dashaAtTime.mahadasha) {
+    parts.push(`${getPlanetName(dashaAtTime.mahadasha.planet)} Mahadasha`);
+  }
+  if (dashaAtTime.antardasha) {
+    parts.push(`${getPlanetName(dashaAtTime.antardasha.planet)} Antardasha`);
+  }
+  return parts.join(' + ') || 'Current period';
 }
 
 export function getPlanetStress(
