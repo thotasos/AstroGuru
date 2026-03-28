@@ -1433,21 +1433,42 @@ const program = new Command();
 
 program
   .name('parashari')
-  .description('Parashari Precision CLI')
+  .description(`
+Parashari Precision CLI — Vedic astrology predictions, dasha analysis, and remedies.
+
+Quick start:
+  parashari create -n "John Doe" -d 1990-05-15 -t 14:30 -p nalgonda-india
+  parashari list
+  parashari process
+  parashari predict -i <id> -d 2026-03-27
+  parashari report -i <id> --remedies
+
+All commands:
+  parashari create    Create a new birth profile
+  parashari process   Calculate chart, dashas, Ashtakavarga for profiles
+  parashari list      List all profiles
+  parashari report    Detailed natal report with career/finance/health/relationships/education
+  parashari predict   Daily or hourly predictions (use --hourly for 24h breakdown)
+  parashari predict-month   Monthly predictions with daily/weekly breakdown
+  parashari predict-cache    Pre-generate 30-day hourly cache (for cron)
+  parashari delete    Delete a profile and all its data
+  parashari timezones List all valid timezone options
+  parashari --help    Show this help
+`)
   .version('1.0.0');
 
 program
   .command('create')
   .description('Create a new profile')
   .requiredOption('-n, --name <name>', 'Name of the person')
-  .requiredOption('-d, --dob <date>', 'Date of birth (YYYY-MM-DD)')
-  .requiredOption('-t, --time <time>', 'Time of birth (HH:MM)')
-  .requiredOption('-p, --place <place>', 'Place of birth (predefined: Nalgonda-India, Houston-Texas, Sunnyvale-California)')
+  .requiredOption('-d, --dob <date>', 'Date of birth (YYYY-MM-DD, e.g. 1990-05-15)')
+  .requiredOption('-t, --time <time>', 'Time of birth (HH:MM in 24h format, e.g. 14:30)')
+  .requiredOption('-p, --place <place>', 'Place of birth. Predefined: nalgonda-india, houston-texas, sunnyvale-california')
   .action(createProfileAction);
 
 program
   .command('process')
-  .description('Process profiles (run without args for all new profiles)')
+  .description('Process profiles — calculate chart, dashas, and Ashtakavarga')
   .option('-i, --id <id>', 'Process specific profile ID')
   .option('-f, --force', 'Force reprocess even if already processed')
   .action(processAction);
@@ -1459,16 +1480,16 @@ program
 
 program
   .command('report')
-  .description('Generate a detailed report for a profile')
-  .requiredOption('-i, --id <id>', 'Profile ID')
-  .option('--remedies', 'Show remediation recommendations based on current dasha and chart stresses')
+  .description('Generate a detailed report for a profile (career, finance, health, relationships, education)')
+  .requiredOption('-i, --id <id>', 'Profile ID (see: parashari list)')
+  .option('--remedies', 'Show gemstone, mantra, and color remedies for stressed planets')
   .action(reportAction);
 
 program
   .command('predict-cache')
-  .description('Pre-generate 30-day hourly prediction cache (for cron)')
+  .description('Pre-generate 30-day hourly prediction cache (run daily via cron)')
   .option('-i, --id <id>', 'Specific profile ID (default: all ready profiles)')
-  .option('-t, --timezone <tz>', 'Timezone for predictions')
+  .option('-t, --timezone <tz>', 'Timezone for predictions (see: parashari timezones)')
   .option('-f, --force', 'Force regeneration even if cache exists')
   .action(predictCacheAction);
 
@@ -2187,24 +2208,24 @@ function getTimezoneOffset(timezone: string, year: number, month: number): numbe
 
 program
   .command('predict')
-  .description('Get daily/hourly predictions for a profile')
-  .requiredOption('-i, --id <id>', 'Profile ID')
-  .requiredOption('-d, --date <date>', 'Date (YYYY-MM-DD)')
-  .option('-t, --timezone <tz>', 'Timezone (default: profile birth timezone)')
-  .option('-h, --hourly', 'Show hourly breakdown')
-  .option('--ai-summary', 'Use AI (Ollama qwen3.5) to generate detailed natural language summary')
-  .option('--json', 'Output JSON')
-  .option('--remedies', 'Show remediation recommendations based on current dasha and chart stresses')
+  .description('Get daily or hourly predictions for a profile')
+  .requiredOption('-i, --id <id>', 'Profile ID (see: parashari list)')
+  .requiredOption('-d, --date <date>', 'Date (YYYY-MM-DD format, e.g. 2026-03-27)')
+  .option('-t, --timezone <tz>', 'Timezone override (see: parashari timezones for all valid values)')
+  .option('-h, --hourly', 'Show 24 hourly predictions instead of 4 daily summaries')
+  .option('--ai-summary', 'Generate AI natural language summary via Ollama (requires Ollama running)')
+  .option('--json', 'Output machine-readable JSON')
+  .option('--remedies', 'Show gemstone, mantra, and color remedies for stressed planets')
   .action(predictAction);
 
 program
   .command('predict-month')
   .description('Get monthly predictions with daily/weekly breakdown and category highlights')
-  .requiredOption('-i, --id <id>', 'Profile ID')
-  .requiredOption('-m, --month <month>', 'Month (YYYY-MM format, e.g., 2027-01)')
-  .option('-t, --timezone <tz>', 'Timezone (default: profile birth timezone)')
-  .option('--ai-summary', 'Use AI (Ollama qwen3.5) to generate detailed monthly summary')
-  .option('--json', 'Output JSON')
+  .requiredOption('-i, --id <id>', 'Profile ID (see: parashari list)')
+  .requiredOption('-m, --month <month>', 'Month in YYYY-MM format (e.g., 2026-03 for March 2026)')
+  .option('-t, --timezone <tz>', 'Timezone override (see: parashari timezones for all valid values)')
+  .option('--ai-summary', 'Generate AI natural language summary via Ollama (requires Ollama running)')
+  .option('--json', 'Output machine-readable JSON')
   .action(predictMonthAction);
 
 interface DeleteOptions {
@@ -2238,23 +2259,23 @@ function deleteAction(options: DeleteOptions) {
 
 program
   .command('delete')
-  .description('Delete a profile and all its data')
-  .requiredOption('-i, --id <id>', 'Profile ID to delete')
+  .description('Delete a profile and all its data (cached predictions, journal, etc.)')
+  .requiredOption('-i, --id <id>', 'Profile ID to delete (see: parashari list)')
   .option('-f, --force', 'Skip confirmation and delete immediately')
   .action(deleteAction);
 
 program
   .command('timezones')
-  .description('List valid timezone options')
+  .description('List all valid IANA timezone options grouped by region')
   .action(() => {
-    console.log('\nValid timezone options:\n');
+    console.log('\nValid IANA timezone options:\n');
+    console.log('Use any of these with -t, --timezone option:\n');
     // Group by region
     const regions: Record<string, string[]> = {
       'Asia': VALID_TIMEZONES.filter(t => t.startsWith('Asia/')),
       'Europe': VALID_TIMEZONES.filter(t => t.startsWith('Europe/')),
       'Americas': VALID_TIMEZONES.filter(t => t.startsWith('America/')),
       'Pacific': VALID_TIMEZONES.filter(t => t.startsWith('Pacific/')),
-      'US': VALID_TIMEZONES.filter(t => t.startsWith('US/')),
       'UTC': ['UTC'],
     };
     for (const [region, zones] of Object.entries(regions)) {
@@ -2264,6 +2285,7 @@ program
       }
       console.log('');
     }
+    console.log('Examples: Asia/Kolkata, America/New_York, Europe/London');
   });
 
 program.parse(process.argv);
