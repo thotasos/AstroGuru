@@ -1531,6 +1531,10 @@ All commands:
   parashari delete    Delete a profile and all its data
   parashari timezones List all valid timezone options
   parashari --help    Show this help
+
+Remedy commands (use with any profile):
+  parashari report -i <id> --remedies     Show birth chart remedies (gemstones, mantras, colors)
+  parashari predict -i <id> -d <date> --remedies    Show current period remedies
 `)
   .version('1.0.0');
 
